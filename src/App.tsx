@@ -45,55 +45,43 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0e14] text-[#e6edf3]">
-      <div className="mx-auto max-w-6xl px-4 pb-16 pt-8 sm:px-6">
-        <header className="mb-6">
-          <button type="button" onClick={() => go('main')} className="block text-left">
-            <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl">DOTA DRAFT ASSISTANT</h1>
-            <p className="mt-1 text-sm text-[#8b949e]">Counter picks for your enemy draft.</p>
+    <div className="min-h-screen bg-bg text-ink">
+      <div className="mx-auto w-full max-w-[1200px] px-4 pb-16 pt-5 sm:px-6 sm:pt-7">
+        <header className="mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-line pb-4">
+          <button type="button" onClick={() => go('main')} className="text-left">
+            <h1 className="text-xl font-extrabold uppercase tracking-tight sm:text-2xl">DOTA DRAFT ASSISTANT</h1>
+            <p className="mt-0.5 text-xs text-muted">Find the best picks against the enemy draft.</p>
           </button>
-          <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
+          <nav className="flex flex-wrap items-center gap-2" aria-label="Site">
             {SHOW_PLAYGROUND && (
-              <span className="flex overflow-hidden rounded-full border border-[#30363d]">
-                <button type="button" onClick={() => { setPage('main'); setView('draft'); }} className={`px-3 py-1 ${view === 'draft' && page === 'main' ? 'bg-[#1f6feb]/30 text-[#e6edf3]' : 'bg-[#161b22] text-[#8b949e]'}`}>Draft</button>
-                <button type="button" onClick={() => { setPage('main'); setView('validate'); }} className={`px-3 py-1 ${view === 'validate' && page === 'main' ? 'bg-[#1f6feb]/30 text-[#e6edf3]' : 'bg-[#161b22] text-[#8b949e]'}`}>Draft validation</button>
-                <button type="button" onClick={() => { setPage('main'); setView('lab'); }} className={`px-3 py-1 ${view === 'lab' && page === 'main' ? 'bg-[#1f6feb]/30 text-[#e6edf3]' : 'bg-[#161b22] text-[#8b949e]'}`}>Scoring lab</button>
+              <span className="flex overflow-hidden rounded-lg border border-line-2">
+                <button type="button" onClick={() => { setPage('main'); setView('draft'); }} className={`px-3 py-1.5 text-xs ${view === 'draft' && page === 'main' ? 'bg-accent text-bg' : 'bg-surface text-muted'}`}>Draft</button>
+                <button type="button" onClick={() => { setPage('main'); setView('validate'); }} className={`px-3 py-1.5 text-xs ${view === 'validate' && page === 'main' ? 'bg-accent text-bg' : 'bg-surface text-muted'}`}>Draft validation</button>
+                <button type="button" onClick={() => { setPage('main'); setView('lab'); }} className={`px-3 py-1.5 text-xs ${view === 'lab' && page === 'main' ? 'bg-accent text-bg' : 'bg-surface text-muted'}`}>Scoring lab</button>
               </span>
             )}
-            {d.loadState.kind === 'ready' && d.meta && (
-              <>
-                <span className="rounded-full border border-[#30363d] bg-[#161b22] px-3 py-1 text-[#8b949e]">
-                  Data source: <span className="text-[#e6edf3]">OpenDota</span> · {freshnessLabel(d.meta)}
-                </span>
-                <span className="rounded-full border border-[#30363d] bg-[#161b22] px-3 py-1 text-[#8b949e]">
-                  Latest Dota patch: <span className="text-[#e6edf3]">{d.meta.latestPatch || 'unknown'}</span>
-                </span>
-              </>
-            )}
-            <span className="ml-auto flex gap-2">
-              <button type="button" onClick={() => go('about')} className={`rounded-full border border-[#30363d] px-3 py-1 ${page === 'about' ? 'bg-[#1f6feb]/30 text-[#e6edf3]' : 'bg-[#161b22] text-[#8b949e] hover:text-[#e6edf3]'}`}>About</button>
-              <button type="button" onClick={() => go('privacy')} className={`rounded-full border border-[#30363d] px-3 py-1 ${page === 'privacy' ? 'bg-[#1f6feb]/30 text-[#e6edf3]' : 'bg-[#161b22] text-[#8b949e] hover:text-[#e6edf3]'}`}>Privacy</button>
-            </span>
-          </div>
+            <button type="button" onClick={() => go('about')} className={`btn btn-ghost btn-sm ${page === 'about' ? 'text-accent' : ''}`}>About</button>
+            <button type="button" onClick={() => go('privacy')} className={`btn btn-ghost btn-sm ${page === 'privacy' ? 'text-accent' : ''}`}>Privacy</button>
+          </nav>
         </header>
         {/* CONTENT_SLOT */}
         {page === 'about' && (
-          <section className="rounded-2xl border border-[#30363d] bg-[#0d1117] p-6 text-sm leading-relaxed text-[#c9d1d9]">
-            <h2 className="mb-3 text-lg font-bold">About Dota Draft Assistant</h2>
+          <section className="panel p-6 text-sm leading-relaxed text-muted sm:p-8">
+            <h2 className="mb-3 text-lg font-bold text-ink">About Dota Draft Assistant</h2>
             <p>Dota Draft Assistant analyzes statistical hero matchups to help you evaluate picks against the enemy draft.</p>
             <p className="mt-2">Statistics are based on OpenDota data.</p>
-            <p className="mt-2 text-[#8b949e]">Recommendations are statistical suggestions, not guarantees of match outcomes.</p>
+            <p className="mt-2 text-dim">Recommendations are statistical suggestions, not guarantees of match outcomes.</p>
           </section>
         )}
         {page === 'privacy' && (
-          <section className="rounded-2xl border border-[#30363d] bg-[#0d1117] p-6 text-sm leading-relaxed text-[#c9d1d9]">
-            <h2 className="mb-3 text-lg font-bold">Privacy</h2>
+          <section className="panel p-6 text-sm leading-relaxed text-muted sm:p-8">
+            <h2 className="mb-3 text-lg font-bold text-ink">Privacy</h2>
             <ul className="list-disc space-y-1 pl-5">
               <li>No account required.</li>
               <li>No personal data stored.</li>
               <li>No Steam login required.</li>
             </ul>
-            <p className="mt-3 text-[#8b949e]">The app does not collect Steam IDs and stores nothing beyond your browser session.</p>
+            <p className="mt-3 text-dim">The app does not collect Steam IDs and stores nothing beyond your browser session.</p>
           </section>
         )}
         {/* PAGESLOT */}
@@ -102,45 +90,54 @@ export default function App() {
           SHOW_PLAYGROUND && view === 'validate' ? <DraftValidation /> : (
           <>
             {d.loadState.kind === 'loading' && (
-              <div className="rounded-xl border border-[#30363d] bg-[#161b22] p-6 text-sm text-[#8b949e]">
-                <span className="mr-2 inline-block h-3 w-3 animate-spin rounded-full border-2 border-[#30363d] border-t-[#58a6ff] align-[-2px]" />
+              <div className="panel flex items-center gap-3 px-5 py-5 text-sm text-muted">
+                <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-line-2 border-t-accent" aria-hidden="true" />
                 {d.loadState.message}
               </div>
             )}
             {d.loadState.kind === 'error' && (
-              <div className="rounded-xl border border-[#f85149]/40 bg-[#f85149]/10 p-6 text-sm">
-                <div className="font-semibold text-[#ffa198]">We&apos;re having trouble loading Dota data.</div>
-                <div className="mt-1 text-[#8b949e]">Please try again later.</div>
+              <div className="rounded-2xl border border-[#E06060]/40 bg-[#E06060]/10 px-5 py-5 text-sm">
+                <div className="font-semibold text-[#F0918A]">We&apos;re having trouble loading Dota data.</div>
+                <div className="mt-1 text-muted">Please try again later.</div>
               </div>
             )}
             {/* DRAFTSLOT */}
             {d.loadState.kind === 'ready' && (
-              <section className="rounded-2xl border border-[#30363d] bg-[#0d1117] p-4 sm:p-6">
+              <section className="panel p-4 sm:p-6">
                 <div className="grid gap-5">
-                  <div>
-                    <h2 className="mb-2 text-sm font-semibold uppercase tracking-wider text-[#8b949e]">Enemy team</h2>
-                    <HeroSearch heroes={d.heroes} excluded={excluded} onPick={(h) => d.addEnemy(h.id)} />
-                    <p className="mt-1.5 text-xs text-[#6e7681]">Pick 1–{APP_CONFIG.ui.maxEnemies} enemies. Recommendations update automatically.</p>
-                  </div>
                   <EnemySlots enemies={d.enemies} heroById={d.heroById} onRemove={d.removeEnemy} onClear={d.clearEnemies} />
+                  <div className="min-w-0">
+                    <HeroSearch heroes={d.heroes} excluded={excluded} onPick={(h) => d.addEnemy(h.id)} />
+                    <p className="mt-2 text-xs text-dim">Pick 1–{APP_CONFIG.ui.maxEnemies} enemies — recommendations update automatically.</p>
+                  </div>
                   <PositionTabs value={d.position} onChange={d.setPosition} />
                 </div>
               </section>
             )}
             {d.loadState.kind === 'ready' && d.enemies.length > 0 && d.missingTables.length > 0 && (
-              <div className="mt-6 rounded-xl border border-[#d29922]/40 bg-[#d29922]/10 p-4 text-sm text-[#e3b341]">
+              <div className="panel mt-6 border-accent/40 px-4 py-3.5 text-sm text-accent-2">
                 Not enough matchup data for {d.missingTables.map((id) => d.heroById.get(id)?.name ?? `#${id}`).join(', ')} — recommendations need coverage vs the full draft.
               </div>
             )}
             {/* RESULTSLOT */}
             {d.loadState.kind === 'ready' && d.results && (
               <div className="mt-8">
-                <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
-                  <h2 className="text-lg font-bold">RECOMMENDED PICKS <span className="text-sm font-normal text-[#8b949e]">· {POSITIONS.find((p) => p.id === d.position)?.label ?? 'All'}</span></h2>
-                  <span className="text-xs text-[#6e7681]">Only heroes with usable data vs every selected enemy are shown.</span>
+                <div className="mb-5 flex flex-wrap items-baseline justify-between gap-2">
+                  <div className="flex items-center gap-3">
+                    <span aria-hidden="true" className="h-2.5 w-2.5 rounded-[3px] bg-accent" />
+                    <h2 className="text-[13px] font-extrabold uppercase tracking-[0.2em] text-ink">Recommendations</h2>
+                    <span className="text-xs text-muted">
+                      · {d.position === 'all' ? 'Best pick per role' : (POSITIONS.find((p) => p.id === d.position)?.label ?? 'All')}
+                    </span>
+                  </div>
+                  <span className="text-[11px] text-dim">
+                    {d.position === 'all'
+                      ? 'Top pick per role — pick a role for the full top 5. Only heroes with usable data vs every enemy are shown.'
+                      : 'Only heroes with usable data vs every selected enemy are shown.'}
+                  </span>
                 </div>
-                <ResultsGrid results={d.results} heroById={d.heroById} onViewDetails={(c) => setDetails(c)} />
-                <p className="mt-6 text-xs leading-relaxed text-[#6e7681]">
+                <ResultsGrid results={d.results} heroById={d.heroById} onViewDetails={(c) => setDetails(c)} summary={d.position === 'all'} />
+                <p className="mt-7 max-w-3xl text-[11px] leading-relaxed text-dim">
                   Statistically favorable matchup — not a guaranteed win. Scores use the median matchup across the enemy draft,
                   sample-size confidence and role fit (role tags + curated lane nudges, not per-position winrates).
                   Matchup data provided by OpenDota (aggregate data, not patch-filtered matches).
@@ -148,11 +145,11 @@ export default function App() {
               </div>
             )}
             {d.loadState.kind === 'ready' && d.enemies.length === 0 && (
-              <div className="mt-8 rounded-xl border border-dashed border-[#30363d] p-8 text-center">
-                <p className="text-sm font-semibold text-[#8b949e]">Build the enemy draft</p>
-                <p className="mt-1 text-sm text-[#6e7681]">Select at least one enemy hero to see counter recommendations.</p>
-                <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-xs">
-                  <span className="text-[#6e7681]">Try:</span>
+              <div className="panel mx-auto mt-10 max-w-xl px-6 py-10 text-center">
+                <p className="text-lg font-bold text-ink">Build your enemy draft</p>
+                <p className="mt-1.5 text-sm text-muted">Select 1–{APP_CONFIG.ui.maxEnemies} enemy heroes to see counter recommendations.</p>
+                <div className="mt-5 flex flex-wrap items-center justify-center gap-2 text-xs">
+                  <span className="text-dim">Try:</span>
                   {TRY_EXAMPLES.map((n) => (
                     <button
                       key={n}
@@ -161,7 +158,7 @@ export default function App() {
                         const id = heroByName.get(n.toLowerCase());
                         if (id !== undefined) d.addEnemy(id);
                       }}
-                      className="rounded-full border border-[#30363d] bg-[#161b22] px-3 py-1 text-[#8b949e] hover:border-[#58a6ff] hover:text-[#e6edf3]"
+                      className="btn btn-ghost btn-sm"
                     >
                       {n}
                     </button>
@@ -169,13 +166,28 @@ export default function App() {
                 </div>
               </div>
             )}
-            <footer className="mt-10 flex flex-wrap justify-between gap-2 border-t border-[#21262d] pt-4 text-xs text-[#6e7681]">
-              <span>Dota Draft Assistant · plain-stats explanations, no AI.</span>
-              <a className="underline hover:text-[#8b949e]" href="https://docs.opendota.com/" target="_blank" rel="noreferrer">Matchup data provided by OpenDota</a>
-            </footer>
           </>
           )
         )}
+        <footer className="mt-12 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-5 text-[11px] leading-relaxed text-dim">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <span className="font-semibold text-muted">Dota Draft Assistant</span>
+            <a className="underline-offset-2 hover:text-ink hover:underline" href="https://docs.opendota.com/" target="_blank" rel="noreferrer">Data provided by OpenDota</a>
+            {d.loadState.kind === 'ready' && d.meta && (
+              <>
+                <span aria-hidden="true">·</span>
+                <span>{freshnessLabel(d.meta)}</span>
+                <span aria-hidden="true">·</span>
+                <span>Latest patch {d.meta.latestPatch || 'unknown'}</span>
+              </>
+            )}
+          </div>
+          <div className="flex items-center gap-3">
+            <button type="button" onClick={() => go('about')} className="hover:text-ink">About</button>
+            <span aria-hidden="true">·</span>
+            <button type="button" onClick={() => go('privacy')} className="hover:text-ink">Privacy</button>
+          </div>
+        </footer>
       </div>
       {details && <HeroDetailsDrawer candidate={details} enemyIds={d.enemies} heroById={d.heroById} onClose={() => setDetails(null)} />}
     </div>

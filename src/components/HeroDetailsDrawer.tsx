@@ -27,28 +27,43 @@ export function HeroDetailsDrawer({ candidate: c, enemyIds, heroById, onClose }:
   const usable = c.matchups.filter((m) => m.usable);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 sm:items-center" onClick={onClose}>
+    <div className="fade-in fixed inset-0 z-50 flex items-end justify-center bg-black/70 backdrop-blur-[2px] sm:items-center" onClick={onClose} role="dialog" aria-modal="true" aria-label={`${c.hero.name} analysis`}>
       <div
-        className="nice-scroll max-h-[88vh] w-full max-w-lg overflow-auto rounded-t-2xl border border-[#30363d] bg-[#0d1117] p-6 sm:rounded-2xl"
+        className="drawer-panel nice-scroll h-[92vh] w-full max-h-[92vh] overflow-auto p-5 sm:h-auto sm:max-h-[86vh] sm:max-w-lg sm:p-7"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="mb-4 flex items-start gap-3">
-          <HeroPortrait hero={c.hero} size={56} />
-          <div className="flex-1">
-            <h2 className="text-xl font-bold">{c.hero.name}</h2>
-            <p className="text-xs text-[#8b949e]">Against your draft</p>
+        <div className="mb-5 flex justify-end">
+          <button type="button" onClick={onClose} className="slot-x static" aria-label="Close">
+            ×
+          </button>
+        </div>
+
+        <div className="flex flex-col items-center text-center">
+          <div className="h-28 w-28 overflow-hidden rounded-2xl sm:h-32 sm:w-32">
+            <HeroPortrait hero={c.hero} fill variant="large" />
           </div>
-          <button type="button" onClick={onClose} className="rounded p-1 text-[#8b949e] hover:text-[#e6edf3]" aria-label="Close">×</button>
+          <h2 className="mt-4 text-2xl font-extrabold uppercase tracking-wide text-ink sm:text-3xl">{c.hero.name}</h2>
+          <div className="mt-1 text-3xl font-extrabold tabular-nums text-accent">
+            {(c.teamScoreM ?? c.teamScore) > 0 ? '+' : ''}{(c.teamScoreM ?? c.teamScore).toFixed(2)}
+          </div>
+          <p className="mt-1 text-xs text-muted">Against your draft</p>
+        </div>
+
+        <div className="mb-2 mt-7 flex items-center gap-3">
+          <h3 className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted">Matchups</h3>
+          <span className="h-px flex-1 bg-line" />
         </div>
 
         <div className="space-y-2">
           {c.matchups.map((m) => (
-            <div key={m.enemyId} className="flex items-center gap-3 rounded-lg border border-[#21262d] bg-[#161b22] p-3">
-              <span className="w-36 truncate text-sm text-[#e6edf3]">{heroById.get(m.enemyId)?.name ?? `#${m.enemyId}`}</span>
-              <span className={`font-mono text-sm font-bold ${m.delta >= 0 ? 'text-[#3fb950]' : 'text-[#f85149]'}`}>
+            <div key={m.enemyId} className="panel-2 flex items-center gap-3 px-3.5 py-3">
+              <span className="min-w-0 flex-1 truncate text-sm font-semibold text-ink">
+                {heroById.get(m.enemyId)?.name ?? `#${m.enemyId}`}
+              </span>
+              <span className={`w-14 text-right text-sm font-bold tabular-nums ${m.delta >= 0 ? 'text-pos' : 'text-neg'}`}>
                 {m.usable ? fmtDelta(m.delta) : 'n/a'}
               </span>
-              <span className="ml-auto text-right text-xs text-[#8b949e]">
+              <span className="w-24 text-right text-[11px] leading-tight text-muted">
                 {m.winrate.toFixed(1)}% WR
                 <br />
                 {Math.round(m.games).toLocaleString()} games
@@ -57,28 +72,28 @@ export function HeroDetailsDrawer({ candidate: c, enemyIds, heroById, onClose }:
           ))}
         </div>
 
-        <div className="mt-4 grid grid-cols-3 gap-2 text-center">
-          <div className="rounded-lg border border-[#21262d] bg-[#161b22] p-3">
-            <div className="text-[10px] uppercase tracking-wide text-[#6e7681]">Team score</div>
-            <div className="font-mono text-sm font-bold text-[#e6edf3]">{(c.teamScoreM ?? c.teamScore).toFixed(2)}</div>
+        <div className="mt-5 grid grid-cols-3 gap-2 text-center">
+          <div className="panel-2 px-2 py-3">
+            <div className="text-[10px] font-semibold uppercase tracking-wide text-dim">Team score</div>
+            <div className="mt-1 text-sm font-bold tabular-nums text-ink">{(c.teamScoreM ?? c.teamScore).toFixed(2)}</div>
           </div>
-          <div className="rounded-lg border border-[#21262d] bg-[#161b22] p-3">
-            <div className="text-[10px] uppercase tracking-wide text-[#6e7681]">Median matchup</div>
-            <div className="font-mono text-sm font-bold text-[#e6edf3]">{c.deltaStats.median.toFixed(2)}</div>
+          <div className="panel-2 px-2 py-3">
+            <div className="text-[10px] font-semibold uppercase tracking-wide text-dim">Median matchup</div>
+            <div className="mt-1 text-sm font-bold tabular-nums text-ink">{c.deltaStats.median.toFixed(2)}</div>
           </div>
-          <div className="rounded-lg border border-[#21262d] bg-[#161b22] p-3">
-            <div className="text-[10px] uppercase tracking-wide text-[#6e7681]">Coverage</div>
-            <div className="font-mono text-sm font-bold text-[#e6edf3]">{usable.length}/{enemyIds.length || c.matchups.length}</div>
+          <div className="panel-2 px-2 py-3">
+            <div className="text-[10px] font-semibold uppercase tracking-wide text-dim">Coverage</div>
+            <div className="mt-1 text-sm font-bold tabular-nums text-ink">{usable.length}/{enemyIds.length || c.matchups.length}</div>
           </div>
         </div>
 
-        <div className="mt-4 space-y-1 border-t border-[#21262d] pt-3 text-xs text-[#8b949e]">
+        <div className="mt-5 space-y-1.5 border-t border-line pt-4 text-xs leading-relaxed text-muted">
           {c.explanation.map((line) => (
             <p key={line}>• {line}</p>
           ))}
         </div>
 
-        <p className="mt-4 text-[10px] leading-relaxed text-[#6e7681]">
+        <p className="mt-4 text-[10px] leading-relaxed text-dim">
           Statistical suggestions based on aggregate OpenDota matchup data — not a guarantee of match outcomes.
         </p>
       </div>

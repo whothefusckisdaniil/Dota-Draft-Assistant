@@ -36,7 +36,14 @@ export function HeroSearch({ heroes, excluded, onPick, disabled }: Props) {
 
   return (
     <div ref={boxRef} className="relative">
+      <span aria-hidden="true" className="pointer-events-none absolute left-4 top-1/2 z-10 -translate-y-1/2 text-sm text-muted">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+          <circle cx="11" cy="11" r="7" />
+          <line x1="16.5" y1="16.5" x2="21" y2="21" />
+        </svg>
+      </span>
       <input
+        id="hero-search"
         value={q}
         disabled={disabled}
         onChange={(e) => { setQ(e.target.value); setOpen(true); }}
@@ -47,26 +54,34 @@ export function HeroSearch({ heroes, excluded, onPick, disabled }: Props) {
           else if (e.key === 'Enter' && results.length > 0 && results[hi]) { e.preventDefault(); pick(results[hi]); }
           else if (e.key === 'Escape') setOpen(false);
         }}
-        placeholder="Search hero… (jug / пак / anti)"
-        className="w-full rounded-lg border border-[#30363d] bg-[#0d1117] px-4 py-2.5 text-sm text-[#e6edf3] placeholder-[#6e7681] outline-none focus:border-[#58a6ff]"
+        placeholder="Search hero by name… (jug / пак / anti)"
+        aria-label="Search heroes"
+        autoComplete="off"
+        className="field"
       />
       {open && q.trim().length > 0 && (
-        <div className="nice-scroll absolute z-30 mt-1 max-h-72 w-full overflow-auto rounded-lg border border-[#30363d] bg-[#161b22] shadow-xl">
+        <div className="drop nice-scroll" role="listbox" aria-label="Hero search results">
           {results.length === 0 && (
-            <div className="px-4 py-3 text-sm text-[#8b949e]">No heroes found for “{q}”.</div>
+            <div className="px-4 py-3 text-sm text-muted">No heroes found for “{q}”.</div>
           )}
           {results.map((h, i) => (
             <button
               key={h.id}
               type="button"
+              role="option"
+              aria-selected={i === hi}
               onMouseEnter={() => setHi(i)}
               onClick={() => pick(h)}
-              className={`flex w-full items-center gap-3 px-3 py-2 text-left text-sm ${i === hi ? 'bg-[#21262d]' : ''}`}
+              className={`drop-item ${i === hi ? 'is-hi' : ''}`}
             >
-              <HeroPortrait hero={h} size={32} />
-              <span className="flex-1">
-                <span className="block text-[#e6edf3]">{h.name}</span>
-                {h.nameRu && <span className="block text-xs text-[#8b949e]">{h.nameRu} · {h.roles.slice(0, 3).join(' / ')}</span>}
+              <span className="h-9 w-9 shrink-0 overflow-hidden rounded-md">
+                <HeroPortrait hero={h} fill variant="small" />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate font-semibold text-ink">{h.name}</span>
+                <span className="block truncate text-xs text-muted">
+                  {h.nameRu ? `${h.nameRu} · ` : ''}{h.roles.slice(0, 3).join(' / ')}
+                </span>
               </span>
             </button>
           ))}

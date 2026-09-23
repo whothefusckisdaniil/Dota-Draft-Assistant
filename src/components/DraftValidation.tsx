@@ -147,7 +147,7 @@ export function DraftValidation() {
           const h = heroById.get(id);
           return (
             <span key={id} className="flex items-center gap-2 rounded-lg border border-[#30363d] bg-[#161b22] py-1 pl-1 pr-2 text-sm">
-              {h && <HeroPortrait hero={h} size={24} />}
+              {h && <HeroPortrait hero={h} size={24} variant="small" />}
               {h?.name ?? `#${id}`}
               <button type="button" onClick={() => changeDraft((p) => p.filter((x) => x !== id))} className="text-[#8b949e] hover:text-[#f85149]">×</button>
             </span>
@@ -197,7 +197,7 @@ export function DraftValidation() {
                 <div key={c.hero.id} className="border-b border-[#21262d] py-2 last:border-0">
                   <div className="flex items-center gap-2">
                     <span className="w-4 text-xs text-[#6e7681]">{i + 1}</span>
-                    <HeroPortrait hero={c.hero} size={28} />
+                    <HeroPortrait hero={c.hero} size={28} variant="small" />
                     <span className="flex-1 truncate text-sm text-[#e6edf3]">{c.hero.name}</span>
                     <span className="font-mono text-sm font-bold text-[#58a6ff]">{c.finalScore.toFixed(2)}</span>
                   </div>

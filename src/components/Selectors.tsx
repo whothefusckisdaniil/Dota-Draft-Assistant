@@ -2,6 +2,11 @@ import type { Hero } from '../types';
 import { APP_CONFIG, POSITIONS, type PositionFilter } from '../config';
 import { HeroPortrait } from './HeroPortrait';
 
+/** Empty slot focuses the hero picker (§7): slots are part of the draft flow. */
+function focusSearch() {
+  document.getElementById('hero-search')?.focus();
+}
+
 export function EnemySlots({ enemies, heroById, onRemove, onClear }: {
   enemies: number[];
   heroById: Map<number, Hero>;
@@ -10,35 +15,39 @@ export function EnemySlots({ enemies, heroById, onRemove, onClear }: {
 }) {
   const slots = Array.from({ length: APP_CONFIG.ui.maxEnemies }, (_, i) => enemies[i]);
   return (
-    <div>
-      <div className="mb-2 flex items-center justify-between">
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-[#8b949e]">Enemy team · {enemies.length}/{APP_CONFIG.ui.maxEnemies}</h2>
+    <div className="min-w-0">
+      <div className="mb-3 flex items-center justify-between">
+        <div className="flex items-baseline gap-3">
+          <h2 className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted">Enemy draft</h2>
+          <span className="text-xs font-semibold tabular-nums text-dim">{enemies.length} / {APP_CONFIG.ui.maxEnemies}</span>
+        </div>
         {enemies.length > 0 && (
-          <button type="button" onClick={onClear} className="text-xs text-[#8b949e] hover:text-[#e6edf3]">Clear</button>
+          <button type="button" onClick={onClear} className="btn btn-ghost btn-sm">Clear</button>
         )}
       </div>
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+      <div className="grid grid-cols-3 gap-2.5 sm:grid-cols-5 sm:gap-3">
         {slots.map((id, i) => {
           const h = id !== undefined ? heroById.get(id) : undefined;
           if (!h) {
             return (
-              <div key={i} className="flex min-h-[64px] items-center justify-center rounded-lg border border-dashed border-[#30363d] text-2xl text-[#484f58]">
-                +
-              </div>
+              <button key={`e${i}`} type="button" onClick={focusSearch} className="slot slot-empty" aria-label="Add hero">
+                <span aria-hidden="true" className="text-2xl font-light leading-none">+</span>
+                <span className="text-[10px] font-bold uppercase tracking-widest">Add hero</span>
+              </button>
             );
           }
           return (
-            <div key={id} className="fade-up flex items-center gap-2 rounded-lg border border-[#30363d] bg-[#161b22] p-2">
-              <HeroPortrait hero={h} size={36} />
-              <div className="min-w-0 flex-1">
-                <div className="truncate text-sm font-medium text-[#e6edf3]">{h.name}</div>
-                <div className="truncate text-[11px] text-[#8b949e]">{h.roles.slice(0, 2).join(' · ')}</div>
+            <div key={id} className="slot fade-up">
+              <HeroPortrait hero={h} fill variant="large" />
+              <div className="slot-overlay">
+                <div className="truncate text-[13px] font-bold leading-tight text-ink sm:text-sm">{h.name}</div>
+                <div className="truncate text-[10px] text-muted">{h.roles.slice(0, 2).join(' · ')}</div>
               </div>
               <button
                 type="button"
                 onClick={() => onRemove(id)}
                 aria-label={`Remove ${h.name}`}
-                className="rounded px-1.5 py-0.5 text-sm text-[#8b949e] hover:bg-[#30363d] hover:text-[#e6edf3]"
+                className="slot-x"
               >
                 ×
               </button>
@@ -50,24 +59,28 @@ export function EnemySlots({ enemies, heroById, onRemove, onClear }: {
   );
 }
 
+/** Compact display labels for mobile fit (§10/§16); titles keep full labels. */
+const SHORT_LABEL: Record<string, string> = { '4': 'Pos 4', '5': 'Pos 5' };
+
 export function PositionTabs({ value, onChange }: { value: PositionFilter; onChange: (p: PositionFilter) => void }) {
   return (
-    <div>
-      <h2 className="mb-2 text-sm font-semibold uppercase tracking-wider text-[#8b949e]">Position</h2>
-      <div className="flex flex-wrap gap-2">
+    <div className="min-w-0">
+      <div className="mb-2.5 flex items-center gap-3">
+        <h2 className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted">Role</h2>
+        <span className="h-px flex-1 bg-line" />
+      </div>
+      <div className="seg" role="tablist" aria-label="Select position">
         {POSITIONS.map((p) => (
           <button
             key={p.id}
             type="button"
-            onClick={() => onChange(p.id)}
+            role="tab"
+            aria-selected={value === p.id}
             title={p.label}
-            className={`rounded-lg border px-3 py-1.5 text-sm transition-colors ${
-              value === p.id
-                ? 'border-[#58a6ff] bg-[#1f6feb]/20 text-[#e6edf3]'
-                : 'border-[#30363d] bg-[#161b22] text-[#8b949e] hover:text-[#e6edf3]'
-            }`}
+            onClick={() => onChange(p.id)}
+            className={`seg-btn ${value === p.id ? 'is-active' : ''}`}
           >
-            {p.short}
+            {SHORT_LABEL[p.id] ?? p.short}
           </button>
         ))}
       </div>
