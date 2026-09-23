@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#0a0e14"/>
+  <path d="M600 140 L720 400 L480 400 Z" fill="none" stroke="#58a6ff" stroke-width="18" stroke-linejoin="round"/>
+  <circle cx="600" cy="340" r="26" fill="#e6edf3"/>
+  <text x="600" y="500" text-anchor="middle" font-family="Arial, sans-serif" font-size="56" font-weight="bold" fill="#e6edf3">DOTA DRAFT ASSISTANT</text>
+  <text x="600" y="560" text-anchor="middle" font-family="Arial, sans-serif" font-size="30" fill="#8b949e">Statistical counter picks for your enemy draft</text>
+</svg>
