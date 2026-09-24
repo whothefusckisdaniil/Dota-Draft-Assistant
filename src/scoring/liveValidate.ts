@@ -17,9 +17,9 @@ declare const process: { env: Record<string, string | undefined> };
 interface PairStat {
   lanes: number;
   sameTop1: number; // A#1 === B#1
-  top1Preserved: number; // the A#1 hero is present anywhere in B's top-5
-  overlapSum: number; // Σ |A∩B| over lanes (each list is exactly top-5)
-  shiftSum: number; // Σ |Δrank| over heroes present in BOTH top-5s
+  top1Preserved: number; // the A#1 hero is present anywhere in B's top-15
+  overlapSum: number; // Σ |A∩B| over lanes (each list is the engine's top-15, topN=15)
+  shiftSum: number; // Σ |Δrank| over heroes present in BOTH top-15s
   shiftHeroes: number;
   lanesWithShift: number; // lanes where at least one shared hero moved ≥2 ranks
   rhoSum: number; // Σ Spearman ρ over lanes with ≥2 shared heroes
@@ -31,8 +31,8 @@ function newPairStat(): PairStat {
 }
 
 /** Aggregates ranking-agreement metrics for one lane, one model pair.
- *  IMPORTANT: top1Preserved counts exactly "the A#1 hero is in B's top-5",
- *  not "the two top-5 lists share any hero" (that was a V9 metric bug). */
+ *  IMPORTANT: top1Preserved counts exactly "the A#1 hero is in B's top-15",
+ *  not "the two top-15 lists share any hero" (that was a V9 metric bug). */
 function accumulatePair(s: PairStat, a: CandidateScore[], b: CandidateScore[]): void {
   s.lanes += 1;
   const aTop1 = a[0]?.hero.id;
@@ -205,10 +205,10 @@ export async function runLiveValidation(log: (s: string) => void = console.log):
   log('EVALUATION SET — 10 fresh drafts, rank comparison: A vs M vs W (no expectations)');
   // Metrics are computed per pair over the union lane pool. Semantics:
   //   sameTop1      — A#1 === M#1 (counted even when both lists are empty? no — only non-empty)
-  //   top1Preserved — the A#1 hero is present anywhere in the M top-5
-  //   overlapSum    — Σ |A∩M| over lanes (each list is exactly top-5)
-  //   shiftSum      — Σ |Δrank| over heroes present in BOTH top-5s
-  //   rho           — Spearman over shared top-5 heroes (ties = average ranks)
+  //   top1Preserved — the A#1 hero is present anywhere in the M top-15
+  //   overlapSum    — Σ |A∩M| over lanes (each list is the engine's top-15, topN=15)
+  //   shiftSum      — Σ |Δrank| over heroes present in BOTH top-15s
+  //   rho           — Spearman over shared top-15 heroes (ties = average ranks)
   const newPair = newPairStat;
   const statAM = newPair();
   const statAW = newPair();
@@ -264,10 +264,10 @@ export async function runLiveValidation(log: (s: string) => void = console.log):
   log('\nMETRIC TABLE over evaluation lanes (A vs M | A vs W):');
   const pct = (n: number, d: number) => `${n}/${d} (${Math.round((n / d) * 100)}%)`;
   log(`  Top-1 same                     ${pct(statAM.sameTop1, statAM.lanes)} | ${pct(statAW.sameTop1, statAW.lanes)}`);
-  log(`  A#1 preserved in M top-5       ${pct(statAM.top1Preserved, statAM.lanes)} | ${pct(statAW.top1Preserved, statAW.lanes)}`);
-  log(`  Top-5 overlap (avg heroes)     ${(statAM.overlapSum / statAM.lanes).toFixed(1)}/5 | ${(statAW.overlapSum / statAW.lanes).toFixed(1)}/5`);
-  log(`  Mean |Δrank| (shared top-5)    ${(statAM.shiftSum / statAM.shiftHeroes).toFixed(2)} over ${statAM.shiftHeroes} heroes | ${(statAW.shiftSum / statAW.shiftHeroes).toFixed(2)} over ${statAW.shiftHeroes}`);
-  log(`  Spearman ρ (shared top-5)      avg ${(statAM.rhoSum / statAM.rhoCount).toFixed(3)} over ${statAM.rhoCount} lanes | avg ${(statAW.rhoSum / statAW.rhoCount).toFixed(3)} over ${statAW.rhoCount}`);
+  log(`  A#1 preserved in M top-15      ${pct(statAM.top1Preserved, statAM.lanes)} | ${pct(statAW.top1Preserved, statAW.lanes)}`);
+  log(`  Top-15 overlap (avg heroes)    ${(statAM.overlapSum / statAM.lanes).toFixed(1)}/15 | ${(statAW.overlapSum / statAW.lanes).toFixed(1)}/15`);
+  log(`  Mean |Δrank| (shared top-15)   ${(statAM.shiftSum / statAM.shiftHeroes).toFixed(2)} over ${statAM.shiftHeroes} heroes | ${(statAW.shiftSum / statAW.shiftHeroes).toFixed(2)} over ${statAW.shiftHeroes}`);
+  log(`  Spearman ρ (shared top-15)     avg ${(statAM.rhoSum / statAM.rhoCount).toFixed(3)} over ${statAM.rhoCount} lanes | avg ${(statAW.rhoSum / statAW.rhoCount).toFixed(3)} over ${statAW.rhoCount}`);
   log(`  lanes with ≥2-rank movement    ${statAM.lanesWithShift}/${statAM.lanes} (A vs M; at most one example logged per lane)`);
   if (rankShiftExamples) log(rankShiftExamples);
 }

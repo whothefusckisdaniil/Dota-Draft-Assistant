@@ -132,7 +132,7 @@ export default function App() {
                   </div>
                   <span className="text-[11px] text-dim">
                     {d.position === 'all'
-                      ? 'Top pick per role — pick a role for the full top 5. Only heroes with usable data vs every enemy are shown.'
+                      ? 'Top pick per role — pick a role for the full top 15. Only heroes with usable data vs every enemy are shown.'
                       : 'Only heroes with usable data vs every selected enemy are shown.'}
                   </span>
                 </div>

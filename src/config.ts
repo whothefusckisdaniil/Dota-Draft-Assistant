@@ -57,7 +57,7 @@ export const APP_CONFIG = {
       5: 4.5,
     } as Record<string, number>,
     // hard exclusion: never recommend these role mismatches (e.g. pure hard support as pos1)
-    topN: 5,
+    topN: 15,
   },
 
   ui: {

@@ -59,6 +59,29 @@ describe('scoreCandidates', () => {
     expect(res).toHaveLength(0);
   });
 
+  it('caps the ranking at topN = 15, sorted descending (Top-15 contract)', () => {
+    // 16 fully-usable carry candidates vs one enemy, strictly decreasing scores:
+    // candidate i wins (1000 - (380 + i*10)) / 1000 → 62%, 61%, … 47%.
+    const candidates = Array.from({ length: 16 }, (_, i) => carry(100 + i, `Cand${i}`));
+    const enemy = hero(13, 'Puck', ['Nuker']);
+    const byEnemy = new Map<number, MatchupRow[]>([
+      [13, rows(candidates.map((h, i) => [h.id, 1000, 380 + i * 10]))],
+    ]);
+    const res = scoreCandidates(
+      input({ heroes: [...candidates, enemy], enemyIds: [13], matchupByEnemy: byEnemy }),
+      '1',
+    );
+    // contract: APP_CONFIG.scoring.topN === 15
+    expect(res).toHaveLength(15);
+    for (let i = 1; i < res.length; i += 1) {
+      expect(res[i - 1].finalScore).toBeGreaterThanOrEqual(res[i].finalScore);
+    }
+    // the worst of the 16 (Cand15, 47% WR) must not make the cut,
+    // the best (Cand0, 62% WR) must lead
+    expect(res.some((c) => c.hero.id === 115)).toBe(false);
+    expect(res[0].hero.id).toBe(100);
+  });
+
   it('hides candidates with a thin pair sample (< minMatchesPerPair)', () => {
     const slark = carry(93, 'Slark');
     const inpt = input({

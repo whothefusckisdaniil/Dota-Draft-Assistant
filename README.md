@@ -55,7 +55,7 @@ Explanations are plain-JS template sentences ("Statistically favorable…"), nev
 1. EN partial search for all heroes + RU aliases for the covered subset (`jug`, `пак`) — `src/data/heroes.ts`, `ruNames.ts`
 2. 1–5 enemies, no duplicates — `useDraftData`
 3. Position filter All/1–5 — `config.POSITIONS`
-4–5. Top-5 per lane over **all** selected enemies — `scoreCandidates`
+4–5. Top-15 per lane over **all** selected enemies — `scoreCandidates`
 6. Shrinkage + confidence + minimum samples — `config.scoring`
 7. `OpenDota data · Latest patch: X` badge (`/constants/patch` is display-only; matchup tables are aggregate, NOT patch-filtered), `Latest patch unavailable` fallback
 8. Loading/error/empty states; patch/heroStats failures degrade gracefully, matchup-table failure blocks ranking honestly
