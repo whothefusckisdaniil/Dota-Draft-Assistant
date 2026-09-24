@@ -274,20 +274,30 @@ body {
     width: 3px;
     background: var(--color-accent);
   }
-  .rec-mini {
-    display: block;
+  /* #2–#15 ranked alternatives (Top-15 redesign): compact list line, the whole
+     row opens the drawer; slightly lighter surface + accent border on hover */
+  .ranking-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
     width: 100%;
-    background: var(--color-surface-2);
+    min-height: 52px;
+    padding: 7px;
+    text-align: left;
+    background: var(--color-surface);
     border: 1px solid var(--color-line);
-    border-radius: 14px;
-    overflow: hidden;
+    border-radius: 11px;
     cursor: pointer;
-    transition: border-color 160ms ease-out, transform 160ms ease-out, box-shadow 160ms ease-out;
+    transition: border-color 140ms ease-out, background-color 140ms ease-out, transform 140ms ease-out, box-shadow 140ms ease-out;
   }
-  .rec-mini:hover {
+  .ranking-row:hover {
+    background: var(--color-surface-2);
     border-color: rgba(199, 138, 66, 0.45);
-    transform: translateY(-2px);
-    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.4);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+  }
+  @media (min-width: 640px) {
+    .ranking-row { gap: 8px; padding: 7px 9px; }
   }
   /* ALL-mode best pick per role (FINAL UX PASS, P1) — compact overview card */
   .rec-best {

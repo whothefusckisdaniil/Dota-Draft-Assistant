@@ -50,8 +50,8 @@ export function CandidateCard({ c, rank, heroById, onViewDetails }: {
   const total = c.matchups.length;
   void heroById;
   return (
-    <article className="rec-top fade-up flex flex-col gap-5 p-4 sm:flex-row sm:gap-6 sm:p-6">
-      <div className="relative mx-auto w-36 shrink-0 overflow-hidden rounded-xl sm:mx-0 sm:w-48 lg:w-52">
+    <article className="rec-top fade-up flex flex-col gap-4 p-4 sm:flex-row sm:gap-5 sm:p-5">
+      <div className="relative mx-auto w-36 shrink-0 overflow-hidden rounded-xl sm:mx-0 sm:w-44 lg:w-48">
         <div className="aspect-4/5 w-full">
           <HeroPortrait hero={c.hero} fill variant="large" />
         </div>
@@ -69,7 +69,7 @@ export function CandidateCard({ c, rank, heroById, onViewDetails }: {
         <div className="mt-2 text-3xl font-extrabold tabular-nums text-accent sm:text-4xl">
           {scoreText(c.finalScore)}
         </div>
-        <p className="mt-3 max-w-xl text-sm leading-relaxed text-muted">{c.explanation[0]}</p>
+        <p className="mt-2.5 max-w-xl text-sm leading-relaxed text-muted">{c.explanation[0]}</p>
         <div className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-xs">
           {c.bestAgainst.length > 0 && (
             <span className="text-dim">Best vs <span className="font-semibold text-pos">{c.bestAgainst.join(', ')}</span></span>
@@ -78,12 +78,12 @@ export function CandidateCard({ c, rank, heroById, onViewDetails }: {
             <span className="text-dim">Worst vs <span className="font-semibold text-neg">{c.worstAgainst[0]}</span></span>
           )}
         </div>
-        <div className="mt-4 flex flex-wrap items-center gap-3">
+        <div className="mt-3.5 flex flex-wrap items-center gap-3">
           <button type="button" onClick={() => onViewDetails(c)} className="btn btn-accent">
             View analysis <span aria-hidden="true">→</span>
           </button>
         </div>
-        <p className="mt-3 text-[10px] leading-relaxed text-dim">
+        <p className="mt-2.5 text-[10px] leading-relaxed text-dim">
           Role fit is heuristic, not measured per-position winrate.
         </p>
       </div>
@@ -91,8 +91,9 @@ export function CandidateCard({ c, rank, heroById, onViewDetails }: {
   );
 }
 
-/** #2–#5 — compact tile, whole tile opens the analysis drawer. */
-export function MiniCard({ c, rank, onViewDetails }: {
+/** #2–#15 — one line of the ranked-alternatives list (Top-15 redesign):
+ *  rank · portrait · name+coverage · score; the whole row opens the drawer. */
+export function RankingRow({ c, rank, onViewDetails }: {
   c: CandidateScore; rank: number;
   onViewDetails: (c: CandidateScore) => void;
 }) {
@@ -102,17 +103,19 @@ export function MiniCard({ c, rank, onViewDetails }: {
       type="button"
       onClick={() => onViewDetails(c)}
       aria-label={`View analysis for ${c.hero.name}, rank ${rank}`}
-      className="rec-mini fade-up group text-left"
+      className="ranking-row"
     >
-      <div className="relative aspect-4/5 overflow-hidden">
+      <span aria-hidden="true" className="w-5 shrink-0 text-[10px] font-bold tabular-nums text-dim">#{rank}</span>
+      <span className="h-8 w-10 shrink-0 overflow-hidden rounded-md sm:h-9 sm:w-11">
         <HeroPortrait hero={c.hero} fill variant="large" />
-        <span className="absolute left-1.5 top-1.5 rounded-md bg-black/60 px-1.5 py-0.5 text-[10px] font-bold text-ink/90">#{rank}</span>
-        <span className="absolute right-1.5 top-1.5 rounded-md bg-black/60 px-1.5 py-0.5 text-[10px] font-semibold text-muted">{coverage}/{c.matchups.length}</span>
-        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 to-transparent px-2.5 pb-2 pt-6">
-          <div className="truncate text-[13px] font-bold uppercase tracking-wide text-ink">{c.hero.name}</div>
-          <div className="text-lg font-extrabold leading-tight tabular-nums text-accent">{scoreText(c.finalScore)}</div>
-        </div>
-      </div>
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-[12px] font-bold uppercase leading-tight text-ink">{c.hero.name}</span>
+        <span className="mt-1 flex items-baseline gap-2">
+          <span className="shrink-0 text-[10px] font-semibold text-muted">{coverage}/{c.matchups.length}</span>
+          <span className="ml-auto shrink-0 text-[13px] font-extrabold leading-none tabular-nums text-accent">{scoreText(c.finalScore)}</span>
+        </span>
+      </span>
     </button>
   );
 }

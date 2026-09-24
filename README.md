@@ -59,6 +59,6 @@ Explanations are plain-JS template sentences ("Statistically favorable…"), nev
 6. Shrinkage + confidence + minimum samples — `config.scoring`
 7. `OpenDota data · Latest patch: X` badge (`/constants/patch` is display-only; matchup tables are aggregate, NOT patch-filtered), `Latest patch unavailable` fallback
 8. Loading/error/empty states; patch/heroStats failures degrade gracefully, matchup-table failure blocks ranking honestly
-9. Responsive: 1 col mobile → 2–3 col desktop (`ResultsGrid`)
+9. Responsive per-role view: dominant Best Pick (#1) + compact 2-col Top-15 ranked-alternatives rows (`ResultsGrid` / `RankingRow`); ALL mode keeps one card per role
 10–11. OpenDota only, static build + `vercel.json`
 12. Matchup breakdown + reasons per card (`CandidateCard`)

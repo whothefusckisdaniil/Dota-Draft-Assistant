@@ -1,5 +1,5 @@
 import type { CandidateScore, Hero } from '../types';
-import { BestPickCard, CandidateCard, MiniCard } from './CandidateCard';
+import { BestPickCard, CandidateCard, RankingRow } from './CandidateCard';
 
 const TITLES: Record<string, string> = {
   1: 'CARRY',
@@ -9,7 +9,8 @@ const TITLES: Record<string, string> = {
   5: 'POSITION 5',
 };
 
-/** Lane sections: #1 gets the dominant card, #2–#5 compact tiles (§11).
+/** Lane sections: #1 gets the dominant Best Pick card and #2–#15 sit beside it
+ *  as one compact ranked-alternatives list (2-col rows; stacked under lg).
  *  summary (ALL mode) renders only the top pick per role as a compact card —
  *  detailed ranking belongs to a selected position (FINAL UX PASS, P1). */
 export function ResultsGrid({ results, heroById, onViewDetails, summary = false }: {
@@ -50,22 +51,35 @@ export function ResultsGrid({ results, heroById, onViewDetails, summary = false 
               {TITLES[lane] ?? lane}
             </h3>
             <span className="h-px flex-1 bg-line" />
+            {list.length > 0 && (
+              <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-dim">
+                {list.length} {list.length === 1 ? 'pick' : 'picks'}
+              </span>
+            )}
           </div>
           {list.length === 0 ? (
             <div className="panel-2 px-4 py-5 text-sm text-muted">
               No hero has usable matchup data vs every selected enemy for this role.
             </div>
+          ) : list.length === 1 ? (
+            <CandidateCard c={list[0]} rank={1} heroById={heroById} onViewDetails={onViewDetails} />
           ) : (
-            <>
+            <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
               <CandidateCard c={list[0]} rank={1} heroById={heroById} onViewDetails={onViewDetails} />
-              {list.length > 1 && (
-                <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <div className="fade-up">
+                <div className="mb-2.5 flex items-center gap-3">
+                  <h4 className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-dim">
+                    Ranked alternatives
+                  </h4>
+                  <span className="h-px flex-1 bg-line" />
+                </div>
+                <div className="grid grid-cols-2 gap-2">
                   {list.slice(1).map((c, i) => (
-                    <MiniCard key={c.hero.id} c={c} rank={i + 2} onViewDetails={onViewDetails} />
+                    <RankingRow key={c.hero.id} c={c} rank={i + 2} onViewDetails={onViewDetails} />
                   ))}
                 </div>
-              )}
-            </>
+              </div>
+            </div>
           )}
         </section>
       ))}
