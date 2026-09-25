@@ -1,0 +1,93 @@
+name: STRATZ CI probe (research, temporary)
+
+# Production-readiness test for ТЗ №5, §19: can GitHub Actions reach
+# api.stratz.com through Cloudflare using Playwright + a repo secret?
+# Manual trigger only; no schedule, no push trigger.
+on:
+  workflow_dispatch:
+    inputs:
+      repeats:
+        description: 'How many consecutive probe runs (repeatability check)'
+        required: false
+        default: '2'
+
+permissions:
+  contents: read
+
+jobs:
+  stratz-probe:
+    name: STRATZ reachability probe
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies (Playwright ad-hoc, no lockfile commit)
+        run: |
+          npm ci --no-audit --no-fund
+          npm install --no-save playwright@1.63.0
+
+      - name: Record Playwright version
+        run: npx playwright --version
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Cold-start probe run 1
+        id: run1
+        env:
+          STRATZ_API_TOKEN: ${{ secrets.STRATZ_API_TOKEN }}
+          CI: 'true'
+        run: |
+          set -o pipefail
+          START=$(date +%s%3N)
+          npx --yes tsx scripts/research-stratz.ts ci-probe 2>&1 | tee /tmp/probe-1.log
+          END=$(date +%s%3N)
+          echo "wall_clock_ms=$((END-START))" >> "$GITHUB_OUTPUT"
+          grep -q 'CI_PROBE_RESULT' /tmp/probe-1.log || { echo 'probe produced no result line'; exit 1; }
+          grep -q '"ok":true' /tmp/probe-1.log || { echo 'probe reported failure'; exit 1; }
+
+      - name: Repeat probe run 2 (fresh process, fresh browser)
+        env:
+          STRATZ_API_TOKEN: ${{ secrets.STRATZ_API_TOKEN }}
+          CI: 'true'
+        run: |
+          set -o pipefail
+          npx --yes tsx scripts/research-stratz.ts ci-probe 2>&1 | tee /tmp/probe-2.log
+          grep -q '"ok":true' /tmp/probe-2.log || { echo 'repeat probe failed'; exit 1; }
+
+      - name: Assert the token never appears in the logs
+        if: always()
+        env:
+          STRATZ_API_TOKEN: ${{ secrets.STRATZ_API_TOKEN }}
+        run: |
+          set -e
+          if [ -z "$STRATZ_API_TOKEN" ]; then echo 'secret STRATZ_API_TOKEN is empty/missing'; exit 1; fi
+          if grep -qF "$STRATZ_API_TOKEN" /tmp/probe-1.log /tmp/probe-2.log; then
+            echo 'TOKEN LEAK DETECTED IN LOGS'; exit 1
+          fi
+          echo 'token leak check: clean'
+
+      - name: Upload sanitized probe logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stratz-ci-probe-logs
+          path: |
+            /tmp/probe-1.log
+            /tmp/probe-2.log
+          if-no-files-found: warn
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "### STRATZ CI probe" >> "$GITHUB_STEP_SUMMARY"
+          grep 'CI_PROBE_RESULT' /tmp/probe-1.log >> "$GITHUB_STEP_SUMMARY" || echo 'run 1: no result' >> "$GITHUB_STEP_SUMMARY"
+          grep 'CI_PROBE_RESULT' /tmp/probe-2.log >> "$GITHUB_STEP_SUMMARY" || echo 'run 2: no result' >> "$GITHUB_STEP_SUMMARY"
