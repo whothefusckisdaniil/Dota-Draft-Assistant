@@ -5,6 +5,16 @@ export function scoreText(v: number): string {
   return `${v > 0 ? '+' : ''}${v.toFixed(2)}`;
 }
 
+/** Match-count label for the #1 card badge (Top-15 polish): the old
+ *  `Math.round(avgGames / 1000) + "k"` printed "0k matches" for thin samples.
+ *  <1000 → "<1k"; 1000–999999 → "1k" / "12.4k"; ≥1000000 → "1.2M". */
+export function formatMatches(count: number): string {
+  if (count < 1000) return '<1k';
+  const k = Math.round((count / 1000) * 10) / 10;
+  if (k < 1000) return `${k}k`;
+  return `${Math.round((count / 1_000_000) * 10) / 10}M`;
+}
+
 /** ALL mode (FINAL UX PASS, P1): one compact best-pick card per role —
  *  fast overview, not 5 full ranking sections (page was ~4600px desktop). */
 export function BestPickCard({ c, title, onViewDetails }: {
@@ -50,17 +60,21 @@ export function CandidateCard({ c, rank, heroById, onViewDetails }: {
   const total = c.matchups.length;
   void heroById;
   return (
-    <article className="rec-top fade-up flex flex-col gap-4 p-4 sm:flex-row sm:gap-5 sm:p-5">
-      <div className="relative mx-auto w-36 shrink-0 overflow-hidden rounded-xl sm:mx-0 sm:w-44 lg:w-48">
+    <article className="rec-top fade-up grid grid-cols-[96px_minmax(0,1fr)] gap-x-3 gap-y-2.5 p-4 sm:grid-cols-[176px_minmax(0,1fr)] sm:gap-x-5 sm:p-5 lg:grid-cols-[192px_minmax(0,1fr)]">
+      {/* Portrait column: 96×120 on mobile (recognizable, ~90px wide per UX
+          brief), 176/192 — unchanged desktop composition. */}
+      <div className="relative col-start-1 row-start-1 self-start overflow-hidden rounded-xl sm:row-span-2">
         <div className="aspect-4/5 w-full">
           <HeroPortrait hero={c.hero} fill variant="large" />
         </div>
-        <span className="badge badge-accent absolute left-2 top-2">#{rank} best pick</span>
+        <span className="badge badge-accent absolute left-2 top-2 hidden sm:inline-flex">#{rank} best pick</span>
       </div>
-      <div className="min-w-0 flex-1">
+      {/* Row 1 (mobile): key info beside the portrait instead of below it. */}
+      <div className="col-start-2 row-start-1 min-w-0">
         <div className="flex flex-wrap items-center gap-2">
+          <span className="badge badge-accent sm:hidden">#{rank} best pick</span>
           <span className="badge">{coverage} / {total} coverage</span>
-          <span className="badge">{Math.round(c.avgGames / 1000).toLocaleString()}k matches</span>
+          <span className="badge">{formatMatches(c.avgGames)} matches</span>
           {c.lowData && <span className="badge badge-warn">Limited data</span>}
         </div>
         <h4 className="mt-2.5 text-2xl font-extrabold uppercase leading-none tracking-wide text-ink sm:text-3xl">
@@ -69,7 +83,11 @@ export function CandidateCard({ c, rank, heroById, onViewDetails }: {
         <div className="mt-2 text-3xl font-extrabold tabular-nums text-accent sm:text-4xl">
           {scoreText(c.finalScore)}
         </div>
-        <p className="mt-2.5 max-w-xl text-sm leading-relaxed text-muted">{c.explanation[0]}</p>
+      </div>
+      {/* Row 2: full card width on mobile, right column on sm+ (grid gap keeps
+          the same 10px rhythm the old mt-2.5 stack had on desktop). */}
+      <div className="col-span-2 row-start-2 min-w-0 sm:col-span-1 sm:col-start-2">
+        <p className="max-w-xl text-sm leading-relaxed text-muted">{c.explanation[0]}</p>
         <div className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-xs">
           {c.bestAgainst.length > 0 && (
             <span className="text-dim">Best vs <span className="font-semibold text-pos">{c.bestAgainst.join(', ')}</span></span>
