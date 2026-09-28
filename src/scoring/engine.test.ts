@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { Hero, MatchupRow } from '../types';
+import type { Hero, MatchupRow, PositionDataset } from '../types';
 import { scoreCandidates, type ScoreInput } from './engine';
 
 function hero(id: number, name: string, roles: string[]): Hero {
@@ -18,6 +18,26 @@ function rows(pairs: [candidateId: number, games: number, enemyWins: number][]):
 const carry = (id: number, name: string) => hero(id, name, ['Carry', 'Escape']);
 const support = (id: number, name: string) => hero(id, name, ['Support', 'Disabler', 'Nuker']);
 
+/**
+ * Synthetic position data where every listed hero is eligible on every lane.
+ * These tests are about the matchup/shrinkage math, so eligibility must not be
+ * a second moving part — the gate itself is covered in positionEligibility.test.ts.
+ */
+function allLanesEligible(heroIds: number[]): PositionDataset {
+  const out: PositionDataset = {};
+  for (const id of heroIds) {
+    const games = 1000;
+    out[id] = {
+      totalGames: games * 5,
+      positions: {
+        '1': { games, share: 0.2 }, '2': { games, share: 0.2 }, '3': { games, share: 0.2 },
+        '4': { games, share: 0.2 }, '5': { games, share: 0.2 },
+      },
+    };
+  }
+  return out;
+}
+
 function input(partial: Partial<ScoreInput>): ScoreInput {
   const heroes: Hero[] = partial.heroes ?? [];
   return {
@@ -25,6 +45,7 @@ function input(partial: Partial<ScoreInput>): ScoreInput {
     enemyIds: partial.enemyIds ?? [],
     matchupByEnemy: partial.matchupByEnemy ?? new Map(),
     heroById: partial.heroById ?? new Map(heroes.map((h) => [h.id, h])),
+    positions: partial.positions ?? allLanesEligible(heroes.map((h) => h.id)),
   };
 }
 
@@ -131,13 +152,39 @@ describe('scoreCandidates', () => {
     expect(scoreCandidates(inpt, '1')).toHaveLength(0);
   });
 
-  it('filters by role: pure support is not a carry pick', () => {
+  it('filters by ROLE DATA: a hero that never plays the lane is excluded', () => {
+    // The gate is empirical (ТЗ №9), not role-tag based: the same helper
+    // `allLanesEligible` would let Crystal Maiden through as a carry. What
+    // decides it here is the fixture — nobody plays her there.
     const cm = support(5, 'Crystal Maiden');
     const slark = carry(93, 'Slark');
     const byEnemy = new Map([[13, rows([[5, 300, 100], [93, 300, 100]])]]);
-    const inpt = input({ heroes: [cm, slark, ...ENEMIES], enemyIds: [13], matchupByEnemy: byEnemy });
+
+    // Realistic data: Crystal Maiden 0.1% carry, Slark 62% carry.
+    const positions: PositionDataset = {
+      5: {
+        totalGames: 100_000,
+        positions: {
+          '1': { games: 100, share: 0.001 }, '2': { games: 4000, share: 0.04 },
+          '3': { games: 3000, share: 0.03 }, '4': { games: 20000, share: 0.2 },
+          '5': { games: 74000, share: 0.739 },
+        },
+      },
+      93: {
+        totalGames: 100_000,
+        positions: {
+          '1': { games: 62000, share: 0.62 }, '2': { games: 20000, share: 0.2 },
+          '3': { games: 10000, share: 0.1 }, '4': { games: 6000, share: 0.06 },
+          '5': { games: 2000, share: 0.02 },
+        },
+      },
+    };
+    const inpt = input({ heroes: [cm, slark, ...ENEMIES], enemyIds: [13], matchupByEnemy: byEnemy, positions });
+
     const carries = scoreCandidates(inpt, '1').map((c) => c.hero.name);
     expect(carries).toContain('Slark');
+    // Identical matchup numbers, identical role tags — the only difference is
+    // that nobody actually picks Crystal Maiden as a carry.
     expect(carries).not.toContain('Crystal Maiden');
     const sup5 = scoreCandidates(inpt, '5').map((c) => c.hero.name);
     expect(sup5).toContain('Crystal Maiden');

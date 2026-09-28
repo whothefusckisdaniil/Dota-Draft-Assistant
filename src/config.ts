@@ -47,16 +47,15 @@ export const APP_CONFIG = {
     weakLinkPenalty: 3,
     // positionBonus mapped from positionScore 0..10 -> -4..+4 points
     positionBonusRange: 4,
-    // candidates with positionScore below this are hidden for a specific position lane
-    minPositionScore: {
-      all: 0,
-      1: 4.5,
-      2: 4.5,
-      3: 4.5,
-      4: 4.5,
-      5: 4.5,
-    } as Record<string, number>,
-    // hard exclusion: never recommend these role mismatches (e.g. pure hard support as pos1)
+    // ТЗ №9: there is no longer a heuristic role-fit HARD gate. The hard gate is
+    // empirical — src/scoring/positionEligibility.ts requires the hero to
+    // actually be picked on the lane (STRATZ position share + games).
+    // `positionScore` (OpenDota role tags + curated affinity) survives only as a
+    // secondary ranking signal via positionBonus, which is worth at most
+    // wPosition * positionBonusRange = 0.8 points of the final score. That is
+    // deliberately too small to override matchup evidence, and far too blunt to
+    // decide eligibility: OpenDota tags Wraith King "Support" and Meepo
+    // "Disabler", which is exactly what put them in the wrong lanes before.
     topN: 15,
   },
 

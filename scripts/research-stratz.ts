@@ -145,7 +145,7 @@ function top15ForEnemy(enemyName: string, ds: ReturnType<typeof loadOpendotaData
   const enemy = [...ds.heroById.values()].find((h) => h.name === enemyName);
   if (!enemy) throw new Error(`hero not found: ${enemyName}`);
   const ranked = scoreCandidates(
-    { heroes: ds.heroes, enemyIds: [enemy.id], matchupByEnemy: ds.matchups, heroById: ds.heroById },
+    { heroes: ds.heroes, enemyIds: [enemy.id], matchupByEnemy: ds.matchups, heroById: ds.heroById, positions: ds.positions },
     'all',
   );
   return ranked.map((c, i) => {
@@ -492,9 +492,9 @@ async function cmdStratzCompare(): Promise<void> {
     if (rows.length === 0) throw new Error(`STRATZ returned 0 rows for ${t}`);
     // engine expects per-enemy rows: wins = ENEMY's wins vs candidate → matchUp(heroId:enemy) gives exactly that
     const stratzRows: MatchupRow[] = rows.map((r) => ({ hero_id: r.heroId2, games_played: r.matchCount, wins: r.winCount }));
-    const odRanked = scoreCandidates({ heroes: ds.heroes, enemyIds: [enemy.id], matchupByEnemy: ds.matchups, heroById: ds.heroById }, 'all');
+    const odRanked = scoreCandidates({ heroes: ds.heroes, enemyIds: [enemy.id], matchupByEnemy: ds.matchups, heroById: ds.heroById, positions: ds.positions }, 'all');
     const stRanked = scoreCandidates(
-      { heroes: ds.heroes, enemyIds: [enemy.id], matchupByEnemy: new Map([[enemy.id, stratzRows]]), heroById: ds.heroById },
+      { heroes: ds.heroes, enemyIds: [enemy.id], matchupByEnemy: new Map([[enemy.id, stratzRows]]), heroById: ds.heroById, positions: ds.positions },
       'all',
     );
     const odPos = new Map(odRanked.map((c, i) => [c.hero.name, i + 1]));
@@ -952,7 +952,7 @@ function windowMetrics(pairs: WindowPair[]) {
 function engineTop15(enemyId: number, pairs: WindowPair[], ds: ReturnType<typeof loadOpendotaDataset>) {
   const rows: MatchupRow[] = pairs.map((p) => ({ hero_id: p.heroId, games_played: p.games, wins: p.wins }));
   const ranked = scoreCandidates(
-    { heroes: ds.heroes, enemyIds: [enemyId], matchupByEnemy: new Map([[enemyId, rows]]), heroById: ds.heroById },
+    { heroes: ds.heroes, enemyIds: [enemyId], matchupByEnemy: new Map([[enemyId, rows]]), heroById: ds.heroById, positions: ds.positions },
     'all',
   );
   const byId = new Map(rows.map((r) => [r.hero_id, r]));

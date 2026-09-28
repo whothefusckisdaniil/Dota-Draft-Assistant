@@ -35,11 +35,31 @@ vi.mock('node:fs/promises', async (importOriginal) => {
 
 const { publishDatasetAtomically, NEXT_SUFFIX, PREV_SUFFIX } = await import('./dataset-publish.mjs');
 
+/** Position layer with every lane at 20% — valid, and irrelevant to the swap logic. */
+const posLayer = (ids: number[]) =>
+  Object.fromEntries(
+    ids.map((id) => [
+      id,
+      {
+        totalGames: 5000,
+        positions: Object.fromEntries(['1', '2', '3', '4', '5'].map((p) => [p, { games: 1000, share: 0.2 }])),
+      },
+    ]),
+  );
+
 const OLD_SNAPSHOT = {
   'heroes.json': [{ id: 111 }],
   'matchups.json': { 111: [] },
+  'positions.json': posLayer([111]),
   'meta.json': { source: 'OLD', heroCount: 1 },
 };
+
+const newSnapshot = () => ({
+  'heroes.json': [{ id: 1 }, { id: 2 }, { id: 3 }],
+  'matchups.json': { 1: [{ hero_id: 2 }, { hero_id: 3 }], 2: [{ hero_id: 1 }, { hero_id: 3 }], 3: [{ hero_id: 1 }, { hero_id: 2 }] },
+  'positions.json': posLayer([1, 2, 3]),
+  'meta.json': { source: 'NEW', heroCount: 3 },
+});
 
 async function seed() {
   const root = await mkdtemp(path.join(tmpdir(), 'rollback-'));
@@ -59,12 +79,6 @@ const readAll = async (dir: string) =>
     ),
   );
 
-const newSnapshot = () => ({
-  'heroes.json': [{ id: 1 }, { id: 2 }, { id: 3 }],
-  'matchups.json': { 1: [{ hero_id: 2 }, { hero_id: 3 }], 2: [{ hero_id: 1 }, { hero_id: 3 }], 3: [{ hero_id: 1 }, { hero_id: 2 }] },
-  'meta.json': { source: 'NEW', heroCount: 3 },
-});
-
 beforeEach(() => { shouldFail = () => false; });
 afterEach(() => { shouldFail = () => false; });
 
@@ -83,7 +97,7 @@ describe('publishDatasetAtomically — when the restore itself fails', () => {
     await expect(publishDatasetAtomically(dir, newSnapshot())).rejects.toThrow(/CRITICAL/);
 
     // The whole point: the last good dataset is still on disk, intact.
-    expect(await readdir(backup)).toEqual(['heroes.json', 'matchups.json', 'meta.json']);
+    expect(await readdir(backup)).toEqual(['heroes.json', 'matchups.json', 'meta.json', 'positions.json']);
     expect(await readFile(path.join(backup, 'meta.json'), 'utf8')).toBe(JSON.stringify(OLD_SNAPSHOT['meta.json']));
     expect(await readFile(path.join(backup, 'heroes.json'), 'utf8')).toBe(JSON.stringify(OLD_SNAPSHOT['heroes.json']));
 
@@ -120,7 +134,7 @@ describe('publishDatasetAtomically — when the restore itself fails', () => {
 
     // --- B. state left behind -------------------------------------------------
     expect(await readdir(root)).not.toContain('data');       // live tree is gone
-    expect(await readdir(backup)).toEqual(['heroes.json', 'matchups.json', 'meta.json']);
+    expect(await readdir(backup)).toEqual(['heroes.json', 'matchups.json', 'meta.json', 'positions.json']);
     expect(await readFile(path.join(backup, 'meta.json'), 'utf8')).toBe(JSON.stringify(OLD_SNAPSHOT['meta.json']));
     const preserved = await readAll(backup);
 
@@ -163,7 +177,7 @@ describe('publishDatasetAtomically — when the restore itself fails', () => {
     expect(String(err)).not.toContain('CRITICAL');
 
     // Old dataset is live again, byte for byte.
-    expect(await readdir(dir)).toEqual(['heroes.json', 'matchups.json', 'meta.json']);
+    expect(await readdir(dir)).toEqual(['heroes.json', 'matchups.json', 'meta.json', 'positions.json']);
     expect(await readFile(path.join(dir, 'meta.json'), 'utf8')).toBe(JSON.stringify(OLD_SNAPSHOT['meta.json']));
     // And the backup was reclaimed, since the restore consumed it.
     expect(await readdir(root)).toEqual(['data']);

@@ -1,12 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import matchupsRaw from '../../public/data/matchups.json';
 import heroesRaw from '../../public/data/heroes.json';
-import type { Hero, MatchupRow } from '../types';
+import positionsRaw from '../../public/data/positions.json';
+import type { Hero, MatchupRow, PositionDataset } from '../types';
 import { scoreCandidates } from './engine';
 import type { Lane } from './positionsExtra';
 
 const heroes = heroesRaw as unknown as Hero[];
 const tables = matchupsRaw as unknown as Record<string, MatchupRow[]>;
+// The real production position layer, so this suite gates on real pick rates.
+const positions = positionsRaw as unknown as Record<string, PositionDataset[number]>;
+const positionById: PositionDataset = Object.fromEntries(
+  Object.entries(positions).map(([id, v]) => [Number(id), v]),
+);
 
 describe('STRATZ production snapshot feeds the real scoring engine', () => {
   it('gives full matchup coverage (every hero has all 126 opponents)', () => {
@@ -33,13 +39,15 @@ describe('STRATZ production snapshot feeds the real scoring engine', () => {
       heroes,
       enemyIds,
       matchupByEnemy,
+      positions: positionById,
       heroById: new Map(heroes.map((h) => [h.id, h])),
     };
     for (const lane of ['1', '2', '3', '4', '5'] as Lane[]) {
       const ranked = scoreCandidates(input, lane);
-      // Engine returns at most topN=15 per lane and hides candidates whose
-      // role fit is below minPositionScore — STRATZ coverage is complete, so
-      // the lane list is limited by role fit only, never by missing data.
+      // Engine returns at most topN=15 per lane, filtered by the empirical
+      // position gate (STRATZ pick rates) — STRATZ matchup coverage is complete,
+      // so the lane list is limited by where the hero is actually played, never
+      // by missing matchup data.
       expect(ranked.length, lane).toBeGreaterThan(5);
       expect(ranked.length, lane).toBeLessThanOrEqual(15);
       for (const c of ranked) {

@@ -1,6 +1,22 @@
 import { describe, expect, it } from 'vitest';
-import type { Hero, MatchupRow } from '../types';
+import type { Hero, MatchupRow, PositionDataset } from '../types';
 import { scoreCandidates } from './engine';
+
+/** Every hero eligible on every lane — this suite tests the matchup math. */
+function allLanes(heroIds: number[]): PositionDataset {
+  const out: PositionDataset = {};
+  for (const id of heroIds) {
+    const g = 1000;
+    out[id] = {
+      totalGames: g * 5,
+      positions: {
+        '1': { games: g, share: 0.2 }, '2': { games: g, share: 0.2 }, '3': { games: g, share: 0.2 },
+        '4': { games: g, share: 0.2 }, '5': { games: g, share: 0.2 },
+      },
+    };
+  }
+  return out;
+}
 import type { Lane } from './positionsExtra';
 import { confidenceOf, positionBonusOf, replay, sampleWeight, shrunkDelta, type PlayRow } from './replay';
 
@@ -135,10 +151,10 @@ describe('playground <-> engine parity', () => {
     }));
 
     for (const lane of ['1', '2', '3', '4', '5'] as Lane[]) {
-      const results = scoreCandidates({ heroes, enemyIds, matchupByEnemy, heroById }, lane, { model: 'A' });
+      const results = scoreCandidates({ heroes, enemyIds, matchupByEnemy, heroById, positions: allLanes([candidate.id, ...enemyIds]) }, lane, { model: 'A' });
       // replay() is the model-A pipeline; pass 'A' explicitly now that the
       // production default in scoreCandidates() is 'M' (V9 median).
-      // all-roles hero passes minPositionScore (4.5) in every lane, so parity
+      // the fixture marks this hero eligible on every lane, so parity
       // must hold for the full pipeline, not just one lucky lane
       expect(results, `lane ${lane}`).toHaveLength(1);
       const c = results[0];
@@ -189,7 +205,7 @@ describe('aggregation models (experiment lab)', () => {
       const candidateWins = Math.round((wr / 100) * games);
       matchupByEnemy.set(enemyId, [{ hero_id: candidate.id, games_played: games, wins: games - candidateWins }]);
     }
-    return { heroes, enemyIds, matchupByEnemy, heroById };
+    return { heroes, enemyIds, matchupByEnemy, heroById, positions: allLanes([candidate.id, ...enemyIds]) };
   }
 
   it('Model M uses median teamScore, robust to one dominating matchup', () => {

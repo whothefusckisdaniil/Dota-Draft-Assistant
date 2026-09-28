@@ -12,6 +12,7 @@ the numbers changed, and **how** to roll back.
 | Hero names, roles, portraits, pub/pro stats | OpenDota `/heroes` + `/heroStats` | **Every run** |
 | Latest patch | OpenDota `/constants/patch` (highest patch id) | **Every run** |
 | Matchup win rates | STRATZ GraphQL `heroStats.matchUp` | Every run (weekly) |
+| Position pick rates | STRATZ GraphQL `heroStats.stats(groupByPosition: true)` | Every run (weekly), same window and brackets as the matchups |
 | Population | — | Calibrated rank brackets `HERALD_GUARDIAN`, `CRUSADER_ARCHON`, `LEGEND_ANCIENT`, `DIVINE_IMMORTAL` |
 | Time window | — | Sum of the 4 last **fully completed** weekly buckets; current partial bucket always excluded |
 | Transport | — | headless Chromium (Playwright) — `api.stratz.com` sits behind a Cloudflare interstitial |
@@ -32,7 +33,7 @@ STRATZ 4-week matchup query  ← asked for EXACTLY the ids above
         ↓
 validateProductionContract(heroes, matchups)      (13 gates, fresh roster)
         ↓
-public/data.__next/  {heroes.json, matchups.json, meta.json}
+public/data.__next/  {heroes.json, matchups.json, positions.json, meta.json}
         ↓  re-read from disk + cross-check
 atomic directory swap  →  public/data/
 ```
@@ -44,8 +45,8 @@ cannot produce a STRATZ request either.
 
 **STRATZ is never asked about a hero that OpenDota did not report this run.** New heroes,
 retired heroes, changed roles, new portraits, changed pub/pro stats and patch bumps therefore
-flow into production automatically, and `heroes.json` / `matchups.json` / `meta.json` are always
-guaranteed to describe the *same* snapshot.
+flow into production automatically, and `heroes.json` / `matchups.json` / `positions.json` / `meta.json`
+are always guaranteed to describe the *same* snapshot.
 
 ### 1.2 Failure policy
 
@@ -206,6 +207,13 @@ backfilling closed buckets by a trickle), so the weekly cron diff stays tiny whe
 ```bash
 npm run update:data:opendota-fallback   # restores the OpenDota-shaped dataset
 ```
+
+It regenerates `heroes.json`, `matchups.json` and `meta.json` from OpenDota and
+**carries the committed `positions.json` forward** — the position layer is
+STRATZ-derived and is not what this script rolls back, but it is part of the same
+snapshot, so the dataset stays complete. If `positions.json` is missing or its
+roster does not match, the fallback fails loudly instead of publishing a dataset
+the app cannot load.
 
 Two things must be reverted with it, because the dataset tests and the UI attribution assert the
 STRATZ contract: `src/data/dataset.test.ts` (expects `source: "STRATZ"`, `matchupWindow`,

@@ -29,7 +29,7 @@ export const NEXT_SUFFIX = 'data.__next';
 export const PREV_SUFFIX = 'data.__prev';
 
 /** Every file a complete dataset must contain. */
-export const DATASET_FILES = ['heroes.json', 'matchups.json', 'meta.json'];
+export const DATASET_FILES = ['heroes.json', 'matchups.json', 'positions.json', 'meta.json'];
 
 /**
  * Re-read the staged files and prove they are complete, parseable and
@@ -41,12 +41,24 @@ export async function verifyStagedDataset(stagedDir, { heroCount, requireComplet
   const missing = DATASET_FILES.filter((f) => !present.has(f));
   if (missing.length > 0) throw new Error(`staged dataset missing files: ${missing.join(', ')}`);
 
-  const [heroesRaw, matchupsRaw, metaRaw] = await Promise.all(
-    DATASET_FILES.map((f) => readFile(path.join(stagedDir, f), 'utf8')),
+  // Read by NAME, not by position in DATASET_FILES. The positional form broke
+  // the moment a fourth file was added: `metaRaw` silently became
+  // positions.json, so the meta.heroCount cross-check read `undefined` and the
+  // guard fired on a perfectly good dataset. A dataset layer added later must
+  // never be able to displace another one here.
+  const raw = Object.fromEntries(
+    await Promise.all(
+      DATASET_FILES.map(async (f) => [f, await readFile(path.join(stagedDir, f), 'utf8')]),
+    ),
   );
-  let heroes, matchups, meta;
+  let heroes, matchups, positions, meta;
   try {
-    [heroes, matchups, meta] = [heroesRaw, matchupsRaw, metaRaw].map((s) => JSON.parse(s));
+    ({ heroes, matchups, positions, meta } = {
+      heroes: JSON.parse(raw['heroes.json']),
+      matchups: JSON.parse(raw['matchups.json']),
+      positions: JSON.parse(raw['positions.json']),
+      meta: JSON.parse(raw['meta.json']),
+    });
   } catch (e) {
     throw new Error(`staged dataset contains invalid JSON: ${e.message}`);
   }
@@ -54,6 +66,9 @@ export async function verifyStagedDataset(stagedDir, { heroCount, requireComplet
   if (!Array.isArray(heroes) || heroes.length === 0) throw new Error('staged heroes.json is not a non-empty array');
   if (!matchups || typeof matchups !== 'object' || Array.isArray(matchups)) {
     throw new Error('staged matchups.json is not an object');
+  }
+  if (!positions || typeof positions !== 'object' || Array.isArray(positions)) {
+    throw new Error('staged positions.json is not an object');
   }
   if (!meta || typeof meta !== 'object') throw new Error('staged meta.json is not an object');
 
@@ -87,6 +102,17 @@ export async function verifyStagedDataset(stagedDir, { heroCount, requireComplet
   // meta.heroCount to itself would accept any value whatsoever.
   if (meta.heroCount !== heroes.length) {
     throw new Error(`staged meta.heroCount=${meta.heroCount} does not match the ${heroes.length} heroes written`);
+  }
+  // Same invariant for the position layer: one entry per hero, same roster.
+  // §6 — positions must never describe a different snapshot than matchups.
+  const positionIds = Object.keys(positions).map(Number);
+  if (positionIds.length !== heroes.length) {
+    throw new Error(
+      `staged hero/position count mismatch: ${heroes.length} heroes vs ${positionIds.length} position entries`,
+    );
+  }
+  for (const id of positionIds) {
+    if (!ids.has(id)) throw new Error(`staged positions.json has an entry for unknown hero ${id}`);
   }
   // Optional external expectation (the caller's in-memory count), when given.
   if (heroCount !== undefined && meta.heroCount !== heroCount) {

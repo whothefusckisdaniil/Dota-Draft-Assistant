@@ -9,6 +9,8 @@
  * via `scripts/dataset-publish.mjs`.
  */
 import path from 'node:path';
+import { existsSync } from 'node:fs';
+import { readFile } from 'node:fs/promises';
 import { fetchJson, fetchOpenDotaMetadata, OPEN_DOTA_API } from './opendota/metadata.mjs';
 import { publishDatasetAtomically } from './dataset-publish.mjs';
 
@@ -81,10 +83,33 @@ async function main() {
   const { totalRows } = validateSnapshot(heroes, matchups, meta);
   console.log(`  ok: ${heroes.length} heroes, ${totalRows} matchup rows, patch ${latestPatch}`);
 
+  // The position layer is STRATZ data and is NOT what this script rolls back, but
+  // it is part of the same snapshot, so it must be republished. Carrying the
+  // committed file forward keeps the rollback a rollback; if it is missing the
+  // dataset would be incomplete and the app would refuse to load, so fail loudly
+  // rather than publish a dataset the app cannot use.
+  const positionsPath = path.join(OUT, 'positions.json');
+  if (!existsSync(positionsPath)) {
+    throw new Error(
+      `positions.json not found at ${positionsPath}. The OpenDota fallback does not generate ` +
+        `position data (it is STRATZ-derived) — run "npm run update:data" to restore it, ` +
+        `or commit a positions.json. Dataset NOT updated.`,
+    );
+  }
+  const positions = JSON.parse(await readFile(positionsPath, 'utf8'));
+  if (Object.keys(positions).length !== heroes.length) {
+    throw new Error(
+      `positions.json covers ${Object.keys(positions).length} heroes but this snapshot has ` +
+        `${heroes.length} — roster mismatch. Dataset NOT updated.`,
+    );
+  }
+  console.log(`  carrying forward positions.json (${Object.keys(positions).length} heroes)`);
+
   console.log('4/5 Publishing dataset atomically…');
   const sizes = await publishDatasetAtomically(OUT, {
     'heroes.json': heroes,
     'matchups.json': matchups,
+    'positions.json': positions,
     'meta.json': meta,
   });
   for (const [name, bytes] of Object.entries(sizes)) console.log(`  ${name} — ${bytes} bytes`);

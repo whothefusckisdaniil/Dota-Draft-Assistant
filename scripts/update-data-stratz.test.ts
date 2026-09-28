@@ -217,6 +217,18 @@ const NOW = new Date('2026-09-28T12:00:00Z');
 const silent = () => {};
 const metaFor = (patch = '7.42', n = 100) => async () => ({ heroes: heroFixture(IDS_100), latestPatch: patch, heroCount: n });
 
+/** Position layer matching `matchupFixture`: 20% on every lane for every hero. */
+function positionFixture(ids: number[]) {
+  const out: Record<string, unknown> = {};
+  for (const i of ids) {
+    out[String(i)] = {
+      totalGames: 5000,
+      positions: Object.fromEntries(['1', '2', '3', '4', '5'].map((p) => [p, { games: 1000, share: 0.2 }])),
+    };
+  }
+  return out;
+}
+
 describe('buildDataset — the STRATZ query is driven by FRESH metadata (ТЗ §8B)', () => {
   it('asks STRATZ for exactly the ids OpenDota returned this run', async () => {
     let queried: number[] = [];
@@ -226,6 +238,7 @@ describe('buildDataset — the STRATZ query is driven by FRESH metadata (ТЗ §
         queried = heroIds;
         return matchupFixture(heroIds);
       },
+      fetchPositions: async (heroIds: number[]) => positionFixture(heroIds),
       now: NOW,
       log: silent,
     });
@@ -239,6 +252,7 @@ describe('buildDataset — the STRATZ query is driven by FRESH metadata (ТЗ §
     const { heroes, matchups, meta } = await buildDataset({
       fetchMetadata: async () => ({ heroes: heroFixture(ids), latestPatch: '7.42', heroCount: 101 }),
       fetchMatchups: async (heroIds: number[]) => matchupFixture(heroIds),
+      fetchPositions: async (ids: number[]) => positionFixture(ids),
       now: NOW,
       log: silent,
     });
@@ -258,6 +272,7 @@ describe('buildDataset — the STRATZ query is driven by FRESH metadata (ТЗ §
     const { heroes, matchups, meta } = await buildDataset({
       fetchMetadata: async () => ({ heroes: heroFixture(ids), latestPatch: '7.42', heroCount: 126 }),
       fetchMatchups: async (heroIds: number[]) => matchupFixture(heroIds),
+      fetchPositions: async (ids: number[]) => positionFixture(ids),
       now: NOW,
       log: silent,
     });
@@ -275,6 +290,7 @@ describe('buildDataset — the STRATZ query is driven by FRESH metadata (ТЗ §
         heroCount: 100,
       }),
       fetchMatchups: async (heroIds: number[]) => matchupFixture(heroIds),
+      fetchPositions: async (ids: number[]) => positionFixture(ids),
       now: NOW,
       log: silent,
     });
@@ -289,6 +305,7 @@ describe('buildDataset — latestPatch is never inherited from the old meta.json
     const { meta } = await buildDataset({
       fetchMetadata: metaFor('9.99', 100),
       fetchMatchups: async (ids: number[]) => matchupFixture(ids),
+      fetchPositions: async (ids: number[]) => positionFixture(ids),
       now: NOW,
       log: silent,
     });
@@ -299,6 +316,7 @@ describe('buildDataset — latestPatch is never inherited from the old meta.json
     const { meta } = await buildDataset({
       fetchMetadata: metaFor('7.42'),
       fetchMatchups: async (ids: number[]) => matchupFixture(ids),
+      fetchPositions: async (ids: number[]) => positionFixture(ids),
       now: NOW,
       log: silent,
     });
@@ -317,6 +335,7 @@ describe('buildDataset — failure policy (ТЗ §3, §8D)', () => {
       buildDataset({
         fetchMetadata: async () => { throw new Error('OpenDota 500'); },
         fetchMatchups: stratz as never,
+        fetchPositions: async (ids: number[]) => positionFixture(ids),
         now: NOW,
         log: silent,
       }),
@@ -329,6 +348,7 @@ describe('buildDataset — failure policy (ТЗ §3, §8D)', () => {
       buildDataset({
         fetchMetadata: metaFor('', 100),
         fetchMatchups: async (ids: number[]) => matchupFixture(ids),
+        fetchPositions: async (ids: number[]) => positionFixture(ids),
         now: NOW,
         log: silent,
       }),
@@ -355,6 +375,7 @@ describe('buildDataset — failure policy (ТЗ §3, §8D)', () => {
           delete t['7']; // a hole in the tables — exactly what gate #1 exists to catch
           return t;
         },
+        fetchPositions: async (ids: number[]) => positionFixture(ids),
         now: NOW,
         log: silent,
       }),
@@ -368,6 +389,7 @@ describe('buildDataset — failure policy (ТЗ §3, §8D)', () => {
         fetchMetadata: async () => ({ heroes: heroFixture(ids), latestPatch: '7.42', heroCount: 99 }),
         // STRATZ still knows hero 55: a stale response must not sneak it back in.
         fetchMatchups: async () => matchupFixture(IDS_100),
+        fetchPositions: async (ids: number[]) => positionFixture(ids),
         now: NOW,
         log: silent,
       }),
@@ -381,6 +403,7 @@ describe('buildDataset — the published triple describes one snapshot (ТЗ §8
     const { heroes, matchups, meta, validationResult } = await buildDataset({
       fetchMetadata: async () => ({ heroes: heroFixture(ids), latestPatch: '7.43', heroCount: 101 }),
       fetchMatchups: async (heroIds: number[]) => matchupFixture(heroIds),
+      fetchPositions: async (ids: number[]) => positionFixture(ids),
       now: NOW,
       log: silent,
     });
@@ -406,6 +429,7 @@ describe('buildDataset — the published triple describes one snapshot (ТЗ §8
     const { meta } = await buildDataset({
       fetchMetadata: metaFor(),
       fetchMatchups: async (ids: number[]) => matchupFixture(ids),
+      fetchPositions: async (ids: number[]) => positionFixture(ids),
       now: NOW,
       log: silent,
     });
@@ -424,6 +448,7 @@ describe('buildDataset — no stale latestPatch (ТЗ §8C)', () => {
     const { meta } = await buildDataset({
       fetchMetadata: metaFor('7.43'),
       fetchMatchups: async (ids: number[]) => matchupFixture(ids),
+      fetchPositions: async (ids: number[]) => positionFixture(ids),
       now: NOW,
       log: silent,
     });
@@ -438,6 +463,7 @@ describe('buildDataset — no stale latestPatch (ТЗ §8C)', () => {
       const { meta } = await buildDataset({
         fetchMetadata: metaFor(fresh),
         fetchMatchups: async (ids: number[]) => matchupFixture(ids),
+        fetchPositions: async (ids: number[]) => positionFixture(ids),
         now: NOW,
         log: silent,
       });
@@ -449,6 +475,7 @@ describe('buildDataset — no stale latestPatch (ТЗ §8C)', () => {
     const { meta } = await buildDataset({
       fetchMetadata: metaFor('7.42', 100),
       fetchMatchups: async (ids: number[]) => matchupFixture(ids),
+      fetchPositions: async (ids: number[]) => positionFixture(ids),
       now: NOW,
       log: silent,
     });
@@ -474,6 +501,10 @@ describe('buildDataset — failure policy (ТЗ §8D, §3)', () => {
       },
       fetchMatchups: async () => {
         calls.push('stratz');
+        throw new Error('STRATZ unreachable');
+      },
+      fetchPositions: async (ids: number[]) => {
+        calls.push('positions');
         throw new Error('STRATZ unreachable');
       },
     };
@@ -503,6 +534,7 @@ describe('buildDataset — failure policy (ТЗ §8D, §3)', () => {
       buildDataset({
         fetchMetadata: metaFor(),
         fetchMatchups: async () => truncated,
+        fetchPositions: async (ids: number[]) => positionFixture(ids),
         now: NOW,
         log: silent,
       }),
@@ -517,6 +549,7 @@ describe('dataset snapshot coherence (ТЗ §8E)', () => {
       const { heroes, matchups, meta } = await buildDataset({
         fetchMetadata: async () => ({ heroes: heroFixture(ids), latestPatch: '7.42', heroCount: n }),
         fetchMatchups: async (heroIds: number[]) => matchupFixture(heroIds),
+        fetchPositions: async (ids: number[]) => positionFixture(ids),
         now: NOW,
         log: silent,
       });
@@ -538,6 +571,7 @@ describe('dataset snapshot coherence (ТЗ §8E)', () => {
       buildDataset({
         fetchMetadata: async () => ({ heroes: heroFixture(ids), latestPatch: '7.42', heroCount: 126 }),
         fetchMatchups: async () => ds,
+        fetchPositions: async (ids: number[]) => positionFixture(ids),
         now: NOW,
         log: silent,
       }),
@@ -553,15 +587,17 @@ describe('end-to-end: build -> publish -> serve (ТЗ §7/§8E)', () => {
     const dir = path.join(root, 'data');
     try {
       const ids = Array.from({ length: 101 }, (_, i) => i + 1);
-      const { heroes, matchups, meta } = await buildDataset({
+      const { heroes, matchups, positions, meta } = await buildDataset({
         fetchMetadata: async () => ({ heroes: heroFixture(ids), latestPatch: '7.42', heroCount: 101 }),
         fetchMatchups: async (h: number[]) => matchupFixture(h),
+        fetchPositions: async (h: number[]) => positionFixture(h),
         now: NOW,
         log: silent,
       });
       await publishDatasetAtomically(dir, {
         'heroes.json': heroes,
         'matchups.json': matchups,
+        'positions.json': positions,
         'meta.json': meta,
       });
 
@@ -594,6 +630,7 @@ describe('end-to-end: build -> publish -> serve (ТЗ §7/§8E)', () => {
     const stale = {
       'heroes.json': heroFixture(staleIds, { pubPick: 1 }),
       'matchups.json': matchupFixture(staleIds),
+      'positions.json': positionFixture(staleIds),
       'meta.json': { source: 'STRATZ', heroMetadataSource: 'OpenDota', latestPatch: '7.40', heroCount: 3 },
     };
     try {
@@ -606,6 +643,7 @@ describe('end-to-end: build -> publish -> serve (ТЗ §7/§8E)', () => {
             throw new Error('OpenDota timeout');
           },
           fetchMatchups: async (h: number[]) => matchupFixture(h),
+          fetchPositions: async (ids: number[]) => positionFixture(ids),
           now: NOW,
           log: silent,
         }),
@@ -624,6 +662,7 @@ describe('buildDataset — latestPatch is always fresh (ТЗ §8C)', () => {
     const { meta } = await buildDataset({
       fetchMetadata: metaFor('7.44'),
       fetchMatchups: async (ids: number[]) => matchupFixture(ids),
+      fetchPositions: async (ids: number[]) => positionFixture(ids),
       now: NOW,
       log: silent,
     });
@@ -636,6 +675,7 @@ describe('buildDataset — latestPatch is always fresh (ТЗ §8C)', () => {
     const { meta } = await buildDataset({
       fetchMetadata: metaFor('7.38'),
       fetchMatchups: async (ids: number[]) => matchupFixture(ids),
+      fetchPositions: async (ids: number[]) => positionFixture(ids),
       now: NOW,
       log: silent,
     });
@@ -648,6 +688,7 @@ describe('buildDataset — latestPatch is always fresh (ТЗ §8C)', () => {
     const { meta } = await buildDataset({
       fetchMetadata: async () => ({ heroes: heroFixture(ids), latestPatch: '7.42', heroCount: 101 }),
       fetchMatchups: async (h: number[]) => matchupFixture(h),
+      fetchPositions: async (ids: number[]) => positionFixture(ids),
       now: NOW,
       log: silent,
     });
@@ -718,6 +759,7 @@ describe('buildDataset — failure policy (ТЗ §8D)', () => {
       buildDataset({
         fetchMetadata: async () => ({ heroes: heroFixture(ids), latestPatch: '7.42', heroCount: 101 }),
         fetchMatchups: async () => matchupFixture(IDS_100), // stale 100-hero answer
+        fetchPositions: async (h: number[]) => positionFixture(h),
         now: NOW,
         log: silent,
       }),
@@ -731,6 +773,7 @@ describe('buildDataset — one consistent snapshot (ТЗ §8E)', () => {
     const { heroes, matchups, meta } = await buildDataset({
       fetchMetadata: async () => ({ heroes: heroFixture(ids), latestPatch: '7.42', heroCount: 101 }),
       fetchMatchups: async (h: number[]) => matchupFixture(h),
+      fetchPositions: async (ids: number[]) => positionFixture(ids),
       now: NOW,
       log: silent,
     });
@@ -745,6 +788,7 @@ describe('buildDataset — one consistent snapshot (ТЗ §8E)', () => {
     const { meta } = await buildDataset({
       fetchMetadata: metaFor(),
       fetchMatchups: async (ids: number[]) => matchupFixture(ids),
+      fetchPositions: async (ids: number[]) => positionFixture(ids),
       now: NOW,
       log: silent,
     });

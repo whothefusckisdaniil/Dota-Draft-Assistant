@@ -31,6 +31,8 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { getCompleteWeeklyBuckets, BUCKET_SEC } from './stratz/buckets.mjs';
+import { fetchPositionsFromStratz, validatePositionData } from './stratz/positions.mjs';
+import { POSITION_ELIGIBILITY } from './stratz/eligibility.mjs';
 import { fetchOpenDotaMetadata, validateHeroMetadata } from './opendota/metadata.mjs';
 import { publishDatasetAtomically } from './dataset-publish.mjs';
 
@@ -159,6 +161,8 @@ export function buildChunkQuery(heroIds, buckets) {
   return `{ heroStats {\n    ${nodes}\n  } }`;
 }
 
+
+export { StratzTransport };
 
 export {
   loadToken,
@@ -366,6 +370,7 @@ export async function fetchMatchupsFromStratz(heroIds, windowInfo, { token, log 
 export async function buildDataset({
   fetchMetadata = fetchOpenDotaMetadata,
   fetchMatchups = fetchMatchupsFromStratz,
+  fetchPositions = fetchPositionsFromStratz,
   now = new Date(),
   log = console.log,
 } = {}) {
@@ -386,8 +391,11 @@ export async function buildDataset({
   );
   log(`    Window: ${windowInfo.windowStartUtc} -> ${windowInfo.windowEndUtcExclusive} (28 days)`);
 
-  // 3+4. STRATZ, queried for exactly the fresh hero ids.
+  // 3+4. STRATZ, queried for exactly the fresh hero ids. Matchups and position
+  // stats are two independent queries over the SAME buckets, so the two layers
+  // can never describe different weeks (§6).
   const matchups = await fetchMatchups(heroIds, windowInfo, { log });
+  const positions = await fetchPositions(heroIds, windowInfo, { log });
 
   // 5. Strict 13-point data contract validation, against the FRESH roster.
   log('5/6 Validating dataset integrity contract...');
@@ -395,6 +403,8 @@ export async function buildDataset({
   log(`    Validation passed! Total rows: ${validationResult.totalPairs}`);
   log(`    Reverse pair asymmetry median: ${validationResult.reversePairAsymmetry.medianPct}% (p99: ${validationResult.reversePairAsymmetry.p99Pct}%, max: ${validationResult.reversePairAsymmetry.maxPct}%)`);
   log(`    Wins sum skew median: ${validationResult.winsSumSkew.medianPct}% (p99: ${validationResult.winsSumSkew.p99Pct}%, max: ${validationResult.winsSumSkew.maxPct}%)`);
+  const positionInfo = validatePositionData(positions, { heroes, windowInfo });
+  log(`    Position data passed! ${positionInfo.heroCount} heroes across buckets [${positionInfo.buckets.join(', ')}]`);
 
   const totalPairGames = Object.values(matchups).reduce(
     (s, rows) => s + rows.reduce((x, r) => x + r.games_played, 0),
@@ -425,6 +435,22 @@ export async function buildDataset({
       brackets: BRACKETS,
     },
     matchupPatchFilter: false,
+    positionData: {
+      source: 'STRATZ',
+      weeks: windowInfo.buckets.length,
+      weeklyBuckets: windowInfo.buckets,
+      completeWeeksOnly: true,
+      population: {
+        type: 'rank-bracket',
+        description: 'Rank-bracket data (calibrated ranks: Herald through Immortal)',
+        brackets: BRACKETS,
+      },
+      eligibility: {
+        minShare: POSITION_ELIGIBILITY.minShare,
+        minGames: POSITION_ELIGIBILITY.minGames,
+        rule: 'hard gate — a hero must clear both thresholds for a position to be ranked there',
+      },
+    },
     schema: {
       matchupsFile: '{ "<enemyHeroId>": [{ "hero_id": <opponentHeroId>, "games_played": n, "wins": n }] }',
       winsPerspective:
@@ -441,7 +467,7 @@ export async function buildDataset({
     },
   };
 
-  return { heroes, matchups, meta, validationResult };
+  return { heroes, matchups, positions, meta, validationResult, positionInfo };
 }
 
 async function main() {
@@ -450,18 +476,21 @@ async function main() {
 
   // 1-5: fetch fresh metadata, query STRATZ, validate. Any throw aborts the run
   // before a single byte of the live dataset is touched.
-  const { heroes, matchups, meta } = await buildDataset({
+  const { heroes, matchups, positions, meta } = await buildDataset({
     fetchMatchups: (heroIds, windowInfo, opts) =>
       fetchMatchupsFromStratz(heroIds, windowInfo, { ...opts, token }),
+    fetchPositions: (heroIds, windowInfo, opts) =>
+      fetchPositionsFromStratz(heroIds, windowInfo, { ...opts, token }),
   });
 
-  // 6. Publish heroes + matchups + meta as ONE directory swap.
-  console.log('6/6 Publishing dataset atomically (heroes.json, matchups.json, meta.json)...');
+  // 6. Publish heroes + matchups + positions + meta as ONE directory swap.
+  console.log('6/6 Publishing dataset atomically (heroes, matchups, positions, meta)...');
   const sizes = await publishDatasetAtomically(
     DATA_DIR,
     {
       'heroes.json': heroes,
       'matchups.json': matchups,
+      'positions.json': positions,
       'meta.json': meta,
     },
     // STRATZ always returns a full matrix; enforce it at the last gate too.

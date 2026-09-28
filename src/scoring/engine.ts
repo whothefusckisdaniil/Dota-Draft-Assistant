@@ -1,7 +1,8 @@
 import { APP_CONFIG } from '../config';
-import type { AggOptions, CandidateScore, DeltaStats, Hero, MatchupDetail, MatchupRow } from '../types';
+import type { AggOptions, CandidateScore, DeltaStats, Hero, MatchupDetail, MatchupRow, PositionDataset } from '../types';
 import { LANE_AFFINITY } from './positions';
 import { EXTRA_AFFINITY, positionScoreBase, type Lane } from './positionsExtra';
+import { isEligibleAt } from './positionEligibility';
 
 export function positionScore(hero: Hero, pos: Lane): number {
   const a = LANE_AFFINITY[hero.name] ?? {};
@@ -55,12 +56,18 @@ export interface ScoreInput {
   enemyIds: number[];
   matchupByEnemy: Map<number, MatchupRow[]>;
   heroById: Map<number, Hero>;
+  /**
+   * Real pick rates per lane (ТЗ №9). REQUIRED for a non-empty result: without
+   * it there is no evidence a hero can play the lane, and inventing a fallback
+   * would reintroduce the exact off-role bug the position layer exists to fix.
+   */
+  positions: PositionDataset;
   /** Heroes whose matchup table failed to load — no candidate may be scored. */
   failedEnemyIds?: number[];
 }
 
 export function scoreCandidates(input: ScoreInput, pos: Lane, opts: AggOptions = {}): CandidateScore[] {
-  const { heroes, enemyIds, matchupByEnemy, heroById, failedEnemyIds } = input;
+  const { heroes, enemyIds, matchupByEnemy, heroById, positions, failedEnemyIds } = input;
   const cfg = APP_CONFIG.scoring;
   // Production default is M (median teamScore) — validated against A on the
   // evaluation set in V9/V10 (see liveValidate.ts). A/W stay available in the
@@ -114,9 +121,15 @@ export function scoreCandidates(input: ScoreInput, pos: Lane, opts: AggOptions =
     const avgGames = gamesSum / usable.length;
     if (avgGames < cfg.minimumSampleAvg) continue;
     const confidence = Math.min(1, Math.sqrt(avgGames / cfg.confidenceDenominator));
+    // ТЗ №9 §11 — HARD GATE, evaluated before any role score or bonus exists.
+    // A hero that does not actually get picked on this lane is not a candidate,
+    // however good its matchup numbers are. Without this, counter advantage
+    // alone could pull Meepo onto pos 4 or Wraith King onto pos 5, because
+    // their OpenDota role tags happened to fit.
+    if (!isEligibleAt(positions, hero.id, pos)) continue;
+    // Secondary only: the heuristic role score nudges ranking, it no longer
+    // decides eligibility (§10, §12).
     const pScore = positionScore(hero, pos);
-    const minP = cfg.minPositionScore[pos] ?? 0;
-    if (pScore < minP) continue;
     const positionBonus = ((pScore - 5) / 5) * cfg.positionBonusRange;
     const deltas = usable.map((m) => m.delta);
     const deltaStats = computeDeltaStats(deltas);

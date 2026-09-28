@@ -23,9 +23,20 @@ function dataset(overrides: Record<string, unknown> = {}, n = 3) {
   for (const h of heroes) {
     matchups[String(h.id)] = heroes.filter((o) => o.id !== h.id).map((o) => ({ hero_id: o.id }));
   }
+  // positions.json is part of the same snapshot (ТЗ №9 §16).
+  const positions: Record<string, unknown> = {};
+  for (const h of heroes) {
+    positions[String(h.id)] = {
+      totalGames: 5000,
+      positions: Object.fromEntries(
+        ['1', '2', '3', '4', '5'].map((p) => [p, { games: 1000, share: 0.2 }]),
+      ),
+    };
+  }
   return {
     'heroes.json': heroes,
     'matchups.json': matchups,
+    'positions.json': positions,
     'meta.json': { source: 'STRATZ', heroCount: n, ...overrides },
     ...overrides,
   };
@@ -42,7 +53,7 @@ describe('publishDatasetAtomically — success path', () => {
     const dir = path.join(root, 'data');
     const sizes = await publishDatasetAtomically(dir, dataset());
 
-    expect(Object.keys(sizes).sort()).toEqual(['heroes.json', 'matchups.json', 'meta.json']);
+    expect(Object.keys(sizes).sort()).toEqual(['heroes.json', 'matchups.json', 'meta.json', 'positions.json']);
     for (const [name, bytes] of Object.entries(sizes)) {
       expect(bytes, name).toBe(Buffer.byteLength(JSON.stringify(dataset()[name])));
     }
@@ -68,7 +79,7 @@ describe('publishDatasetAtomically — success path', () => {
 
     await publishDatasetAtomically(dir, dataset());
 
-    expect((await readdir(dir)).sort()).toEqual(['heroes.json', 'matchups.json', 'meta.json']);
+    expect((await readdir(dir)).sort()).toEqual(['heroes.json', 'matchups.json', 'meta.json', 'positions.json']);
     await rm(root, { recursive: true, force: true });
   });
 
@@ -76,7 +87,7 @@ describe('publishDatasetAtomically — success path', () => {
     const root = await tmpRoot();
     const dir = path.join(root, 'nested', 'data');
     await publishDatasetAtomically(dir, dataset());
-    expect((await readdir(dir)).sort()).toEqual(['heroes.json', 'matchups.json', 'meta.json']);
+    expect((await readdir(dir)).sort()).toEqual(['heroes.json', 'matchups.json', 'meta.json', 'positions.json']);
     await rm(root, { recursive: true, force: true });
   });
 
@@ -121,7 +132,17 @@ describe('publishDatasetAtomically — the old dataset survives every failure', 
     const root = await tmpRoot();
     const dir = path.join(root, 'data');
     await mkdir(dir, { recursive: true });
-    const old = { 'heroes.json': [{ id: 111 }], 'matchups.json': { 111: [] }, 'meta.json': { source: 'OLD' } };
+    const old = {
+      'heroes.json': [{ id: 111 }],
+      'matchups.json': { 111: [] },
+      'positions.json': {
+        111: {
+          totalGames: 5000,
+          positions: Object.fromEntries(['1', '2', '3', '4', '5'].map((p) => [p, { games: 1000, share: 0.2 }])),
+        },
+      },
+      'meta.json': { source: 'OLD' },
+    };
     for (const [name, data] of Object.entries(old)) await writeFile(path.join(dir, name), JSON.stringify(data));
     return { root, dir, old };
   }
@@ -137,7 +158,7 @@ describe('publishDatasetAtomically — the old dataset survives every failure', 
 
     const after = await readAll(dir);
     for (const [name, expected] of Object.entries(old)) expect(after[name], name).toBe(JSON.stringify(expected));
-    expect(Object.keys(after).sort()).toEqual(['heroes.json', 'matchups.json', 'meta.json']);
+    expect(Object.keys(after).sort()).toEqual(['heroes.json', 'matchups.json', 'meta.json', 'positions.json']);
     await rm(root, { recursive: true, force: true });
   });
 
@@ -158,6 +179,8 @@ describe('publishDatasetAtomically — the old dataset survives every failure', 
     const mixed = {
       'heroes.json': [{ id: 1 }, { id: 2 }, { id: 3 }, { id: 4 }],
       'matchups.json': dataset()['matchups.json'],
+      // Positions from the OLD 3-hero roster: another layer out of step (§6).
+      'positions.json': dataset()['positions.json'],
       'meta.json': { source: 'STRATZ', heroCount: 4 },
     };
     await expect(publishDatasetAtomically(dir, mixed)).rejects.toThrow(/count mismatch|rows, expected/);
@@ -170,7 +193,7 @@ describe('publishDatasetAtomically — the old dataset survives every failure', 
     await expect(
       publishDatasetAtomically(dir, { ...dataset(), 'meta.json': { source: 'STRATZ', heroCount: 99 } }),
     ).rejects.toThrow(/heroCount=99/);
-    expect((await readdir(dir)).sort()).toEqual(['heroes.json', 'matchups.json', 'meta.json']);
+    expect((await readdir(dir)).sort()).toEqual(['heroes.json', 'matchups.json', 'meta.json', 'positions.json']);
     await rm(root, { recursive: true, force: true });
   });
 

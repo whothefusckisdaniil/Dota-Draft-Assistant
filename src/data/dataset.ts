@@ -1,7 +1,7 @@
 import { APP_CONFIG } from '../config';
 import { RU_NAMES } from './ruNames';
 import { searchHeroes as searchHeroesLocal } from './heroes';
-import type { Hero, MatchupRow } from '../types';
+import type { Hero, HeroPositionEntry, MatchupRow, PositionDataset } from '../types';
 
 /** Static snapshot produced by scripts/update-data-stratz.mjs (see meta.json for freshness).
  *  Matchups come from STRATZ weekly buckets, hero metadata from OpenDota.
@@ -30,12 +30,22 @@ export interface DatasetMeta {
     brackets: string[];
   };
   matchupPatchFilter?: boolean;
+  positionData?: {
+    source: string;
+    weeks: number;
+    weeklyBuckets: number[];
+    completeWeeksOnly: boolean;
+    population: { type: string; description: string; brackets: string[] };
+    eligibility?: { minShare: number; minGames: number; rule: string };
+  };
 }
 
 export interface Dataset {
   heroes: Hero[];
   heroById: Map<number, Hero>;
   matchups: Map<number, MatchupRow[]>;
+  /** Real pick rates per lane (ТЗ №9) — the hard eligibility gate. */
+  positions: PositionDataset;
   meta: DatasetMeta;
 }
 
@@ -46,13 +56,18 @@ export async function loadDataset(): Promise<Dataset> {
   if (cache) return cache;
   if (inflight) return inflight;
   inflight = (async () => {
-    const [heroesRes, matchupsRes, metaRes] = await Promise.all([
+    const [heroesRes, matchupsRes, positionsRes, metaRes] = await Promise.all([
       fetch(`${import.meta.env.BASE_URL}data/heroes.json`),
       fetch(`${import.meta.env.BASE_URL}data/matchups.json`),
+      fetch(`${import.meta.env.BASE_URL}data/positions.json`),
       fetch(`${import.meta.env.BASE_URL}data/meta.json`),
     ]);
     if (!heroesRes.ok) throw new Error(`Failed to load hero data (${heroesRes.status}).`);
     if (!matchupsRes.ok) throw new Error(`Failed to load matchup data (${matchupsRes.status}).`);
+    // Positions are a HARD eligibility gate, not an optional signal: without
+    // them we cannot tell a real pos-4 pick from a forced one, so the app must
+    // refuse to rank rather than fall back to the old generic role tags.
+    if (!positionsRes.ok) throw new Error(`Failed to load position data (${positionsRes.status}).`);
     if (!metaRes.ok) throw new Error(`Failed to load dataset metadata (${metaRes.status}).`);
     const raw = (await heroesRes.json()) as Array<Omit<Hero, 'key' | 'nameRu'>>;
     const heroes: Hero[] = raw.map((h) => ({
@@ -61,6 +76,7 @@ export async function loadDataset(): Promise<Dataset> {
       nameRu: RU_NAMES[h.name] ?? '',
     }));
     const matchupsRaw = (await matchupsRes.json()) as Record<string, MatchupRow[]>;
+    const positionsRaw = (await positionsRes.json()) as Record<string, HeroPositionEntry>;
     const meta = (await metaRes.json()) as DatasetMeta;
     const heroById = new Map(heroes.map((h) => [h.id, h]));
     const matchups = new Map<number, MatchupRow[]>();
@@ -68,7 +84,18 @@ export async function loadDataset(): Promise<Dataset> {
       const numId = Number(id);
       if (heroById.has(numId) && Array.isArray(rows)) matchups.set(numId, rows);
     }
-    const ds: Dataset = { heroes, heroById, matchups, meta };
+    const positions: PositionDataset = {};
+    for (const [id, entry] of Object.entries(positionsRaw)) {
+      const numId = Number(id);
+      if (heroById.has(numId)) positions[numId] = entry;
+    }
+    // A roster/positions mismatch would silently drop heroes from every lane.
+    if (Object.keys(positions).length !== heroes.length) {
+      throw new Error(
+        `Position data covers ${Object.keys(positions).length} of ${heroes.length} heroes — refusing to rank on incomplete position data.`,
+      );
+    }
+    const ds: Dataset = { heroes, heroById, matchups, positions, meta };
     cache = ds;
     return ds;
   })();

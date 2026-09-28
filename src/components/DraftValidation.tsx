@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
-import type { AggModel, CandidateScore, Hero, MatchupRow } from '../types';
+import type { AggModel, CandidateScore, Hero, MatchupRow, PositionDataset } from '../types';
 import { getHeroStats, getHeroes, getMatchupsMany, isMatchupError } from '../data/opendota';
+import { loadDataset } from '../data/dataset';
 import { mergeHeroes } from '../data/heroes';
 import { APP_CONFIG } from '../config';
 import { fmtDelta, laneLabel, scoreCandidates } from '../scoring/engine';
@@ -26,6 +27,7 @@ export function DraftValidation() {
   const [heroes, setHeroes] = useState<Hero[]>([]);
   const [enemyIds, setEnemyIds] = useState<number[]>([]);
   const [matchups, setMatchups] = useState<Map<number, MatchupRow[]>>(new Map());
+  const [positions, setPositions] = useState<PositionDataset>({});
   const [failed, setFailed] = useState<Set<number>>(new Set());
   const [state, setState] = useState<LoadState>({ kind: 'idle' });
   const [model, setModel] = useState<AggModel>('A');
@@ -53,6 +55,10 @@ export function DraftValidation() {
       if (requestId.current !== myRequest) return; // draft changed mid-flight
       const merged = mergeHeroes(list, stats);
       setHeroes(merged);
+      // Positions come from the static production snapshot, not from OpenDota:
+      // they are the same STRATZ layer the app gates on (ТЗ №9), so the dev
+      // lab validates the same eligibility the users get.
+      setPositions((await loadDataset()).positions);
       const byId = new Map(merged.map((h) => [h.id, h]));
       setState({ kind: 'loading', message: 'Analyzing matchups…' });
       const res = await getMatchupsMany(draft);
@@ -79,10 +85,10 @@ export function DraftValidation() {
     const failedIds = [...failed].filter((id) => enemyIds.includes(id));
     const out = new Map<Lane, CandidateScore[]>();
     for (const lane of LANES) {
-      out.set(lane, scoreCandidates({ heroes, enemyIds, matchupByEnemy: matchups, heroById, failedEnemyIds: failedIds }, lane, { model }));
+      out.set(lane, scoreCandidates({ heroes, enemyIds, matchupByEnemy: matchups, heroById, positions, failedEnemyIds: failedIds }, lane, { model }));
     }
     return out;
-  }, [state, enemyIds, heroes, matchups, heroById, failed, model]);
+  }, [state, enemyIds, heroes, matchups, heroById, positions, failed, model]);
 
   const nameOf = (id: number) => heroById.get(id)?.name ?? `#${id}`;
 

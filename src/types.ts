@@ -33,6 +33,20 @@ export interface PatchEntry {
   id: number;
 }
 
+/** One hero's real pick rates per lane, from STRATZ (ТЗ №9). */
+export interface HeroPositionStat {
+  games: number;
+  /** games / totalGames, in [0, 1]. */
+  share: number;
+}
+
+export interface HeroPositionEntry {
+  totalGames: number;
+  positions: Record<'1' | '2' | '3' | '4' | '5', HeroPositionStat>;
+}
+
+export type PositionDataset = Record<number, HeroPositionEntry>;
+
 export interface Hero {
   id: number;
   key: string; // npc_dota_hero_*
