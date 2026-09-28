@@ -3,13 +3,33 @@ import { RU_NAMES } from './ruNames';
 import { searchHeroes as searchHeroesLocal } from './heroes';
 import type { Hero, MatchupRow } from '../types';
 
-/** Static snapshot produced by scripts/update-data.mjs (see meta.json for freshness).
- *  No runtime OpenDota calls in production — the app runs fully on this dataset. */
-interface DatasetMeta {
+/** Static snapshot produced by scripts/update-data-stratz.mjs (see meta.json for freshness).
+ *  Matchups come from STRATZ weekly buckets, hero metadata from OpenDota.
+ *  No runtime third-party calls in production — the app runs fully on this dataset. */
+export interface DatasetMeta {
   source: string;
+  heroMetadataSource?: string;
   generatedAt: string;
   latestPatch: string;
   heroCount: number;
+  matchupWindow?: {
+    kind?: string;
+    weeks: number;
+    weeklyBuckets: number[];
+    completeWeeksOnly: boolean;
+    windowStartUtc: string;
+    windowEndUtcExclusive: string;
+    excludedBuckets?: {
+      currentIncomplete: number;
+      reason: string;
+    };
+  };
+  population?: {
+    type: string;
+    description: string;
+    brackets: string[];
+  };
+  matchupPatchFilter?: boolean;
 }
 
 export interface Dataset {

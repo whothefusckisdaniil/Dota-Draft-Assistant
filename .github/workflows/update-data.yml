@@ -2,7 +2,10 @@ name: Update Dota dataset
 
 on:
   schedule:
-    - cron: '0 3 * * *' # daily at 03:00 UTC
+    # STRATZ matchup data is bucketed by full weeks (buckets open Thursday 00:00 UTC),
+    # so the dataset can only change once per week. Run Friday 03:00 UTC — safely past
+    # the Thursday boundary and after STRATZ finishes ingesting the closed week.
+    - cron: '0 3 * * 5'
   workflow_dispatch:
 
 permissions:
@@ -23,8 +26,43 @@ jobs:
         with:
           node-version: 20
 
-      - name: Refresh OpenDota snapshot
-        run: node scripts/update-data.mjs
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium chromium-headless-shell
+
+      - name: Refresh dataset (OpenDota metadata + STRATZ matchups)
+        # Single step on purpose: the generator enforces the ordering
+        # OpenDota -> STRATZ -> validate -> publish internally, and any failure
+        # in any of those stages exits non-zero before public/data is touched.
+        env:
+          STRATZ_API_TOKEN: ${{ secrets.STRATZ_API_TOKEN }}
+        run: node scripts/update-data-stratz.mjs
+
+      - name: Verify the committed snapshot is self-consistent
+        # A second, independent gate in CI: the published files must agree with
+        # each other on disk, not merely in the generator's memory.
+        run: node scripts/verify-dataset.mjs
+
+      - name: Check for leftover staging directories
+        # publishDatasetAtomically cleans up after itself; this asserts it, so a
+        # crashed run can never leave a half-written dataset next to the live one.
+        run: |
+          leftovers=$(ls -d public/data.__next public/data.__prev 2>/dev/null || true)
+          if [ -n "$leftovers" ]; then
+            echo "::error::staging directories left behind: $leftovers"
+            exit 1
+          fi
+
+      - name: Review dataset changes
+        run: |
+          git --no-pager diff --stat public/data || true
+          echo "--- meta.json ---"
+          git --no-pager diff public/data/meta.json | head -20 || true
+          # Heroes that entered or left the canonical roster this week.
+          git --no-pager diff --unified=0 public/data/heroes.json \
+            | grep -E '^[+-]\{"id"' | head -10 || echo "(no roster change)"
 
       - name: Commit dataset if changed
         run: |
@@ -34,8 +72,8 @@ jobs:
           if git diff --cached --quiet; then
             echo "Dataset unchanged — nothing to commit."
           else
-            git commit -m "chore(data): refresh OpenDota snapshot ($(date -u +%F))"
+            git commit -m "chore(data): refresh OpenDota metadata + STRATZ snapshot ($(date -u +%F))"
             git push
           fi
-        # If update-data.mjs failed (non-zero exit), nothing was written and
+        # If any earlier step failed (non-zero exit), nothing was written and
         # nothing is committed — the previous dataset stays intact.

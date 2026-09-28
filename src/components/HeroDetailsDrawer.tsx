@@ -94,7 +94,7 @@ export function HeroDetailsDrawer({ candidate: c, enemyIds, heroById, onClose }:
         </div>
 
         <p className="mt-4 text-[10px] leading-relaxed text-dim">
-          Statistical suggestions based on aggregate OpenDota matchup data — not a guarantee of match outcomes.
+          Statistical suggestions based on STRATZ rank-bracket matchup data — not a guarantee of match outcomes.
         </p>
       </div>
     </div>

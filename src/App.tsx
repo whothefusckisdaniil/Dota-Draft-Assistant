@@ -69,7 +69,7 @@ export default function App() {
           <section className="panel p-6 text-sm leading-relaxed text-muted sm:p-8">
             <h2 className="mb-3 text-lg font-bold text-ink">About Dota Draft Assistant</h2>
             <p>Dota Draft Assistant analyzes statistical hero matchups to help you evaluate picks against the enemy draft.</p>
-            <p className="mt-2">Statistics are based on OpenDota data.</p>
+            <p className="mt-2">Hero metadata is sourced from OpenDota; matchup statistics are aggregated from STRATZ rank-bracket data over the latest four complete weeks.</p>
             <p className="mt-2 text-dim">Recommendations are statistical suggestions, not guarantees of match outcomes.</p>
           </section>
         )}
@@ -140,7 +140,7 @@ export default function App() {
                 <p className="mt-7 max-w-3xl text-[11px] leading-relaxed text-dim">
                   Statistically favorable matchup — not a guaranteed win. Scores use the median matchup across the enemy draft,
                   sample-size confidence and role fit (role tags + curated lane nudges, not per-position winrates).
-                  Matchup data provided by OpenDota (aggregate data, not patch-filtered matches).
+                  Matchup statistics aggregated from STRATZ rank-bracket data (calibrated ranks: Herald through Immortal, 4 complete weeks). Hero metadata sourced from OpenDota.
                 </p>
               </div>
             )}
@@ -172,7 +172,7 @@ export default function App() {
         <footer className="mt-12 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-5 text-[11px] leading-relaxed text-dim">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
             <span className="font-semibold text-muted">Dota Draft Assistant</span>
-            <a className="underline-offset-2 hover:text-ink hover:underline" href="https://docs.opendota.com/" target="_blank" rel="noreferrer">Data provided by OpenDota</a>
+            <span>Matchups: STRATZ · Heroes: OpenDota</span>
             {d.loadState.kind === 'ready' && d.meta && (
               <>
                 <span aria-hidden="true">·</span>
