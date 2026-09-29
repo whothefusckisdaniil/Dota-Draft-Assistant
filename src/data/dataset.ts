@@ -12,6 +12,35 @@ import type {
   PositionDataset,
 } from '../types';
 
+/** Population contract shared by the matchup, position and item layers. */
+export interface PopulationMeta {
+  type: string;
+  description: string;
+  brackets: string[];
+}
+
+/**
+ * Provenance for the item layer (ТЗ №14 §1/§23) — closes the type debt left by
+ * ТЗ №12, where `meta.json` shipped `itemData` but `DatasetMeta` did not
+ * describe it, so `dataset.meta.itemData` was `undefined` on a type that
+ * asserted the field existed.
+ */
+export interface ItemDataMeta {
+  source: string;
+  weeks: number;
+  weeklyBuckets: number[];
+  completeWeeksOnly: boolean;
+  population: PopulationMeta;
+  statistics: {
+    type: string;
+    /** "purchase-events" — see ItemStatEntry.purchases. */
+    matchCountSemantics: string;
+    note?: string;
+  };
+  /** ItemFullPurchase is not patch-filtered, so this stays false. */
+  patchFiltered?: boolean;
+}
+
 /** Static snapshot produced by scripts/update-data-stratz.mjs (see meta.json for freshness).
  *  Matchups come from STRATZ weekly buckets, hero metadata from OpenDota.
  *  No runtime third-party calls in production — the app runs fully on this dataset. */
@@ -44,9 +73,10 @@ export interface DatasetMeta {
     weeks: number;
     weeklyBuckets: number[];
     completeWeeksOnly: boolean;
-    population: { type: string; description: string; brackets: string[] };
+    population: PopulationMeta;
     eligibility?: { minShare: number; minGames: number; rule: string };
   };
+  itemData?: ItemDataMeta;
 }
 
 export interface Dataset {
