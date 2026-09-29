@@ -1,0 +1,6413 @@
+{
+ "source": {
+  "repository": "SteamDatabase/GameTracking-Dota2",
+  "path": "game/dota/itembuilds/",
+  "kind": "Valve-authored default item builds, mirrored by a community tracker",
+  "sourceCommit": "e84714d6ff871cfae0b59f3f9038860f052fa247",
+  "sourceCommitDate": "2026-09-25T23:03:34Z",
+  "isOfficialValveApi": false
+ },
+ "phaseOrder": [
+  "Starting_Items",
+  "Starting_Items_Secondary",
+  "Early_Game",
+  "Early_Game_Secondary",
+  "Core_Items",
+  "Core_Items_Secondary",
+  "Mid_Items",
+  "Late_Items",
+  "Luxury",
+  "Other_Items"
+ ],
+ "phaseSemantics": "Categorical build labels authored by Valve. NOT minute ranges, NOT positions. An item may appear under several phases; phase says nothing about inventory slots.",
+ "heroCount": 127,
+ "distinctValveItems": 148,
+ "herolessTemplateFiles": [
+  "default_generic.txt"
+ ],
+ "heroes": {
+  "npc_dota_hero_abaddon": {
+   "author": "Valve",
+   "sourceFile": "default_abaddon.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_ward_observer",
+     "item_tango",
+     "item_flask",
+     "item_clarity",
+     "item_orb_of_venom"
+    ],
+    "Early_Game": [
+     "item_boots",
+     "item_magic_stick",
+     "item_ring_of_basilius",
+     "item_medallion_of_courage"
+    ],
+    "Mid_Items": [
+     "item_tranquil_boots",
+     "item_magic_wand",
+     "item_urn_of_shadows",
+     "item_vladmir",
+     "item_aghanims_shard"
+    ],
+    "Late_Items": [
+     "item_solar_crest",
+     "item_assault",
+     "item_ultimate_scepter"
+    ],
+    "Other_Items": [
+     "item_soul_ring",
+     "item_phase_boots",
+     "item_sange_and_yasha",
+     "item_blade_mail",
+     "item_echo_sabre",
+     "item_mjollnir",
+     "item_radiance",
+     "item_heart",
+     "item_guardian_greaves",
+     "item_glimmer_cape",
+     "item_pipe",
+     "item_lotus_orb",
+     "item_ancient_janggo",
+     "item_abyssal_blade",
+     "item_mask_of_madness",
+     "item_aether_lens",
+     "item_silver_edge",
+     "item_arcane_boots",
+     "item_orb_of_corrosion"
+    ]
+   }
+  },
+  "npc_dota_hero_abyssal_underlord": {
+   "author": "Valve",
+   "sourceFile": "default_abyssal_underlord.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_tango",
+     "item_tango",
+     "item_clarity",
+     "item_branches",
+     "item_flask",
+     "item_quelling_blade"
+    ],
+    "Early_Game": [
+     "item_boots",
+     "item_magic_stick",
+     "item_headdress"
+    ],
+    "Mid_Items": [
+     "item_arcane_boots",
+     "item_magic_wand",
+     "item_mekansm"
+    ],
+    "Late_Items": [
+     "item_guardian_greaves",
+     "item_shivas_guard",
+     "item_lotus_orb",
+     "item_black_king_bar"
+    ],
+    "Other_Items": [
+     "item_soul_ring",
+     "item_power_treads",
+     "item_necronomicon_3",
+     "item_assault",
+     "item_blade_mail",
+     "item_radiance",
+     "item_sheepstick",
+     "item_crimson_guard",
+     "item_cyclone",
+     "item_pipe",
+     "item_sphere",
+     "item_blink",
+     "item_veil_of_discord",
+     "item_vladmir",
+     "item_heart",
+     "item_helm_of_the_dominator",
+     "item_echo_sabre",
+     "item_force_staff",
+     "item_ultimate_scepter",
+     "item_heavens_halberd"
+    ]
+   }
+  },
+  "npc_dota_hero_alchemist": {
+   "author": "Valve",
+   "sourceFile": "default_alchemist.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_tango",
+     "item_flask",
+     "item_branches",
+     "item_branches",
+     "item_quelling_blade",
+     "item_gauntlets"
+    ],
+    "Early_Game": [
+     "item_bottle",
+     "item_boots",
+     "item_soul_ring",
+     "item_magic_stick"
+    ],
+    "Mid_Items": [
+     "item_radiance",
+     "item_travel_boots_1",
+     "item_sange_and_yasha"
+    ],
+    "Late_Items": [
+     "item_sange_and_yasha",
+     "item_assault",
+     "item_abyssal_blade",
+     "item_heart",
+     "item_black_king_bar"
+    ],
+    "Other_Items": [
+     "item_black_king_bar",
+     "item_silver_edge",
+     "item_vladmir",
+     "item_blade_mail",
+     "item_mjollnir",
+     "item_ultimate_scepter",
+     "item_heavens_halberd",
+     "item_heart",
+     "item_solar_crest",
+     "item_bfury",
+     "item_hand_of_midas",
+     "item_moon_shard",
+     "item_monkey_king_bar",
+     "item_ultimate_scepter",
+     "item_shivas_guard",
+     "item_skadi",
+     "item_lotus_orb",
+     "item_aghanims_shard"
+    ]
+   }
+  },
+  "npc_dota_hero_ancient_apparition": {
+   "author": "Valve",
+   "sourceFile": "default_ancient_apparition.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_branches",
+     "item_branches",
+     "item_clarity",
+     "item_clarity",
+     "item_tango",
+     "item_tango",
+     "item_flask",
+     "item_faerie_fire"
+    ],
+    "Early_Game": [
+     "item_magic_wand",
+     "item_boots",
+     "item_urn_of_shadows",
+     "item_wind_lace"
+    ],
+    "Mid_Items": [
+     "item_tranquil_boots",
+     "item_cyclone",
+     "item_glimmer_cape"
+    ],
+    "Late_Items": [
+     "item_ultimate_scepter",
+     "item_octarine_core",
+     "item_aeon_disk",
+     "item_recipe_force_staff",
+     "item_sheepstick"
+    ],
+    "Other_Items": [
+     "item_hand_of_midas",
+     "item_power_treads",
+     "item_glimmer_cape",
+     "item_veil_of_discord",
+     "item_aghanims_shard",
+     "item_mekansm",
+     "item_sheepstick",
+     "item_rod_of_atos",
+     "item_shivas_guard",
+     "item_guardian_greaves",
+     "item_lotus_orb",
+     "item_pipe",
+     "item_dagon_5",
+     "item_ethereal_blade",
+     "item_refresher",
+     "item_aether_lens",
+     "item_solar_crest",
+     "item_spirit_vessel"
+    ]
+   }
+  },
+  "npc_dota_hero_antimage": {
+   "author": "Valve",
+   "sourceFile": "default_antimage.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_tango",
+     "item_flask",
+     "item_branches",
+     "item_branches",
+     "item_quelling_blade",
+     "item_circlet"
+    ],
+    "Early_Game": [
+     "item_ring_of_health",
+     "item_recipe_wraith_band",
+     "item_boots"
+    ],
+    "Mid_Items": [
+     "item_power_treads",
+     "item_bfury"
+    ],
+    "Late_Items": [
+     "item_manta",
+     "item_skadi",
+     "item_butterfly",
+     "item_abyssal_blade"
+    ],
+    "Other_Items": [
+     "item_travel_boots_2",
+     "item_black_king_bar",
+     "item_heart",
+     "item_greater_crit",
+     "item_monkey_king_bar",
+     "item_bloodthorn",
+     "item_moon_shard",
+     "item_sphere",
+     "item_moon_shard",
+     "item_ultimate_scepter",
+     "item_rapier",
+     "item_mjollnir",
+     "item_skadi",
+     "item_sange_and_yasha"
+    ]
+   }
+  },
+  "npc_dota_hero_arc_warden": {
+   "author": "Valve",
+   "sourceFile": "default_arc_warden.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_circlet",
+     "item_tango",
+     "item_flask",
+     "item_branches",
+     "item_branches",
+     "item_mango"
+    ],
+    "Early_Game": [
+     "item_hand_of_midas",
+     "item_boots_of_speed"
+    ],
+    "Mid_Items": [
+     "item_maelstrom",
+     "item_travel_boots_1",
+     "item_recipe_orchid"
+    ],
+    "Late_Items": [
+     "item_mjollnir",
+     "item_manta",
+     "item_bloodthorn",
+     "item_black_king_bar",
+     "item_sheepstick"
+    ],
+    "Other_Items": [
+     "item_blink",
+     "item_sphere",
+     "item_necronomicon_3",
+     "item_diffusal_blade_2",
+     "item_shivas_guard",
+     "item_dagon",
+     "item_butterfly",
+     "item_greater_crit",
+     "item_monkey_king_bar",
+     "item_moon_shard",
+     "item_silver_edge",
+     "item_skadi",
+     "item_octarine_core",
+     "item_ethereal_blade"
+    ]
+   }
+  },
+  "npc_dota_hero_axe": {
+   "author": "Valve",
+   "sourceFile": "default_axe.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_tango",
+     "item_tango",
+     "item_branches",
+     "item_branches",
+     "item_quelling_blade",
+     "item_flask"
+    ],
+    "Early_Game": [
+     "item_phase_boots",
+     "item_magic_stick",
+     "item_ring_of_health"
+    ],
+    "Mid_Items": [
+     "item_blink",
+     "item_vanguard"
+    ],
+    "Late_Items": [
+     "item_blade_mail",
+     "item_crimson_guard",
+     "item_heart",
+     "item_black_king_bar",
+     "item_overwhelming_blink"
+    ],
+    "Other_Items": [
+     "item_force_staff",
+     "item_cyclone",
+     "item_pipe",
+     "item_shivas_guard",
+     "item_ultimate_scepter",
+     "item_travel_boots_1",
+     "item_assault",
+     "item_heavens_halberd",
+     "item_lotus_orb",
+     "item_sphere",
+     "item_octarine_core",
+     "item_radiance",
+     "item_mjollnir"
+    ]
+   }
+  },
+  "npc_dota_hero_bane": {
+   "author": "Valve",
+   "sourceFile": "default_bane.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_tango",
+     "item_clarity",
+     "item_tango",
+     "item_ward_observer",
+     "item_ward_observer",
+     "item_branches",
+     "item_flask",
+     "item_enchanted_mango",
+     "item_enchanted_mango"
+    ],
+    "Early_Game": [
+     "item_magic_stick",
+     "item_arcane_boots"
+    ],
+    "Mid_Items": [
+     "item_magic_wand",
+     "item_glimmer_cape"
+    ],
+    "Late_Items": [
+     "item_aether_lens",
+     "item_force_staff"
+    ],
+    "Other_Items": [
+     "item_necronomicon_3",
+     "item_black_king_bar",
+     "item_sphere",
+     "item_sheepstick",
+     "item_shivas_guard",
+     "item_ghost",
+     "item_guardian_greaves",
+     "item_blink",
+     "item_lotus_orb",
+     "item_cyclone",
+     "item_ultimate_scepter",
+     "item_shadow_blade",
+     "item_pipe",
+     "item_invis_sword",
+     "item_octarine_core"
+    ]
+   }
+  },
+  "npc_dota_hero_batrider": {
+   "author": "Valve",
+   "sourceFile": "default_batrider.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_tango",
+     "item_flask",
+     "item_wind_lace",
+     "item_branches",
+     "item_branches"
+    ],
+    "Early_Game": [
+     "item_boots",
+     "item_null_talisman",
+     "item_bottle",
+     "item_infused_raindrop"
+    ],
+    "Mid_Items": [
+     "item_magic_wand",
+     "item_travel_boots",
+     "item_blink",
+     "item_force_staff"
+    ],
+    "Late_Items": [
+     "item_black_king_bar",
+     "item_octarine_core",
+     "item_ultimate_scepter",
+     "item_aghanims_shard"
+    ],
+    "Other_Items": [
+     "item_sheepstick",
+     "item_lotus_orb",
+     "item_sphere",
+     "item_ghost",
+     "item_aeon_disk",
+     "item_pipe",
+     "item_veil_of_discord",
+     "item_aether_lens",
+     "item_heavens_halberd",
+     "item_spirit_vessel",
+     "item_yasha_and_kaya",
+     "item_shivas_guard",
+     "item_cyclone"
+    ]
+   }
+  },
+  "npc_dota_hero_beastmaster": {
+   "author": "Valve",
+   "sourceFile": "default_beastmaster.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_tango",
+     "item_flask",
+     "item_branches",
+     "item_branches",
+     "item_quelling_blade"
+    ],
+    "Early_Game": [
+     "item_necronomicon",
+     "item_magic_stick",
+     "item_boots"
+    ],
+    "Mid_Items": [
+     "item_magic_wand",
+     "item_necronomicon_3"
+    ],
+    "Late_Items": [
+     "item_black_king_bar",
+     "item_travel_boots",
+     "item_solar_crest"
+    ],
+    "Other_Items": [
+     "item_pipe",
+     "item_ultimate_scepter",
+     "item_force_staff",
+     "item_refresher",
+     "item_heart",
+     "item_assault",
+     "item_heavens_halberd",
+     "item_vladmir",
+     "item_power_treads",
+     "item_crimson_guard",
+     "item_blade_mail",
+     "item_guardian_greaves",
+     "item_abyssal_blade",
+     "item_lotus_orb",
+     "item_helm_of_the_dominator"
+    ]
+   }
+  },
+  "npc_dota_hero_bloodseeker": {
+   "author": "Valve",
+   "sourceFile": "default_bloodseeker.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_tango",
+     "item_slippers",
+     "item_circlet",
+     "item_quelling_blade",
+     "item_branches"
+    ],
+    "Early_Game": [
+     "item_wraith_band",
+     "item_orb_of_venom",
+     "item_boots",
+     "item_infused_raindrop"
+    ],
+    "Mid_Items": [
+     "item_magic_wand",
+     "item_phase_boots",
+     "item_ancient_janggo",
+     "item_blade_mail"
+    ],
+    "Late_Items": [
+     "item_satanic",
+     "item_sange_and_yasha",
+     "item_black_king_bar",
+     "item_abyssal_blade",
+     "item_maelstrom"
+    ],
+    "Other_Items": [
+     "item_power_treads",
+     "item_ultimate_scepter",
+     "item_silver_edge",
+     "item_skadi",
+     "item_monkey_king_bar",
+     "item_radiance",
+     "item_mjollnir",
+     "item_manta",
+     "item_butterfly",
+     "item_assault",
+     "item_desolator",
+     "item_nullifier",
+     "item_sphere",
+     "item_greater_crit",
+     "item_heavens_halberd"
+    ]
+   }
+  },
+  "npc_dota_hero_bounty_hunter": {
+   "author": "Valve",
+   "sourceFile": "default_bounty_hunter.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_tango",
+     "item_ward_observer",
+     "item_clarity",
+     "item_branches",
+     "item_orb_of_venom",
+     "item_flask"
+    ],
+    "Early_Game": [
+     "item_boots",
+     "item_magic_stick",
+     "item_ring_of_basilius",
+     "item_infused_raindrop"
+    ],
+    "Mid_Items": [
+     "item_arcane_boots",
+     "item_magic_wand",
+     "item_mekansm",
+     "item_medallion_of_courage"
+    ],
+    "Late_Items": [
+     "item_guardian_greaves",
+     "item_solar_crest",
+     "item_vladmir",
+     "item_ultimate_scepter",
+     "item_sheepstick"
+    ],
+    "Other_Items": [
+     "item_urn_of_shadows",
+     "item_desolator",
+     "item_dagon_5",
+     "item_butterfly",
+     "item_lotus_orb",
+     "item_ghost",
+     "item_cyclone",
+     "item_force_staff",
+     "item_aether_lens",
+     "item_bloodthorn",
+     "item_abyssal_blade",
+     "item_bfury",
+     "item_skadi",
+     "item_sange_and_yasha"
+    ]
+   }
+  },
+  "npc_dota_hero_brewmaster": {
+   "author": "Valve",
+   "sourceFile": "default_brewmaster.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_tango",
+     "item_flask",
+     "item_enchanted_mango",
+     "item_branches",
+     "item_branches",
+     "item_quelling_blade"
+    ],
+    "Early_Game": [
+     "item_boots",
+     "item_bottle",
+     "item_magic_stick",
+     "item_urn_of_shadows"
+    ],
+    "Mid_Items": [
+     "item_phase_boots",
+     "item_magic_wand",
+     "item_spirit_vessel"
+    ],
+    "Late_Items": [
+     "item_vladmir",
+     "item_ultimate_scepter",
+     "item_assault",
+     "item_blink"
+    ],
+    "Other_Items": [
+     "item_shivas_guard",
+     "item_heart",
+     "item_radiance",
+     "item_heavens_halberd",
+     "item_black_king_bar",
+     "item_refresher",
+     "item_power_treads",
+     "item_arcane_boots",
+     "item_blade_mail",
+     "item_abyssal_blade",
+     "item_sphere",
+     "item_hand_of_midas",
+     "item_octarine_core"
+    ]
+   }
+  },
+  "npc_dota_hero_bristleback": {
+   "author": "Valve",
+   "sourceFile": "default_bristleback.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_tango",
+     "item_enchanted_mango",
+     "item_ring_of_protection",
+     "item_enchanted_mango"
+    ],
+    "Early_Game": [
+     "item_ring_of_health",
+     "item_boots",
+     "item_magic_stick"
+    ],
+    "Mid_Items": [
+     "item_magic_wand",
+     "item_power_treads",
+     "item_vanguard",
+     "item_hood_of_defiance"
+    ],
+    "Late_Items": [
+     "item_crimson_guard",
+     "item_eternal_shroud",
+     "item_shivas_guard",
+     "item_sange_and_yasha",
+     "item_abyssal_blade"
+    ],
+    "Other_Items": [
+     "item_blade_mail",
+     "item_vladmir",
+     "item_heavens_halberd",
+     "item_assault",
+     "item_heart",
+     "item_radiance",
+     "item_echo_sabre",
+     "item_octarine_core",
+     "item_lotus_orb",
+     "item_solar_crest",
+     "item_moon_shard",
+     "item_ultimate_scepter",
+     "item_guardian_greaves"
+    ]
+   }
+  },
+  "npc_dota_hero_broodmother": {
+   "author": "Valve",
+   "sourceFile": "default_broodmother.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_tango",
+     "item_enchanted_mango",
+     "item_enchanted_mango",
+     "item_enchanted_mango",
+     "item_enchanted_mango"
+    ],
+    "Early_Game": [
+     "item_soul_ring",
+     "item_boots",
+     "item_magic_stick"
+    ],
+    "Mid_Items": [
+     "item_power_treads",
+     "item_orchid"
+    ],
+    "Late_Items": [
+     "item_black_king_bar",
+     "item_bloodthorn",
+     "item_assault",
+     "item_ultimate_scepter",
+     "item_sheepstick"
+    ],
+    "Other_Items": [
+     "item_manta",
+     "item_butterfly",
+     "item_monkey_king_bar",
+     "item_radiance",
+     "item_heart",
+     "item_abyssal_blade",
+     "item_hand_of_midas",
+     "item_diffusal_blade",
+     "item_echo_sabre",
+     "item_sange_and_yasha",
+     "item_desolator",
+     "item_mjollnir",
+     "item_sphere"
+    ]
+   }
+  },
+  "npc_dota_hero_centaur": {
+   "author": "Valve",
+   "sourceFile": "default_centaur.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_tango",
+     "item_flask",
+     "item_quelling_blade",
+     "item_ring_of_protection"
+    ],
+    "Early_Game": [
+     "item_boots",
+     "item_magic_stick",
+     "item_ring_of_health",
+     "item_infused_raindrop"
+    ],
+    "Mid_Items": [
+     "item_magic_wand",
+     "item_phase_boots",
+     "item_hood_of_defiance",
+     "item_blink",
+     "item_vanguard"
+    ],
+    "Late_Items": [
+     "item_crimson_guard",
+     "item_ultimate_scepter",
+     "item_pipe",
+     "item_heart",
+     "item_overwhelming_blink"
+    ],
+    "Other_Items": [
+     "item_blade_mail",
+     "item_assault_cuirass",
+     "item_heavens_halberd",
+     "item_shivas_guard",
+     "item_radiance",
+     "item_mjollnir",
+     "item_sphere",
+     "item_lotus_orb",
+     "item_black_king_bar",
+     "item_abyssal_blade",
+     "item_refresher"
+    ]
+   }
+  },
+  "npc_dota_hero_chaos_knight": {
+   "author": "Valve",
+   "sourceFile": "default_chaos_knight.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_tango",
+     "item_tango",
+     "item_flask",
+     "item_quelling_blade",
+     "item_enchanted_mango"
+    ],
+    "Early_Game": [
+     "item_boots",
+     "item_magic_stick"
+    ],
+    "Mid_Items": [
+     "item_power_treads",
+     "item_magic_wand",
+     "item_armlet"
+    ],
+    "Late_Items": [
+     "item_black_king_bar",
+     "item_sange_and_yasha",
+     "item_heart",
+     "item_abyssal_blade",
+     "item_assault",
+     "item_ultimate_scepter"
+    ],
+    "Other_Items": [
+     "item_satanic",
+     "item_heavens_halberd",
+     "item_echo_sabre",
+     "item_skadi",
+     "item_monkey_king_bar",
+     "item_swift_blink",
+     "item_moon_shard",
+     "item_mjollnir",
+     "item_hand_of_midas",
+     "item_blade_mail",
+     "item_butterfly",
+     "item_manta"
+    ]
+   }
+  },
+  "npc_dota_hero_chen": {
+   "author": "Valve",
+   "sourceFile": "default_chen.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_ward_observer",
+     "item_tango",
+     "item_headdress"
+    ],
+    "Early_Game": [
+     "item_boots",
+     "item_ring_of_basilius",
+     "item_buckler",
+     "item_infused_raindrop"
+    ],
+    "Mid_Items": [
+     "item_mekansm",
+     "item_guardian_greaves",
+     "item_magic_wand",
+     "item_arcane_boots",
+     "item_vladmir"
+    ],
+    "Late_Items": [
+     "item_lotus_orb",
+     "item_solar_crest",
+     "item_ultimate_scepter"
+    ],
+    "Other_Items": [
+     "item_glimmer_cape",
+     "item_pipe",
+     "item_holy_locket",
+     "item_ghost",
+     "item_force_staff",
+     "item_sheepstick",
+     "item_solar_crest",
+     "item_spirit_vessel",
+     "item_lotus_orb",
+     "item_heavens_halberd",
+     "item_aeon_disk",
+     "item_shivas_guard",
+     "item_refresher",
+     "item_helm_of_the_dominator",
+     "item_necronomicon_3"
+    ]
+   }
+  },
+  "npc_dota_hero_clinkz": {
+   "author": "Valve",
+   "sourceFile": "default_clinkz.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_flask",
+     "item_tango",
+     "item_branches",
+     "item_branches",
+     "item_faerie_fire",
+     "item_ring_of_protection"
+    ],
+    "Early_Game": [
+     "item_boots",
+     "item_soul_ring",
+     "item_magic_stick"
+    ],
+    "Mid_Items": [
+     "item_power_treads",
+     "item_falcon_blade",
+     "item_magic_wand",
+     "item_desolator"
+    ],
+    "Late_Items": [
+     "item_black_king_bar",
+     "item_bloodthorn",
+     "item_sheepstick",
+     "item_aghanims_shard",
+     "item_greater_crit"
+    ],
+    "Other_Items": [
+     "item_hurricane_pike",
+     "item_solar_crest",
+     "item_monkey_king_bar",
+     "item_assault",
+     "item_sphere",
+     "item_butterfly",
+     "item_skadi",
+     "item_mjollnir",
+     "item_heart",
+     "item_moon_shard",
+     "item_helm_of_the_dominator",
+     "item_helm_of_the_dominator_2",
+     "item_vladmir",
+     "item_satanic"
+    ]
+   }
+  },
+  "npc_dota_hero_crystal_maiden": {
+   "author": "Valve",
+   "sourceFile": "default_crystal_maiden.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_tango",
+     "item_tango",
+     "item_clarity",
+     "item_flask",
+     "item_branches",
+     "item_ward_observer",
+     "item_ward_observer",
+     "item_enchanted_mango",
+     "item_enchanted_mango"
+    ],
+    "Early_Game": [
+     "item_magic_wand",
+     "item_tranquil_boots"
+    ],
+    "Mid_Items": [
+     "item_glimmer_cape",
+     "item_force_staff"
+    ],
+    "Late_Items": [
+     "item_ultimate_scepter",
+     "item_aeon_disk"
+    ],
+    "Other_Items": [
+     "item_guardian_greaves",
+     "item_cyclone",
+     "item_ghost",
+     "item_sheepstick",
+     "item_shivas_guard",
+     "item_aether_lens",
+     "item_sphere",
+     "item_lotus_orb",
+     "item_shadow_blade",
+     "item_octarine_core",
+     "item_rod_of_atos",
+     "item_blink"
+    ]
+   }
+  },
+  "npc_dota_hero_dark_seer": {
+   "author": "Valve",
+   "sourceFile": "default_dark_seer.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_tango",
+     "item_flask",
+     "item_clarity",
+     "item_enchanted_mango",
+     "item_enchanted_mango",
+     "item_ring_of_protection"
+    ],
+    "Early_Game": [
+     "item_soul_ring",
+     "item_boots"
+    ],
+    "Mid_Items": [
+     "item_arcane_boots",
+     "item_mekansm",
+     "item_blink"
+    ],
+    "Late_Items": [
+     "item_guardian_greaves",
+     "item_shivas_guard",
+     "item_ultimate_scepter",
+     "item_black_king_bar"
+    ],
+    "Other_Items": [
+     "item_aghanims_shard",
+     "item_crimson_guard",
+     "item_sheepstick",
+     "item_heart",
+     "item_refresher",
+     "item_ghost",
+     "item_aether_lens",
+     "item_radiance",
+     "item_blade_mail",
+     "item_force_staff",
+     "item_octarine_core",
+     "item_bloodstone",
+     "item_sphere",
+     "item_cyclone"
+    ]
+   }
+  },
+  "npc_dota_hero_dark_willow": {
+   "author": "Valve",
+   "sourceFile": "default_dark_willow.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_tango",
+     "item_clarity",
+     "item_ward_observer",
+     "item_branches",
+     "item_branches",
+     "item_wind_lace",
+     "item_flask"
+    ],
+    "Early_Game": [
+     "item_tranquil_boots",
+     "item_magic_stick"
+    ],
+    "Mid_Items": [
+     "item_magic_wand",
+     "item_cyclone"
+    ],
+    "Late_Items": [
+     "item_ultimate_scepter",
+     "item_blink",
+     "item_aeon_disk",
+     "item_glimmer_cape",
+     "item_sphere"
+    ],
+    "Other_Items": [
+     "item_aghanims_shard",
+     "item_spirit_vessel",
+     "item_assault",
+     "item_pipe",
+     "item_veil_of_discord",
+     "item_wind_waker",
+     "item_necronomicon_3",
+     "item_arcane_boots",
+     "item_octarine_core",
+     "item_mekansm",
+     "item_moon_shard",
+     "item_mekansm"
+    ]
+   }
+  },
+  "npc_dota_hero_dawnbreaker": {
+   "author": "Valve",
+   "sourceFile": "default_dawnbreaker.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_tango",
+     "item_flask",
+     "item_enchanted_mango",
+     "item_branches",
+     "item_branches"
+    ],
+    "Early_Game": [
+     "item_boots",
+     "item_magic_stick",
+     "item_ring_of_basilius"
+    ],
+    "Mid_Items": [
+     "item_phase_boots",
+     "item_magic_wand",
+     "item_blink",
+     "item_sange_and_yasha"
+    ],
+    "Late_Items": [
+     "item_black_king_bar",
+     "item_assault",
+     "item_overwhelming_blink"
+    ],
+    "Other_Items": [
+     "item_phase_boots",
+     "item_silver_edge",
+     "item_abyssal_blade",
+     "item_desolator",
+     "item_satanic",
+     "item_black_king_bar",
+     "item_heavens_halberd",
+     "item_vladmir",
+     "item_ultimate_scepter",
+     "item_sphere",
+     "item_lotus_orb",
+     "item_armlet",
+     "item_monkey_king_bar",
+     "item_sange_and_yasha",
+     "item_echo_sabre",
+     "item_heart"
+    ]
+   }
+  },
+  "npc_dota_hero_dazzle": {
+   "author": "Valve",
+   "sourceFile": "default_dazzle.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_branches",
+     "item_clarity",
+     "item_clarity",
+     "item_tango",
+     "item_flask",
+     "item_ward_observer",
+     "item_faerie_fire",
+     "item_tango"
+    ],
+    "Early_Game": [
+     "item_magic_stick",
+     "item_boots",
+     "item_urn_of_shadows",
+     "item_ring_of_basilius"
+    ],
+    "Mid_Items": [
+     "item_magic_wand",
+     "item_arcane_boots",
+     "item_glimmer_cape",
+     "item_force_staff"
+    ],
+    "Late_Items": [
+     "item_mekansm",
+     "item_aeon_disk",
+     "item_guardian_greaves"
+    ],
+    "Other_Items": [
+     "item_solar_crest",
+     "item_aether_lens",
+     "item_sheepstick",
+     "item_ultimate_scepter",
+     "item_shivas_guard",
+     "item_aghanims_shard",
+     "item_pipe",
+     "item_cyclone",
+     "item_spirit_vessel",
+     "item_ghost",
+     "item_sphere",
+     "item_lotus_orb",
+     "item_bloodthorn"
+    ]
+   }
+  },
+  "npc_dota_hero_death_prophet": {
+   "author": "Valve",
+   "sourceFile": "default_death_prophet.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_tango",
+     "item_circlet",
+     "item_branches",
+     "item_branches",
+     "item_mantle"
+    ],
+    "Early_Game": [
+     "item_bottle",
+     "item_boots"
+    ],
+    "Mid_Items": [
+     "item_power_treads",
+     "item_cyclone"
+    ],
+    "Late_Items": [
+     "item_black_king_bar",
+     "item_ultimate_scepter",
+     "item_shivas_guard",
+     "item_octarine_core"
+    ],
+    "Luxury": [
+     "item_blood_stone",
+     "item_kaya_and_sange",
+     "item_veil_of_discord",
+     "item_aether_lens",
+     "item_sphere",
+     "item_ghost",
+     "item_guardian_greaves",
+     "item_arcane_blink",
+     "item_sheepstick",
+     "item_heart",
+     "item_black_king_bar",
+     "item_refresher",
+     "item_force_staff",
+     "item_assault"
+    ]
+   }
+  },
+  "npc_dota_hero_disruptor": {
+   "author": "Valve",
+   "sourceFile": "default_disruptor.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_tango",
+     "item_clarity",
+     "item_branches",
+     "item_branches",
+     "item_flask",
+     "item_ward_observer",
+     "item_enchanted_mango",
+     "item_enchanted_mango",
+     "item_enchanted_mango"
+    ],
+    "Early_Game": [
+     "item_boots",
+     "item_magic_stick"
+    ],
+    "Mid_Items": [
+     "item_arcane_boots",
+     "item_magic_wand",
+     "item_force_staff"
+    ],
+    "Late_Items": [
+     "item_aeon_disk",
+     "item_ultimate_scepter",
+     "item_blink"
+    ],
+    "Other_Items": [
+     "item_urn_of_shadows",
+     "item_guardian_greaves",
+     "item_shivas_guard",
+     "item_veil_of_discord",
+     "item_ghost",
+     "item_rod_of_atos",
+     "item_refresher",
+     "item_sheepstick",
+     "item_cyclone",
+     "item_sphere",
+     "item_lotus_orb",
+     "item_octarine_core",
+     "item_aether_lens"
+    ]
+   }
+  },
+  "npc_dota_hero_doom_bringer": {
+   "author": "Valve",
+   "sourceFile": "default_doom_bringer.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_tango",
+     "item_flask",
+     "item_ring_of_protection",
+     "item_quelling_blade"
+    ],
+    "Early_Game": [
+     "item_magic_stick",
+     "item_ring_of_basilius",
+     "item_phase_boots"
+    ],
+    "Mid_Items": [
+     "item_blink",
+     "item_magic_wand",
+     "item_ancient_janggo"
+    ],
+    "Late_Items": [
+     "item_black_king_bar",
+     "item_shivas_guard",
+     "item_assault",
+     "item_overwhelming_blink"
+    ],
+    "Other_Items": [
+     "item_ultimate_scepter",
+     "item_blade_mail",
+     "item_guardian_greaves",
+     "item_silver_edge",
+     "item_heart",
+     "item_abyssal_blade",
+     "item_refresher",
+     "item_heavens_halberd",
+     "item_radiance",
+     "item_echo_sabre",
+     "item_lotus_orb",
+     "item_pipe",
+     "item_sange_and_yasha"
+    ]
+   }
+  },
+  "npc_dota_hero_dragon_knight": {
+   "author": "Valve",
+   "sourceFile": "default_dragon_knight.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_tango",
+     "item_quelling_blade",
+     "item_gauntlets",
+     "item_circlet"
+    ],
+    "Early_Game": [
+     "item_soul_ring",
+     "item_magic_stick",
+     "item_boots",
+     "item_bracer"
+    ],
+    "Mid_Items": [
+     "item_power_treads",
+     "item_magic_wand",
+     "item_blink"
+    ],
+    "Late_Items": [
+     "item_black_king_bar",
+     "item_assault",
+     "item_greater_crit",
+     "item_ultimate_scepter",
+     "item_satanic"
+    ],
+    "Other_Items": [
+     "item_armlet",
+     "item_abyssal_blade",
+     "item_heavens_halberd",
+     "item_heart",
+     "item_mjollnir",
+     "item_silver_edge",
+     "item_sange_and_yasha",
+     "item_moon_shard",
+     "item_blade_mail",
+     "item_monkey_king_bar",
+     "item_echo_sabre",
+     "item_hurricane_pike"
+    ]
+   }
+  },
+  "npc_dota_hero_drow_ranger": {
+   "author": "Valve",
+   "sourceFile": "default_drow_ranger.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_flask",
+     "item_tango",
+     "item_slippers",
+     "item_circlet",
+     "item_branches"
+    ],
+    "Early_Game": [
+     "item_boots",
+     "item_magic_stick",
+     "item_wraith_band"
+    ],
+    "Mid_Items": [
+     "item_magic_wand",
+     "item_power_treads",
+     "item_dragon_lance"
+    ],
+    "Late_Items": [
+     "item_sange_and_yasha",
+     "item_hurricane_pike",
+     "item_black_king_bar",
+     "item_butterfly",
+     "item_greater_crit"
+    ],
+    "Other_Items": [
+     "item_invis_sword",
+     "item_manta",
+     "item_blink",
+     "item_ultimate_scepter",
+     "item_mjollnir",
+     "item_greater_crit",
+     "item_satanic",
+     "item_skadi",
+     "item_mask_of_madness",
+     "item_silver_edge",
+     "item_monkey_king_bar",
+     "item_desolator",
+     "item_sphere",
+     "item_bloodthorn",
+     "item_ethereal_blade",
+     "item_moon_shard",
+     "item_rapier"
+    ]
+   }
+  },
+  "npc_dota_hero_earth_spirit": {
+   "author": "Valve",
+   "sourceFile": "default_earth_spirit.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_tango",
+     "item_clarity",
+     "item_branches",
+     "item_orb_of_venom",
+     "item_ward_observer",
+     "item_flask"
+    ],
+    "Early_Game": [
+     "item_boots",
+     "item_magic_stick",
+     "item_urn_of_shadows"
+    ],
+    "Mid_Items": [
+     "item_tranquil_boots",
+     "item_magic_wand",
+     "item_spirit_vessel"
+    ],
+    "Late_Items": [
+     "item_black_king_bar",
+     "item_cyclone",
+     "item_ultimate_scepter",
+     "item_lotus_orb"
+    ],
+    "Other_Items": [
+     "item_guardian_greaves",
+     "item_blink",
+     "item_heavens_halberd",
+     "item_pipe",
+     "item_heart",
+     "item_sheepstick",
+     "item_blade_mail",
+     "item_shivas_guard",
+     "item_aether_lens",
+     "item_aghanims_shard",
+     "item_aeon_disk",
+     "item_ghost",
+     "item_crimson_guard",
+     "item_glimmer_cape",
+     "item_veil_of_discord"
+    ]
+   }
+  },
+  "npc_dota_hero_earthshaker": {
+   "author": "Valve",
+   "sourceFile": "default_earthshaker.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_clarity",
+     "item_clarity",
+     "item_boots"
+    ],
+    "Early_Game": [
+     "item_magic_stick",
+     "item_arcane_boots"
+    ],
+    "Mid_Items": [
+     "item_aghanims_shard",
+     "item_magic_wand",
+     "item_blink"
+    ],
+    "Late_Items": [
+     "item_force_staff",
+     "item_ultimate_scepter",
+     "item_cyclone",
+     "item_black_king_bar"
+    ],
+    "Other_Items": [
+     "item_soul_ring",
+     "item_aeon_disk",
+     "item_invis_sword",
+     "item_refresher",
+     "item_shivas_guard",
+     "item_sheepstick",
+     "item_heart",
+     "item_octarine_core",
+     "item_ghost",
+     "item_lotus_orb",
+     "item_glimmer_cape"
+    ]
+   }
+  },
+  "npc_dota_hero_elder_titan": {
+   "author": "Valve",
+   "sourceFile": "default_elder_titan.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_tango",
+     "item_flask",
+     "item_enchanted_mango",
+     "item_orb_of_venom"
+    ],
+    "Early_Game": [
+     "item_boots",
+     "item_magic_stick",
+     "item_wind_lace",
+     "item_infused_raindrop"
+    ],
+    "Mid_Items": [
+     "item_power_treads",
+     "item_magic_wand",
+     "item_cyclone"
+    ],
+    "Late_Items": [
+     "item_ultimate_scepter",
+     "item_solar_crest",
+     "item_lotus_orb"
+    ],
+    "Other_Items": [
+     "item_soul_ring",
+     "item_guardian_greaves",
+     "item_crimson_guard",
+     "item_pipe",
+     "item_vladmir",
+     "item_heavens_halberd",
+     "item_assault",
+     "item_blade_mail",
+     "item_sheepstick",
+     "item_refresher",
+     "item_ultimate_scepter",
+     "item_glimmer_cape",
+     "item_force_staff",
+     "item_silver_edge"
+    ]
+   }
+  },
+  "npc_dota_hero_ember_spirit": {
+   "author": "Valve",
+   "sourceFile": "default_ember_spirit.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_ward_observer",
+     "item_tango",
+     "item_slippers",
+     "item_circlet",
+     "item_quelling_blade",
+     "item_branches"
+    ],
+    "Early_Game": [
+     "item_wraith_band",
+     "item_bottle",
+     "item_boots",
+     "item_orb_of_corrosion"
+    ],
+    "Mid_Items": [
+     "item_magic_wand",
+     "item_phase_boots",
+     "item_maelstrom"
+    ],
+    "Late_Items": [
+     "item_desolator",
+     "item_black_king_bar",
+     "item_ultimate_scepter",
+     "item_mjollnir",
+     "item_sphere"
+    ],
+    "Other_Items": [
+     "item_travel_boots",
+     "item_shivas_guard",
+     "item_greater_crit",
+     "item_cyclone",
+     "item_blade_mail",
+     "item_radiance",
+     "item_octarine_core",
+     "item_refresher",
+     "item_blink",
+     "item_aeon_disk",
+     "item_lotus_orb",
+     "item_bloodthorn",
+     "item_monkey_king_bar",
+     "item_skadi",
+     "item_abyssal_blade",
+     "item_nullifier",
+     "item_bfury",
+     "item_rapier"
+    ]
+   }
+  },
+  "npc_dota_hero_enchantress": {
+   "author": "Valve",
+   "sourceFile": "default_enchantress.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_ward_observer",
+     "item_tango",
+     "item_flask",
+     "item_faerie_fire",
+     "item_blight_stone"
+    ],
+    "Early_Game": [
+     "item_boots",
+     "item_ring_of_basilius",
+     "item_wind_lace",
+     "item_infused_raindrop"
+    ],
+    "Core_Items": [
+     "item_magic_wand",
+     "item_power_treads",
+     "item_glimmer_cape",
+     "item_force_staff"
+    ],
+    "Late_Items": [
+     "item_hurricane_pike",
+     "item_ultimate_scepter",
+     "item_black_king_bar"
+    ],
+    "Other_Items": [
+     "item_sheepstick",
+     "item_monkey_king_bar",
+     "item_bloodthorn",
+     "item_shivas_guard",
+     "item_sphere",
+     "item_lotus_orb",
+     "item_aeon_disk",
+     "item_silver_edge",
+     "item_spirit_vessel",
+     "item_cyclone",
+     "item_heavens_halberd",
+     "item_assault"
+    ]
+   }
+  },
+  "npc_dota_hero_enigma": {
+   "author": "Valve",
+   "sourceFile": "default_enigma.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_clarity",
+     "item_clarity",
+     "item_enchanted_mango",
+     "item_tango",
+     "item_enchanted_mango",
+     "item_enchanted_mango",
+     "item_ward_observer"
+    ],
+    "Early_Game": [
+     "item_soul_ring",
+     "item_magic_stick",
+     "item_arcane_boots"
+    ],
+    "Mid_Items": [
+     "item_magic_wand",
+     "item_blink"
+    ],
+    "Late_Items": [
+     "item_octarine_core",
+     "item_black_king_bar",
+     "item_refresher",
+     "item_sphere"
+    ],
+    "Other_Items": [
+     "item_aeon_disk",
+     "item_arcane_blink",
+     "item_ultimate_scepter",
+     "item_sheepstick",
+     "item_shivas_guard",
+     "item_radiance",
+     "item_invis_sword",
+     "item_glimmer_cape",
+     "item_octarine_core",
+     "item_cyclone",
+     "item_pipe",
+     "item_hand_of_midas",
+     "item_ghost",
+     "item_necromonicon_3"
+    ]
+   }
+  },
+  "npc_dota_hero_faceless_void": {
+   "author": "Valve",
+   "sourceFile": "default_faceless_void.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_tango",
+     "item_flask",
+     "item_quelling_blade",
+     "item_slippers",
+     "item_branches"
+    ],
+    "Early_Game": [
+     "item_magic_stick",
+     "item_boots",
+     "item_ring_of_health"
+    ],
+    "Mid_Items": [
+     "item_magic_wand",
+     "item_power_treads",
+     "item_bfury"
+    ],
+    "Late_Items": [
+     "item_sange_and_yasha",
+     "item_butterfly",
+     "item_black_king_bar",
+     "item_greater_crit"
+    ],
+    "Other_Items": [
+     "item_monkey_king_bar",
+     "item_swift_blink",
+     "item_ultimate_scepter",
+     "item_blink",
+     "item_heart",
+     "item_moon_shard",
+     "item_mjollnir",
+     "item_sphere",
+     "item_assault",
+     "item_desolator",
+     "item_radiance",
+     "item_bloodthorn",
+     "item_hand_midas"
+    ]
+   }
+  },
+  "npc_dota_hero_furion": {
+   "author": "Valve",
+   "sourceFile": "default_furion.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_tango",
+     "item_flask",
+     "item_faerie_fire",
+     "item_blight_stone"
+    ],
+    "Early_Game": [
+     "item_power_treads",
+     "item_infused_raindrop",
+     "item_magic_wand"
+    ],
+    "Mid_Items": [
+     "item_orchid",
+     "item_black_king_bar"
+    ],
+    "Late_Items": [
+     "item_sheepstick",
+     "item_bloodthorn",
+     "item_satanic",
+     "item_assault",
+     "item_aghanims_shard"
+    ],
+    "Other_Items": [
+     "item_ancient_janggo",
+     "item_blade_mail",
+     "item_monkey_king_bar",
+     "item_solar_crest",
+     "item_spirit_vessel",
+     "item_desolator",
+     "item_mjollnir",
+     "item_nullifier",
+     "item_shivas_guard",
+     "item_necronomicon_3",
+     "item_sphere",
+     "item_aeon_disk",
+     "item_ultimate_scepter",
+     "item_refresher_orb",
+     "item_ethereal_blade"
+    ]
+   }
+  },
+  "npc_dota_hero_grimstroke": {
+   "author": "Valve",
+   "sourceFile": "default_grimstroke.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_tango",
+     "item_flask",
+     "item_clarity",
+     "item_tango",
+     "item_enchanted_mango",
+     "item_enchanted_mango",
+     "item_enchanted_mango",
+     "item_ward_observer"
+    ],
+    "Early_Game": [
+     "item_arcane_boots",
+     "item_magic_stick"
+    ],
+    "Mid_Items": [
+     "item_magic_wand",
+     "item_aether_lens",
+     "item_glimmer_cape"
+    ],
+    "Late_Items": [
+     "item_glimmer_cape",
+     "item_sheepstick",
+     "item_orchid",
+     "item_ultimate_scepter"
+    ],
+    "Other_Items": [
+     "item_heavens_halberd",
+     "item_veil_of_discord",
+     "item_blink",
+     "item_urn_of_shadows",
+     "item_spirit_vessel",
+     "item_kaya",
+     "item_nullifier",
+     "item_rod_of_atos",
+     "item_cyclone",
+     "item_force_staff",
+     "item_ethereal_blade",
+     "item_dagon_5",
+     "item_shivas_guard",
+     "item_octarine_core",
+     "item_aghanims_shard"
+    ]
+   }
+  },
+  "npc_dota_hero_gyrocopter": {
+   "author": "Valve",
+   "sourceFile": "default_gyrocopter.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_tango",
+     "item_flask",
+     "item_slippers",
+     "item_circlet",
+     "item_branches",
+     "item_branches"
+    ],
+    "Early_Game": [
+     "item_wraith_band",
+     "item_magic_wand",
+     "item_power_treads"
+    ],
+    "Mid_Items": [
+     "item_maelstrom",
+     "item_ultimate_scepter"
+    ],
+    "Late_Items": [
+     "item_black_king_bar",
+     "item_sange_and_yasha",
+     "item_monkey_king_bar",
+     "item_satanic"
+    ],
+    "Other_Items": [
+     "item_phase_boots",
+     "item_mjollnir",
+     "item_butterfly",
+     "item_skadi",
+     "item_hurricane_pike",
+     "item_sphere",
+     "item_manta_style",
+     "item_aghanims_shard",
+     "item_travel_boots",
+     "item_greater_crit",
+     "item_rapier",
+     "item_ethereal_blade",
+     "item_desolator",
+     "item_silver_edge",
+     "item_nullifier",
+     "item_abyssal_blade"
+    ]
+   }
+  },
+  "npc_dota_hero_hoodwink": {
+   "author": "Valve",
+   "sourceFile": "default_hoodwink.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_flask",
+     "item_tango",
+     "item_slippers",
+     "item_circlet",
+     "item_branches"
+    ],
+    "Early_Game": [
+     "item_boots",
+     "item_magic_stick",
+     "item_wraith_band",
+     "item_falcon_blade"
+    ],
+    "Mid_Items": [
+     "item_magic_wand",
+     "item_power_treads",
+     "item_dragon_lance",
+     "item_maelstrom"
+    ],
+    "Late_Items": [
+     "item_hurricane_pike",
+     "item_black_king_bar",
+     "item_sphere",
+     "item_skadi",
+     "item_mjollnir"
+    ],
+    "Other_Items": [
+     "item_manta",
+     "item_satanic",
+     "item_sange_and_yasha",
+     "item_silver_edge",
+     "item_monkey_king_bar",
+     "item_desolator",
+     "item_yasha_and_kaya",
+     "item_rapier"
+    ]
+   }
+  },
+  "npc_dota_hero_huskar": {
+   "author": "Valve",
+   "sourceFile": "default_huskar.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_tango",
+     "item_gauntlets",
+     "item_gauntlets",
+     "item_circlet"
+    ],
+    "Early_Game": [
+     "item_boots",
+     "item_magic_stick",
+     "item_bracer",
+     "item_bracer"
+    ],
+    "Mid_Items": [
+     "item_power_treads",
+     "item_magic_wand",
+     "item_armlet"
+    ],
+    "Late_Items": [
+     "item_heavens_halberd",
+     "item_black_king_bar",
+     "item_satanic",
+     "item_assault",
+     "item_ultimate_scepter"
+    ],
+    "Other_Items": [
+     "item_phase_boots",
+     "item_overwhelming_blink",
+     "item_blade_mail",
+     "item_heart",
+     "item_aghanims_shard",
+     "item_shivas_guard",
+     "item_sange_and_yasha",
+     "item_monkey_king_bar",
+     "item_ghost_scepter",
+     "item_solar_crest",
+     "item_greater_crit",
+     "item_blink",
+     "item_moonshard",
+     "item_desolator",
+     "item_sphere",
+     "item_lotus_orb"
+    ]
+   }
+  },
+  "npc_dota_hero_invoker": {
+   "author": "Valve",
+   "sourceFile": "default_invoker.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_tango",
+     "item_null_talisman"
+    ],
+    "Early_Game": [
+     "item_boots",
+     "item_magic_stick",
+     "item_hand_of_midas",
+     "item_urn_of_shadows"
+    ],
+    "Mid_Items": [
+     "item_travel_boots",
+     "item_magic_wand",
+     "item_black_king_bar"
+    ],
+    "Late_Items": [
+     "item_ultimate_scepter",
+     "item_blink",
+     "item_sheepstick",
+     "item_aghanims_shard",
+     "item_sphere"
+    ],
+    "Other_Items": [
+     "item_blink",
+     "item_black_king_bar",
+     "item_skadi",
+     "item_shivas_guard",
+     "item_necronomicon_3",
+     "item_octarine_core",
+     "item_refresher",
+     "item_sphere",
+     "item_force_staff",
+     "item_bloodthorn",
+     "item_monkey_king_bar",
+     "item_hurricane_pike",
+     "item_mjollnir"
+    ]
+   }
+  },
+  "npc_dota_hero_jakiro": {
+   "author": "Valve",
+   "sourceFile": "default_jakiro.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_tango",
+     "item_ward_observer",
+     "item_tango",
+     "item_clarity",
+     "item_branches",
+     "item_enchanted_mango",
+     "item_enchanted_mango",
+     "item_enchanted_mango",
+     "item_flask"
+    ],
+    "Early_Game": [
+     "item_wind_lace",
+     "item_boots",
+     "item_magic_stick"
+    ],
+    "Mid_Items": [
+     "item_magic_wand",
+     "item_arcane_boots",
+     "item_cyclone",
+     "item_glimmer_cape"
+    ],
+    "Late_Items": [
+     "item_mekansm",
+     "item_force_staff",
+     "item_blink",
+     "item_guardian_greaves",
+     "item_aeon_disk"
+    ],
+    "Other_Items": [
+     "item_aether_lens",
+     "item_aghanims_shard",
+     "item_urn_of_shadows",
+     "item_ancient_janggo",
+     "item_pipe",
+     "item_rod_of_atos",
+     "item_ultimate_scepter",
+     "item_shivas_guard",
+     "item_sheepstick",
+     "item_ghost_scepter",
+     "item_octarine_core",
+     "item_sphere",
+     "item_lotus_orb",
+     "item_refresher"
+    ]
+   }
+  },
+  "npc_dota_hero_juggernaut": {
+   "author": "Valve",
+   "sourceFile": "default_juggernaut.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_tango",
+     "item_flask",
+     "item_slippers",
+     "item_circlet",
+     "item_branches"
+    ],
+    "Early_Game": [
+     "item_boots",
+     "item_magic_stick",
+     "item_wraith_band"
+    ],
+    "Mid_Items": [
+     "item_phase_boots",
+     "item_magic_wand",
+     "item_bfury"
+    ],
+    "Late_Items": [
+     "item_sange_and_yasha",
+     "item_abyssal_blade",
+     "item_butterfly",
+     "item_ultimate_scepter",
+     "item_aghanims_shard"
+    ],
+    "Other_Items": [
+     "item_swift_blink",
+     "item_bfury",
+     "item_manta",
+     "item_black_king_bar",
+     "item_monkey_king_bar",
+     "item_skadi",
+     "item_sphere",
+     "item_blink",
+     "item_silver_edge",
+     "item_satanic",
+     "item_mask_of_madness",
+     "item_mjollnir",
+     "item_assault",
+     "item_desolator",
+     "item_moon_shard"
+    ]
+   }
+  },
+  "npc_dota_hero_keeper_of_the_light": {
+   "author": "Valve",
+   "sourceFile": "default_keeper_of_the_light.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_ward_observer",
+     "item_tango",
+     "item_flask",
+     "item_clarity",
+     "item_branches",
+     "item_branches",
+     "item_wind_lace"
+    ],
+    "Early_Game": [
+     "item_magic_stick",
+     "item_tranquil_boots",
+     "item_infused_raindrop"
+    ],
+    "Mid_Items": [
+     "item_magic_wand",
+     "item_wind_lace",
+     "item_glimmer_cape",
+     "item_force_staff"
+    ],
+    "Late_Items": [
+     "item_force_staff",
+     "item_refresher",
+     "item_ghost",
+     "item_ultimate_scepter",
+     "item_aghanims_shard"
+    ],
+    "Other_Items": [
+     "item_cyclone",
+     "item_aeon_disk",
+     "item_aether_lens",
+     "item_sheepstick",
+     "item_guardian_greaves",
+     "item_shivas_guard",
+     "item_rod_of_atos",
+     "item_lotus_orb",
+     "item_sphere",
+     "item_travel_boots",
+     "item_blink",
+     "item_octarine_core",
+     "item_heavens_halberd"
+    ]
+   }
+  },
+  "npc_dota_hero_bird_samurai": {
+   "author": "Valve",
+   "sourceFile": "default_kez.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_tango",
+     "item_flask",
+     "item_slippers",
+     "item_branches",
+     "item_branches",
+     "item_branches"
+    ],
+    "Early_Game": [
+     "item_boots",
+     "item_wraith_band",
+     "item_magic_wand",
+     "item_blight_stone",
+     "item_falcon_blade"
+    ],
+    "Mid_Items": [
+     "item_power_treads",
+     "item_black_king_bar",
+     "item_manta",
+     "item_desolator"
+    ],
+    "Late_Items": [
+     "item_echo_sabre",
+     "item_abyssal_blade",
+     "item_butterfly",
+     "item_harpoon",
+     "item_monkey_king_bar",
+     "item_skadi",
+     "item_sphere",
+     "item_diffusal_blade_2",
+     "item_silver_edge",
+     "item_satanic",
+     "item_mjollnir",
+     "item_assault",
+     "item_moon_shard"
+    ]
+   }
+  },
+  "npc_dota_hero_kunkka": {
+   "author": "Valve",
+   "sourceFile": "default_kunkka.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_tango",
+     "item_quelling_blade",
+     "item_gauntlets",
+     "item_gauntlets"
+    ],
+    "Early_Game": [
+     "item_bottle",
+     "item_boots",
+     "item_magic_stick",
+     "item_bracer",
+     "item_bracer"
+    ],
+    "Mid_Items": [
+     "item_phase_boots",
+     "item_magic_wand",
+     "item_heavens_halberd",
+     "item_black_king_bar"
+    ],
+    "Late_Items": [
+     "item_assault",
+     "item_ultimate_scepter",
+     "item_shivas_guard",
+     "item_aghanims_shard"
+    ],
+    "Other_Items": [
+     "item_greater_crit",
+     "item_echo_sabre",
+     "item_armlet",
+     "item_heavens_halberd",
+     "item_assault",
+     "item_heart",
+     "item_bfury",
+     "item_silver_edge",
+     "item_rapier",
+     "item_radiance",
+     "item_orchid",
+     "item_sheepstick",
+     "item_sphere"
+    ]
+   }
+  },
+  "npc_dota_hero_largo": {
+   "author": "Valve",
+   "sourceFile": "default_largo.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_tango",
+     "item_ward_sentry",
+     "item_clarity",
+     "item_branches",
+     "item_branches",
+     "item_magic_stick",
+     "item_enchanted_mango"
+    ],
+    "Early_Game": [
+     "item_magic_wand",
+     "item_arcane_boots"
+    ],
+    "Mid_Items": [
+     "item_holy_locket",
+     "item_glimmer_cape",
+     "item_aghanims_shard"
+    ],
+    "Late_Items": [
+     "item_pavise",
+     "item_solar_crest",
+     "item_ultimate_scepter",
+     "item_guardian_greaves",
+     "item_lotus_orb"
+    ]
+   }
+  },
+  "npc_dota_hero_legion_commander": {
+   "author": "Valve",
+   "sourceFile": "default_legion_commander.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_tango",
+     "item_flask",
+     "item_quelling_blade",
+     "item_branches",
+     "item_branches"
+    ],
+    "Early_Game": [
+     "item_boots",
+     "item_magic_stick",
+     "item_orb_of_venom"
+    ],
+    "Mid_Items": [
+     "item_phase_boots",
+     "item_magic_wand",
+     "item_blink",
+     "item_blade_mail"
+    ],
+    "Late_Items": [
+     "item_assault",
+     "item_mjollnir",
+     "item_black_king_bar",
+     "item_aghanims_shard",
+     "item_heart"
+    ],
+    "Other_Items": [
+     "item_power_treads",
+     "item_silver_edge",
+     "item_abyssal_blade",
+     "item_desolator",
+     "item_satanic",
+     "item_orb_of_corrosion",
+     "item_heavens_halberd",
+     "item_invis_sword",
+     "item_ultimate_scepter",
+     "item_sphere",
+     "item_lotus_orb",
+     "item_armlet",
+     "item_monkey_king_bar",
+     "item_greater_crit",
+     "item_sange_and_yasha",
+     "item_echo_sabre"
+    ]
+   }
+  },
+  "npc_dota_hero_leshrac": {
+   "author": "Valve",
+   "sourceFile": "default_leshrac.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_ward_observer",
+     "item_tango",
+     "item_faerie_fire",
+     "item_mantle",
+     "item_circlet",
+     "item_branches"
+    ],
+    "Early_Game": [
+     "item_null_talisman",
+     "item_bottle",
+     "item_boots",
+     "item_infused_raindrop"
+    ],
+    "Mid_Items": [
+     "item_magic_wand",
+     "item_cyclone",
+     "item_travel_boots",
+     "item_bloodstone"
+    ],
+    "Late_Items": [
+     "item_black_king_bar",
+     "item_shivas_guard",
+     "item_octarine_core",
+     "item_sheepstick"
+    ],
+    "Other_Items": [
+     "item_arcane_blink",
+     "item_ultimate_scepter",
+     "item_ethereal_blade",
+     "item_sphere",
+     "item_lotus_orb",
+     "item_force_staff",
+     "item_aeon_disk",
+     "item_yasha_and_kaya",
+     "item_glimmer_cape",
+     "item_veil_of_discord",
+     "item_aether_lens",
+     "item_kaya_and_sange",
+     "item_spirit_vessel",
+     "item_guardian_greaves",
+     "item_blink",
+     "item_aghanims_shard"
+    ]
+   }
+  },
+  "npc_dota_hero_lich": {
+   "author": "Valve",
+   "sourceFile": "default_lich.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_tango",
+     "item_tango",
+     "item_flask",
+     "item_ward_observer",
+     "item_enchanted_mango",
+     "item_enchanted_mango",
+     "item_enchanted_mango"
+    ],
+    "Early_Game": [
+     "item_tranquil_boots",
+     "item_magic_stick"
+    ],
+    "Mid_Items": [
+     "item_glimmer_cape",
+     "item_force_staff"
+    ],
+    "Late_Items": [
+     "item_aeon_disk",
+     "item_aghanims_shard",
+     "item_ghost"
+    ],
+    "Other_Items": [
+     "item_urn_of_shadows",
+     "item_ultimate_scepter",
+     "item_guardian_greaves",
+     "item_blink",
+     "item_aether_lens",
+     "item_cyclone",
+     "item_sheepstick",
+     "item_shivas_guard",
+     "item_veil_of_discord",
+     "item_rod_of_atos",
+     "item_lotus_orb",
+     "item_refresher",
+     "item_octarine_core"
+    ]
+   }
+  },
+  "npc_dota_hero_life_stealer": {
+   "author": "Valve",
+   "sourceFile": "default_life_stealer.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_tango",
+     "item_orb_of_venom",
+     "item_quelling_blade"
+    ],
+    "Early_Game": [
+     "item_phase_boots",
+     "item_magic_stick"
+    ],
+    "Mid_Items": [
+     "item_armlet",
+     "item_sange_and_yasha"
+    ],
+    "Late_Items": [
+     "item_desolator",
+     "item_abyssal_blade",
+     "item_basher",
+     "item_assault"
+    ],
+    "Other_Items": [
+     "item_power_treads",
+     "item_desolator",
+     "item_nullifier",
+     "item_blink",
+     "item_black_king_bar",
+     "item_mjollnir",
+     "item_heavens_halberd",
+     "item_ultimate_scepter",
+     "item_solar_crest",
+     "item_silver_edge",
+     "item_sphere",
+     "item_bloodthorn",
+     "item_heart",
+     "item_monkey_king_bar",
+     "item_aghanims_shard",
+     "item_greater_crit",
+     "item_hand_of_midas",
+     "item_moon_shard"
+    ]
+   }
+  },
+  "npc_dota_hero_lina": {
+   "author": "Valve",
+   "sourceFile": "default_lina.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_ward_observer",
+     "item_tango",
+     "item_mantle",
+     "item_mantle",
+     "item_circlet",
+     "item_branches"
+    ],
+    "Early_Game": [
+     "item_null_talisman",
+     "item_bottle",
+     "item_boots",
+     "item_infused_raindrop"
+    ],
+    "Mid_Items": [
+     "item_magic_wand",
+     "item_cyclone",
+     "item_travel_boots"
+    ],
+    "Late_Items": [
+     "item_black_king_bar",
+     "item_ultimate_scepter",
+     "item_sphere",
+     "item_sheepstick",
+     "item_octarine_core"
+    ],
+    "Other_Items": [
+     "item_phase_boots",
+     "item_silver_edge",
+     "item_monkey_king_bar",
+     "item_greater_crit",
+     "item_aghanims_shard",
+     "item_ethereal_blade",
+     "item_shivas_guard",
+     "item_aeon_disk",
+     "item_yasha_and_kaya",
+     "item_bloodstone",
+     "item_bloodthorn",
+     "item_hurricane_pike"
+    ]
+   }
+  },
+  "npc_dota_hero_lion": {
+   "author": "Valve",
+   "sourceFile": "default_lion.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_tango",
+     "item_flask",
+     "item_branches",
+     "item_branches",
+     "item_wind_lace"
+    ],
+    "Early_Game": [
+     "item_magic_stick",
+     "item_boots"
+    ],
+    "Core_Items": [
+     "item_magic_wand",
+     "item_tranquil_boots"
+    ],
+    "Late_Items": [
+     "item_blink",
+     "item_aether_lens",
+     "item_ultimate_scepter",
+     "item_aeon_disk"
+    ],
+    "Other_Items": [
+     "item_aghanims_shard",
+     "item_dagon_5",
+     "item_ghost",
+     "item_glimmer_cape",
+     "item_lotus_orb",
+     "item_shivas_guard",
+     "item_veil_of_discord",
+     "item_octarine_core",
+     "item_force_staff",
+     "item_ethereal_blade",
+     "item_urn_of_shadows",
+     "item_invis_sword",
+     "item_guardian_greaves",
+     "item_sphere"
+    ]
+   }
+  },
+  "npc_dota_hero_lone_druid": {
+   "author": "Valve",
+   "sourceFile": "default_lone_druid.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_tango",
+     "item_branches"
+    ],
+    "Starting_Items_Secondary": [
+     "item_enchanted_mango",
+     "item_quelling_blade",
+     "item_orb_of_venom"
+    ],
+    "Early_Game": [
+     "item_boots"
+    ],
+    "Early_Game_Secondary": [
+     "item_boots",
+     "item_phase_boots",
+     "item_blight_stone"
+    ],
+    "Core_Items": [
+     "item_tranquil_boots",
+     "item_magic_wand"
+    ],
+    "Core_Items_Secondary": [
+     "item_phase_boots",
+     "item_radiance",
+     "item_mask_of_madness",
+     "item_desolator",
+     "item_basher",
+     "item_assault",
+     "item_abyssal_blade"
+    ],
+    "Late_Items": [
+     "item_butterfly",
+     "item_travel_boots",
+     "item_mjollnir",
+     "item_black_king_bar",
+     "item_aghanims_shard"
+    ],
+    "Other_Items": [
+     "item_pipe",
+     "item_solar_crest",
+     "item_monkey_king_bar",
+     "item_vladmir",
+     "item_ultimate_scepter",
+     "item_ghost",
+     "item_greater_crit"
+    ]
+   }
+  },
+  "npc_dota_hero_luna": {
+   "author": "Valve",
+   "sourceFile": "default_luna.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_circlet",
+     "item_tango",
+     "item_flask",
+     "item_branches"
+    ],
+    "Early_Game": [
+     "item_magic_stick",
+     "item_boots",
+     "item_wraith_band"
+    ],
+    "Mid_Items": [
+     "item_magic_wand",
+     "item_power_treads",
+     "item_mask_of_madness",
+     "item_manta"
+    ],
+    "Late_Items": [
+     "item_butterfly",
+     "item_satanic",
+     "item_black_king_bar"
+    ],
+    "Other_Items": [
+     "item_ultimate_scepter",
+     "item_rapier",
+     "item_falcon_blade",
+     "item_aghanims_shard",
+     "item_monkey_king_bar",
+     "item_skadi",
+     "item_sange_and_yasha",
+     "item_dragon_lance",
+     "item_sphere",
+     "item_assault",
+     "item_hurricane_pike",
+     "item_desolator",
+     "item_bloodthorn"
+    ]
+   }
+  },
+  "npc_dota_hero_lycan": {
+   "author": "Valve",
+   "sourceFile": "default_lycan.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_tango",
+     "item_flask",
+     "item_ring_of_protection",
+     "item_quelling_blade"
+    ],
+    "Early_Game": [
+     "item_necronomicon"
+    ],
+    "Mid_Items": [
+     "item_assault",
+     "item_necronomicon_3"
+    ],
+    "Late_Items": [
+     "item_black_king_bar",
+     "item_abyssal_blade",
+     "item_desolator",
+     "item_ultimate_scepter",
+     "item_aghanims_shard"
+    ],
+    "Other_Items": [
+     "item_solar_crest",
+     "item_ancient_janggo",
+     "item_heavens_halberd",
+     "item_power_treads",
+     "item_monkey_king_bar",
+     "item_bloodthorn",
+     "item_nullifier",
+     "item_sange_and_yasha",
+     "item_satanic",
+     "item_mjollnir",
+     "item_sphere",
+     "item_sheepstick",
+     "item_moon_shard",
+     "item_travel_boots"
+    ]
+   }
+  },
+  "npc_dota_hero_magnataur": {
+   "author": "Valve",
+   "sourceFile": "default_magnataur.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_tango",
+     "item_quelling_blade",
+     "item_gauntlets",
+     "item_circlet"
+    ],
+    "Early_Game": [
+     "item_bottle",
+     "item_boots",
+     "item_magic_stick",
+     "item_bracer"
+    ],
+    "Mid_Items": [
+     "item_magic_wand",
+     "item_arcane_boots",
+     "item_blink",
+     "item_invis_sword",
+     "item_aghanims_shard"
+    ],
+    "Late_Items": [
+     "item_force_staff",
+     "item_refresher",
+     "item_shivas_guard"
+    ],
+    "Other_Items": [
+     "item_octarine_core",
+     "item_bfury",
+     "item_greater_crit",
+     "item_heart",
+     "item_assault",
+     "item_ultimate_scepter",
+     "item_echo_sabre",
+     "item_guardian_greaves",
+     "item_heavens_halberd",
+     "item_black_king_bar",
+     "item_bloodthorn",
+     "item_sphere",
+     "item_ghost",
+     "item_cyclone",
+     "item_moonshard"
+    ]
+   }
+  },
+  "npc_dota_hero_marci": {
+   "author": "Valve",
+   "sourceFile": "default_marci.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_tango",
+     "item_flask",
+     "item_branches",
+     "item_branches",
+     "item_enchanted_mango",
+     "item_quelling_blade"
+    ],
+    "Early_Game": [
+     "item_boots",
+     "item_magic_stick",
+     "item_orb_of_venom"
+    ],
+    "Mid_Items": [
+     "item_phase_boots",
+     "item_magic_wand",
+     "item_basher",
+     "item_hood_of_defiance"
+    ],
+    "Late_Items": [
+     "item_black_king_bar",
+     "item_satanic",
+     "item_abyssal_blade"
+    ],
+    "Other_Items": [
+     "item_pipe",
+     "item_orb_of_corrosion",
+     "item_heart",
+     "item_lotus_orb",
+     "item_sange_and_yasha",
+     "item_blade_mail",
+     "item_maelstrom",
+     "item_assault",
+     "item_bloodthorn",
+     "item_skadi",
+     "item_sphere",
+     "item_desolator",
+     "item_greater_crit"
+    ]
+   }
+  },
+  "npc_dota_hero_mars": {
+   "author": "Valve",
+   "sourceFile": "default_mars.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_tango",
+     "item_flask",
+     "item_enchanted_mango",
+     "item_quelling_blade",
+     "item_branches",
+     "item_branches"
+    ],
+    "Early_Game": [
+     "item_boots",
+     "item_magic_stick",
+     "item_bracer",
+     "item_soul_ring"
+    ],
+    "Mid_Items": [
+     "item_phase_boots",
+     "item_magic_wand",
+     "item_blink",
+     "item_black_king_bar"
+    ],
+    "Late_Items": [
+     "item_black_king_bar",
+     "item_desolator",
+     "item_assault",
+     "item_satanic",
+     "item_ultimate_scepter"
+    ],
+    "Other_Items": [
+     "item_pipe",
+     "item_blade_mail",
+     "item_heart",
+     "item_abyssal_blade",
+     "item_lotus_orb",
+     "item_aghanims_shard",
+     "item_vladmir",
+     "item_solar_crest",
+     "item_hood_of_defiance",
+     "item_overwhelming_blink",
+     "item_basher",
+     "item_abyssal_blade",
+     "item_cyclone"
+    ]
+   }
+  },
+  "npc_dota_hero_medusa": {
+   "author": "Valve",
+   "sourceFile": "default_medusa.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_circlet",
+     "item_branches",
+     "item_tango",
+     "item_flask"
+    ],
+    "Early_Game": [
+     "item_wraith_band",
+     "item_boots",
+     "item_wraith_band",
+     "item_magic_stick"
+    ],
+    "Mid_Items": [
+     "item_power_treads",
+     "item_magic_wand",
+     "item_manta",
+     "item_skadi"
+    ],
+    "Late_Items": [
+     "item_greater_crit",
+     "item_butterfly",
+     "item_aghanims_shard",
+     "item_black_king_bar"
+    ],
+    "Other_Items": [
+     "item_mjollnir",
+     "item_sheepstick",
+     "item_monkey_king_bar",
+     "item_sange_and_yasha",
+     "item_mask_of_madness",
+     "item_rapier",
+     "item_moon_shard",
+     "item_bloodthorn",
+     "item_heart",
+     "item_assault",
+     "item_hurricane_pike",
+     "item_hand_of_midas",
+     "item_swift_blink"
+    ]
+   }
+  },
+  "npc_dota_hero_meepo": {
+   "author": "Valve",
+   "sourceFile": "default_meepo.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_tango",
+     "item_slippers",
+     "item_circlet",
+     "item_slippers"
+    ],
+    "Early_Game": [
+     "item_wraith_band",
+     "item_wraith_band",
+     "item_boots"
+    ],
+    "Core_Items": [
+     "item_power_treads",
+     "item_ethereal_blade",
+     "item_blink"
+    ],
+    "Late_Items": [
+     "item_ultimate_scepter",
+     "item_skadi",
+     "item_heart"
+    ],
+    "Other_Items": [
+     "item_aghanims_shard",
+     "item_pipe",
+     "item_sheepstick",
+     "item_assault",
+     "item_necronomicon_3",
+     "item_ghost",
+     "item_dragon_lance",
+     "item_bloodthorn",
+     "item_manta",
+     "item_sange_and_yasha",
+     "item_abyssal_blade"
+    ]
+   }
+  },
+  "npc_dota_hero_mirana": {
+   "author": "Valve",
+   "sourceFile": "default_mirana.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_wraith_band",
+     "item_tango"
+    ],
+    "Early_Game": [
+     "item_bottle",
+     "item_magic_stick",
+     "item_boots"
+    ],
+    "Mid_Items": [
+     "item_magic_wand",
+     "item_arcane_boots",
+     "item_ultimate_scepter"
+    ],
+    "Late_Items": [
+     "item_blink",
+     "item_cyclone",
+     "item_ghost",
+     "item_ethereal_blade"
+    ],
+    "Other_Items": [
+     "item_sphere",
+     "item_solar_crest",
+     "item_falcon_blade",
+     "item_dagon_5",
+     "item_spirit_vessel",
+     "item_cyclone",
+     "item_lotus_orb",
+     "item_guardian_greaves",
+     "item_sange_and_yasha",
+     "item_hurricane_pike",
+     "item_bloodthorn",
+     "item_veil_of_discord"
+    ]
+   }
+  },
+  "npc_dota_hero_monkey_king": {
+   "author": "Valve",
+   "sourceFile": "default_monkey_king.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_tango",
+     "item_slippers",
+     "item_circlet",
+     "item_quelling_blade"
+    ],
+    "Early_Game": [
+     "item_wraith_band",
+     "item_orb_of_venom",
+     "item_boots",
+     "item_infused_raindrop"
+    ],
+    "Mid_Items": [
+     "item_magic_wand",
+     "item_phase_boots",
+     "item_maelstrom",
+     "item_black_king_bar"
+    ],
+    "Late_Items": [
+     "item_ultimate_scepter",
+     "item_sange_and_yasha",
+     "item_abyssal_blade",
+     "item_skadi"
+    ],
+    "Other_Items": [
+     "item_power_treads",
+     "item_aghanims_shard",
+     "item_desolator",
+     "item_silver_edge",
+     "item_manta",
+     "item_butterfly",
+     "item_satanic",
+     "item_monkey_king_bar",
+     "item_mjollnir",
+     "item_assault",
+     "item_heavens_halberd",
+     "item_bfury",
+     "item_bloodthorn",
+     "item_nullifier",
+     "item_greater_crit",
+     "item_rapier",
+     "item_witch_blade",
+     "item_gungir"
+    ]
+   }
+  },
+  "npc_dota_hero_morphling": {
+   "author": "Valve",
+   "sourceFile": "default_morphling.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_slippers",
+     "item_circlet",
+     "item_tango",
+     "item_flask",
+     "item_branches",
+     "item_branches"
+    ],
+    "Early_Game": [
+     "item_boots",
+     "item_magic_stick",
+     "item_wraith_band",
+     "item_lifesteal"
+    ],
+    "Mid_Items": [
+     "item_power_treads",
+     "item_magic_wand",
+     "item_manta"
+    ],
+    "Late_Items": [
+     "item_ethereal_blade",
+     "item_skadi",
+     "item_black_king_bar",
+     "item_butterfly",
+     "item_satanic"
+    ],
+    "Other_Items": [
+     "item_ultimate_scepter",
+     "item_swift_blink",
+     "item_dragon_lance",
+     "item_hurricane_pike",
+     "item_falcon_blade",
+     "item_sange_and_yasha",
+     "item_monkey_king_bar",
+     "item_rapier",
+     "item_mjollnir",
+     "item_ultimate_scepter",
+     "item_aether_lens",
+     "item_sheepstick"
+    ]
+   }
+  },
+  "npc_dota_hero_muerta": {
+   "author": "Valve",
+   "sourceFile": "default_muerta.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_tango",
+     "item_circlet",
+     "item_mantle",
+     "item_branches",
+     "item_branches",
+     "item_faerie_fire"
+    ],
+    "Early_Game": [
+     "item_null_talisman",
+     "item_boots",
+     "item_magic_wand",
+     "item_falcon_blade"
+    ],
+    "Mid_Items": [
+     "item_power_treads",
+     "item_dragon_lance",
+     "item_maelstrom"
+    ],
+    "Late_Items": [
+     "item_hurricane_pike",
+     "item_gungir",
+     "item_black_king_bar",
+     "item_greater_crit"
+    ]
+   }
+  },
+  "npc_dota_hero_naga_siren": {
+   "author": "Valve",
+   "sourceFile": "default_naga_siren.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_circlet",
+     "item_slippers",
+     "item_tango",
+     "item_flask",
+     "item_branches",
+     "item_branches"
+    ],
+    "Early_Game": [
+     "item_boots",
+     "item_wraith_band",
+     "item_wraith_band",
+     "item_magic_stick"
+    ],
+    "Mid_Items": [
+     "item_power_treads",
+     "item_manta"
+    ],
+    "Late_Items": [
+     "item_heart",
+     "item_butterfly",
+     "item_abyssal_blade",
+     "item_swift_blink"
+    ],
+    "Other_Items": [
+     "item_sphere",
+     "item_ultimate_scepter",
+     "item_skadi",
+     "item_hand_of_midas",
+     "item_sange_and_yasha",
+     "item_moonshard",
+     "item_aghanims_shard",
+     "item_travel_boots",
+     "item_black_king_bar"
+    ]
+   }
+  },
+  "npc_dota_hero_necrolyte": {
+   "author": "Valve",
+   "sourceFile": "default_necrolyte.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_null_talisman",
+     "item_tango"
+    ],
+    "Early_Game": [
+     "item_magic_stick",
+     "item_boots",
+     "item_hood_of_defiance"
+    ],
+    "Mid_Items": [
+     "item_magic_wand",
+     "item_arcane_boots",
+     "item_mekansm",
+     "item_guardian_greaves"
+    ],
+    "Late_Items": [
+     "item_ghost",
+     "item_aghanims_shard",
+     "item_lotus_orb",
+     "item_eternal_shroud"
+    ],
+    "Other_Items": [
+     "item_power_treads",
+     "item_bloodstone",
+     "item_sheepstick",
+     "item_shivas_guard",
+     "item_pipe",
+     "item_heart",
+     "item_radiance",
+     "item_octarine_core",
+     "item_blink",
+     "item_dagon_5",
+     "item_falcon_blade",
+     "item_blade_mail",
+     "item_cyclone",
+     "item_veil_of_discord",
+     "item_force_staff",
+     "item_urn_of_shadows",
+     "item_ultimate_scepter",
+     "item_glimmer_cape"
+    ]
+   }
+  },
+  "npc_dota_hero_nevermore": {
+   "author": "Valve",
+   "sourceFile": "default_nevermore.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_slippers",
+     "item_tango",
+     "item_enchanted_mango",
+     "item_enchanted_mango",
+     "item_enchanted_mango",
+     "item_circlet"
+    ],
+    "Early_Game": [
+     "item_bottle",
+     "item_magic_stick",
+     "item_boots"
+    ],
+    "Mid_Items": [
+     "item_magic_wand",
+     "item_cyclone",
+     "item_travel_boots",
+     "item_blink"
+    ],
+    "Late_Items": [
+     "item_black_king_bar",
+     "item_arcane_blink",
+     "item_abyssal_blade",
+     "item_aghanims_shard"
+    ],
+    "Other_Items": [
+     "item_assault",
+     "item_greater_crit",
+     "item_butterfly",
+     "item_monkey_king_bar",
+     "item_skadi",
+     "item_sange_and_yasha",
+     "item_satanic",
+     "item_manta",
+     "item_ultimate_scepter",
+     "item_sphere",
+     "item_bloodthorn",
+     "item_refresher",
+     "item_octarine_core",
+     "item_sheepstick"
+    ]
+   }
+  },
+  "npc_dota_hero_night_stalker": {
+   "author": "Valve",
+   "sourceFile": "default_night_stalker.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_enchanted_mango",
+     "item_flask",
+     "item_tango",
+     "item_enchanted_mango",
+     "item_quelling_blade",
+     "item_branches",
+     "item_branches"
+    ],
+    "Early_Game": [
+     "item_magic_stick",
+     "item_boots",
+     "item_urn_of_shadows"
+    ],
+    "Mid_Items": [
+     "item_magic_wand",
+     "item_phase_boots",
+     "item_black_king_bar",
+     "item_blink"
+    ],
+    "Late_Items": [
+     "item_assault",
+     "item_abyssal_blade",
+     "item_aghanims_shard",
+     "item_heavens_halberd"
+    ],
+    "Other_Items": [
+     "item_heart",
+     "item_ultimate_scepter",
+     "item_armlet",
+     "item_solar_crest",
+     "item_satanic",
+     "item_moon_shard",
+     "item_lotus_orb",
+     "item_silver_edge",
+     "item_pipe",
+     "item_ancient_janggo",
+     "item_sange_and_yasha",
+     "item_blade_mail",
+     "item_desolator",
+     "item_mjollnir",
+     "item_crimson_guard",
+     "item_mask_of_madness"
+    ]
+   }
+  },
+  "npc_dota_hero_nyx_assassin": {
+   "author": "Valve",
+   "sourceFile": "default_nyx_assassin.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_tango",
+     "item_boots"
+    ],
+    "Early_Game": [
+     "item_tranquil_boots",
+     "item_urn_of_shadows",
+     "item_magic_stick"
+    ],
+    "Mid_Items": [
+     "item_cyclone",
+     "item_magic_wand",
+     "item_aghanims_shard"
+    ],
+    "Late_Items": [
+     "item_blink",
+     "item_ultimate_scepter",
+     "item_aeon_disk"
+    ],
+    "Other_Items": [
+     "item_force_staff",
+     "item_dagon_5",
+     "item_sheepstick",
+     "item_meteor_hammer",
+     "item_sphere",
+     "item_lotus_orb",
+     "item_octarine_core",
+     "item_ethereal_blade",
+     "item_ghost",
+     "item_spirit_vessel",
+     "item_aether_lens",
+     "item_solar_crest",
+     "item_guardian_greaves"
+    ]
+   }
+  },
+  "npc_dota_hero_obsidian_destroyer": {
+   "author": "Valve",
+   "sourceFile": "default_obsidian_destroyer.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_crown",
+     "item_tango",
+     "item_branches"
+    ],
+    "Early_Game": [
+     "item_boots",
+     "item_infused_raindrop",
+     "item_meteor_hammer"
+    ],
+    "Mid_Items": [
+     "item_magic_wand",
+     "item_power_treads",
+     "item_blink",
+     "item_black_king_bar"
+    ],
+    "Late_Items": [
+     "item_ultimate_scepter",
+     "item_moon_shard",
+     "item_sheepstick"
+    ],
+    "Other_Items": [
+     "item_hand_of_midas",
+     "item_aether_lens",
+     "item_aghanims_shard",
+     "item_shivas_guard",
+     "item_bloodthorn",
+     "item_sphere",
+     "item_hurricane_pike",
+     "item_refresher",
+     "item_octarine_core",
+     "item_yasha_and_kaya",
+     "item_witch_blade",
+     "item_bloodstone",
+     "item_ethereal_blade",
+     "item_assault"
+    ]
+   }
+  },
+  "npc_dota_hero_ogre_magi": {
+   "author": "Valve",
+   "sourceFile": "default_ogre_magi.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_tango",
+     "item_tango",
+     "item_ward_observer",
+     "item_clarity",
+     "item_orb_of_venom",
+     "item_enchanted_mango"
+    ],
+    "Early_Game": [
+     "item_boots",
+     "item_magic_stick",
+     "item_infused_raindrop"
+    ],
+    "Mid_Items": [
+     "item_magic_wand",
+     "item_arcane_boots",
+     "item_glimmer_cape"
+    ],
+    "Late_Items": [
+     "item_ultimate_scepter",
+     "item_aether_lens",
+     "item_ghost",
+     "item_aghanims_shard",
+     "item_lotus_orb"
+    ],
+    "Other_Items": [
+     "item_soul_ring",
+     "item_urn_of_shadows",
+     "item_solar_crest",
+     "item_blink",
+     "item_guardian_greaves",
+     "item_sheepstick",
+     "item_shivas_guard",
+     "item_bloodstone",
+     "item_veil_of_discord",
+     "item_cyclone",
+     "item_force_staff",
+     "item_octarine_core",
+     "item_ethereal_blade"
+    ]
+   }
+  },
+  "npc_dota_hero_omniknight": {
+   "author": "Valve",
+   "sourceFile": "default_omniknight.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_clarity",
+     "item_clarity",
+     "item_branches",
+     "item_enchanted_mango",
+     "item_enchanted_mango",
+     "item_tango",
+     "item_tango",
+     "item_ward_observer",
+     "item_flask"
+    ],
+    "Early_Game": [
+     "item_soul_ring",
+     "item_boots",
+     "item_magic_stick"
+    ],
+    "Mid_Items": [
+     "item_arcane_boots",
+     "item_magic_wand"
+    ],
+    "Late_Items": [
+     "item_aether_lens",
+     "item_force_staff",
+     "item_ghost",
+     "item_mekansm",
+     "item_guardian_greaves",
+     "item_aeon_disk"
+    ],
+    "Other_Items": [
+     "item_ultimate_scepter",
+     "item_glimmer_cape",
+     "item_sheepstick",
+     "item_shivas_guard",
+     "item_solar_crest",
+     "item_sange_and_yasha",
+     "item_refresher",
+     "item_radiance",
+     "item_cyclone",
+     "item_pipe",
+     "item_lotus_orb",
+     "item_octarine_core"
+    ]
+   }
+  },
+  "npc_dota_hero_oracle": {
+   "author": "Valve",
+   "sourceFile": "default_oracle.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_tango",
+     "item_tango",
+     "item_clarity",
+     "item_clarity",
+     "item_branches",
+     "item_flask",
+     "item_enchanted_mango",
+     "item_enchanted_mango"
+    ],
+    "Early_Game": [
+     "item_magic_stick",
+     "item_boots",
+     "item_wind_lace"
+    ],
+    "Mid_Items": [
+     "item_magic_wand",
+     "item_arcane_boots",
+     "item_glimmer_cape"
+    ],
+    "Late_Items": [
+     "item_aether_lens",
+     "item_force_staff",
+     "item_guardian_greaves",
+     "item_cyclone",
+     "item_aeon_disk"
+    ],
+    "Other_Items": [
+     "item_soul_ring",
+     "item_aghanims_shard",
+     "item_blink",
+     "item_solar_crest",
+     "item_veil_of_discord",
+     "item_ghost",
+     "item_ultimate_scepter",
+     "item_urn_of_shadows",
+     "item_sheepstick",
+     "item_shivas_guard",
+     "item_ethereal_blade",
+     "item_lotus_orb"
+    ]
+   }
+  },
+  "npc_dota_hero_pangolier": {
+   "author": "Valve",
+   "sourceFile": "default_pangolier.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_quelling_blade",
+     "item_tango",
+     "item_tango",
+     "item_flask",
+     "item_branches",
+     "item_branches"
+    ],
+    "Early_Game": [
+     "item_boots",
+     "item_magic_wand",
+     "item_orb_of_corrosion"
+    ],
+    "Mid_Items": [
+     "item_power_treads",
+     "item_blink",
+     "item_cyclone",
+     "item_aghanims_shard"
+    ],
+    "Late_Items": [
+     "item_basher",
+     "item_abyssal_blade",
+     "item_lotus_orb",
+     "item_sphere"
+    ],
+    "Other_Items": [
+     "item_heart",
+     "item_assault",
+     "item_pipe",
+     "item_vladmir",
+     "item_heavens_halberd",
+     "item_diffusal_blade",
+     "item_ultimate_scepter",
+     "item_octarine_core",
+     "item_greater_crit",
+     "item_maelstrom",
+     "item_spirit_vessel",
+     "item_tranquil_boots",
+     "item_moon_shard",
+     "item_gungir"
+    ]
+   }
+  },
+  "npc_dota_hero_phantom_assassin": {
+   "author": "Valve",
+   "sourceFile": "default_phantom_assassin.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_quelling_blade",
+     "item_tango",
+     "item_tango",
+     "item_orb_of_venom"
+    ],
+    "Early_Game": [
+     "item_boots",
+     "item_magic_wand",
+     "item_orb_of_corrosion"
+    ],
+    "Mid_Items": [
+     "item_power_treads",
+     "item_bfury",
+     "item_desolator"
+    ],
+    "Late_Items": [
+     "item_black_king_bar",
+     "item_abyssal_blade",
+     "item_ultimate_scepter"
+    ],
+    "Other_Items": [
+     "item_aghanims_shard",
+     "item_phase_boots",
+     "item_satanic",
+     "item_butterfly",
+     "item_monkey_king_bar",
+     "item_assault",
+     "item_sange_and_yasha",
+     "item_manta",
+     "item_nullifier",
+     "item_heart",
+     "item_moon_shard",
+     "item_rapier",
+     "item_sphere",
+     "item_skadi"
+    ]
+   }
+  },
+  "npc_dota_hero_phantom_lancer": {
+   "author": "Valve",
+   "sourceFile": "default_phantom_lancer.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_tango",
+     "item_flask",
+     "item_quelling_blade",
+     "item_branches",
+     "item_circlet"
+    ],
+    "Early_Game": [
+     "item_boots",
+     "item_magic_stick",
+     "item_wraith_band"
+    ],
+    "Mid_Items": [
+     "item_power_treads",
+     "item_magic_wand",
+     "item_diffusal_blade"
+    ],
+    "Late_Items": [
+     "item_manta",
+     "item_heart",
+     "item_abyssal_blade",
+     "item_skadi"
+    ],
+    "Other_Items": [
+     "item_ultimate_scepter",
+     "item_rapier",
+     "item_aghanims_shard",
+     "item_nullifier",
+     "item_sange_and_yasha",
+     "item_greater_crit",
+     "item_satanic",
+     "item_monkey_king_bar",
+     "item_black_king_bar",
+     "item_sphere",
+     "item_silver_edge",
+     "item_bloodthorn",
+     "item_hand_of_midas"
+    ]
+   }
+  },
+  "npc_dota_hero_phoenix": {
+   "author": "Valve",
+   "sourceFile": "default_phoenix.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_tango",
+     "item_flask",
+     "item_wind_lace",
+     "item_branches",
+     "item_branches"
+    ],
+    "Early_Game": [
+     "item_magic_stick",
+     "item_tranquil_boots",
+     "item_urn_of_shadows"
+    ],
+    "Mid_Items": [
+     "item_magic_wand",
+     "item_cyclone",
+     "item_spirit_vessel"
+    ],
+    "Late_Items": [
+     "item_shivas_guard",
+     "item_ultimate_scepter",
+     "item_aeon_disk",
+     "item_refresher"
+    ],
+    "Other_Items": [
+     "item_ghost",
+     "item_aghanims_shard",
+     "item_solar_crest",
+     "item_pipe",
+     "item_heavens_halberd",
+     "item_heart",
+     "item_radiance",
+     "item_aether_lens",
+     "item_force_staff",
+     "item_octarine_core",
+     "item_sheepstick",
+     "item_sphere",
+     "item_glimmer_cape",
+     "item_lotus_orb",
+     "item_meteor_hammer"
+    ]
+   }
+  },
+  "npc_dota_hero_primal_beast": {
+   "author": "Valve",
+   "sourceFile": "default_primal_beast.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_tango",
+     "item_enchanted_mango",
+     "item_quelling_blade",
+     "item_branches"
+    ],
+    "Early_Game": [
+     "item_boots",
+     "item_magic_stick",
+     "item_orb_of_venom"
+    ],
+    "Mid_Items": [
+     "item_phase_boots",
+     "item_armlet",
+     "item_blink"
+    ],
+    "Late_Items": [
+     "item_assault",
+     "item_black_king_bar"
+    ],
+    "Other_Items": [
+     "item_power_treads",
+     "item_sange_and_yasha",
+     "item_echo_sabre",
+     "item_heavens_halberd",
+     "item_abyssal_blade",
+     "item_solar_crest",
+     "item_silver_edge",
+     "item_sphere",
+     "item_bloodthorn",
+     "item_heart",
+     "item_monkey_king_bar",
+     "item_radiance",
+     "item_greater_crit",
+     "item_hand_of_midas",
+     "item_moon_shard",
+     "item_overwhelming_blink"
+    ]
+   }
+  },
+  "npc_dota_hero_puck": {
+   "author": "Valve",
+   "sourceFile": "default_puck.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_ward_observer",
+     "item_tango",
+     "item_mantle",
+     "item_mantle",
+     "item_circlet",
+     "item_branches"
+    ],
+    "Early_Game": [
+     "item_null_talisman",
+     "item_null_talisman",
+     "item_bottle",
+     "item_boots"
+    ],
+    "Mid_Items": [
+     "item_magic_wand",
+     "item_power_treads",
+     "item_witch_blade"
+    ],
+    "Late_Items": [
+     "item_ultimate_scepter",
+     "item_blink",
+     "item_sphere",
+     "item_aether_lens",
+     "item_octarine_core"
+    ],
+    "Other_Items": [
+     "item_aghanims_shard",
+     "item_dagon_5",
+     "item_aeon_disk",
+     "item_sheepstick",
+     "item_shivas_guard",
+     "item_ethereal_blade",
+     "item_desolator",
+     "item_greater_crit",
+     "item_bloodthorn",
+     "item_black_king_bar",
+     "item_travel_boots",
+     "item_spirit_vessel",
+     "item_lotus_orb",
+     "item_heavens_halberd"
+    ]
+   }
+  },
+  "npc_dota_hero_pudge": {
+   "author": "Valve",
+   "sourceFile": "default_pudge.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_wind_lace",
+     "item_flask",
+     "item_tango",
+     "item_enchanted_mango",
+     "item_enchanted_mango"
+    ],
+    "Early_Game": [
+     "item_magic_stick",
+     "item_tranquil_boots",
+     "item_infused_raindrop"
+    ],
+    "Mid_Items": [
+     "item_magic_wand",
+     "item_aether_lens",
+     "item_hood_of_defiance"
+    ],
+    "Late_Items": [
+     "item_blink",
+     "item_heart",
+     "item_pipe",
+     "item_ultimate_scepter"
+    ],
+    "Other_Items": [
+     "item_urn_of_shadows",
+     "item_soul_ring",
+     "item_glimmer_cape",
+     "item_crimson_guard",
+     "item_rod_of_atos",
+     "item_ghost",
+     "item_shivas_guard",
+     "item_force_staff",
+     "item_lotus_orb",
+     "item_aghanims_shard",
+     "item_ultimate_scepter",
+     "item_octarine_core",
+     "item_cyclone",
+     "item_blade_mail",
+     "item_ethereal_blade",
+     "item_black_king_bar"
+    ]
+   }
+  },
+  "npc_dota_hero_pugna": {
+   "author": "Valve",
+   "sourceFile": "default_pugna.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_branches",
+     "item_circlet",
+     "item_enchanted_mango",
+     "item_faerie_fire",
+     "item_mantle"
+    ],
+    "Early_Game": [
+     "item_magic_stick",
+     "item_boots",
+     "item_null_talisman",
+     "item_null_talisman"
+    ],
+    "Mid_Items": [
+     "item_magic_wand",
+     "item_arcane_boots",
+     "item_aether_lens",
+     "item_glimmer_cape"
+    ],
+    "Late_Items": [
+     "item_aeon_disk",
+     "item_ultimate_scepter",
+     "item_black_king_bar",
+     "item_dagon_5"
+    ],
+    "Other_Items": [
+     "item_guardian_greaves",
+     "item_aghanims_shard",
+     "item_sheepstick",
+     "item_shivas_guard",
+     "item_dagon_5",
+     "item_veil_of_discord",
+     "item_force_staff",
+     "item_cyclone",
+     "item_octarine_core",
+     "item_sphere",
+     "item_ghost",
+     "item_lotus_orb",
+     "item_heart",
+     "item_urn_of_shadows"
+    ]
+   }
+  },
+  "npc_dota_hero_queenofpain": {
+   "author": "Valve",
+   "sourceFile": "default_queenofpain.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_tango",
+     "item_null_talisman"
+    ],
+    "Early_Game": [
+     "item_bottle",
+     "item_boots",
+     "item_magic_stick",
+     "item_infused_raindrop"
+    ],
+    "Mid_Items": [
+     "item_power_treads",
+     "item_magic_wand",
+     "item_orchid"
+    ],
+    "Late_Items": [
+     "item_black_king_bar",
+     "item_shivas_guard",
+     "item_bloodthorn",
+     "item_sheepstick"
+    ],
+    "Other_Items": [
+     "item_skadi",
+     "item_mjollnir",
+     "item_ultimate_scepter",
+     "item_aghanims_shard",
+     "item_sphere",
+     "item_monkey_king_bar",
+     "item_desolator",
+     "item_assault",
+     "item_kaya_and_sange",
+     "item_aeon_disk",
+     "item_witch_blade",
+     "item_lotus_orb",
+     "item_greater_crit",
+     "item_bloodstone"
+    ]
+   }
+  },
+  "npc_dota_hero_rattletrap": {
+   "author": "Valve",
+   "sourceFile": "default_rattletrap.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_tango",
+     "item_flask",
+     "item_enchanted_mango",
+     "item_clarity",
+     "item_branches",
+     "item_ring_of_protection"
+    ],
+    "Early_Game": [
+     "item_boots",
+     "item_magic_stick",
+     "item_urn_of_shadows",
+     "item_infused_raindrop"
+    ],
+    "Mid_Items": [
+     "item_tranquil_boots",
+     "item_magic_wand",
+     "item_blade_mail",
+     "item_spirit_vessel"
+    ],
+    "Late_Items": [
+     "item_ultimate_scepter",
+     "item_shivas_guard",
+     "item_force_staff",
+     "item_aghanims_shard"
+    ],
+    "Other_Items": [
+     "item_power_treads",
+     "item_black_king_bar",
+     "item_lotus_orb",
+     "item_solar_crest",
+     "item_ancient_janggo",
+     "item_pipe",
+     "item_orchid",
+     "item_crimson_guard",
+     "item_heavens_halberd",
+     "item_octarine_core",
+     "item_cyclone",
+     "item_sphere"
+    ]
+   }
+  },
+  "npc_dota_hero_razor": {
+   "author": "Valve",
+   "sourceFile": "default_razor.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_circlet",
+     "item_tango",
+     "item_slippers",
+     "item_branches",
+     "item_branches",
+     "item_faerie_fire"
+    ],
+    "Early_Game": [
+     "item_magic_stick",
+     "item_boots",
+     "item_wraith_band",
+     "item_infused_raindrop"
+    ],
+    "Mid_Items": [
+     "item_magic_wand",
+     "item_power_treads",
+     "item_cyclone",
+     "item_black_king_bar"
+    ],
+    "Late_Items": [
+     "item_sange_and_yasha",
+     "item_blink",
+     "item_assault",
+     "item_shivas_guard",
+     "item_swift_blink"
+    ],
+    "Other_Items": [
+     "item_aghanims_shard",
+     "item_ultimate_scepter",
+     "item_falcon_blade",
+     "item_heart",
+     "item_butterfly",
+     "item_shivas_guard",
+     "item_monkey_king_bar",
+     "item_heavens_halberd",
+     "item_skadi",
+     "item_sphere",
+     "item_lotus_orb",
+     "item_hurricane_pike",
+     "item_manta",
+     "item_mjollnir",
+     "item_refresher"
+    ]
+   }
+  },
+  "npc_dota_hero_riki": {
+   "author": "Valve",
+   "sourceFile": "default_riki.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_tango",
+     "item_tango",
+     "item_orb_of_venom",
+     "item_quelling_blade"
+    ],
+    "Early_Game": [
+     "item_boots",
+     "item_magic_stick",
+     "item_orb_of_corrosion"
+    ],
+    "Mid_Items": [
+     "item_power_treads",
+     "item_magic_wand",
+     "item_bfury",
+     "item_ultimate_scepter"
+    ],
+    "Late_Items": [
+     "item_greater_crit",
+     "item_basher",
+     "item_abyssal_blade",
+     "item_black_king_bar"
+    ],
+    "Other_Items": [
+     "item_aghanims_shard",
+     "item_ultimate_scepter",
+     "item_butterfly",
+     "item_sphere",
+     "item_manta",
+     "item_skadi",
+     "item_desolator",
+     "item_rapier",
+     "item_monkey_king_bar",
+     "item_moon_shard",
+     "item_heart",
+     "item_sange_and_yasha"
+    ]
+   }
+  },
+  "npc_dota_hero_ringmaster": {
+   "author": "Valve",
+   "sourceFile": "default_ringmaster.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_tango",
+     "item_tango",
+     "item_flask",
+     "item_ward_observer",
+     "item_ward_sentry",
+     "item_branches",
+     "item_branches",
+     "item_clarity",
+     "item_clarity",
+     "item_mango"
+    ],
+    "Early_Game": [
+     "item_magic_stick",
+     "item_boots"
+    ],
+    "Mid_Items": [
+     "item_magic_wand",
+     "item_arcane_boots",
+     "item_force_staff"
+    ],
+    "Late_Items": [
+     "item_rod_of_atos",
+     "item_aether_lens",
+     "item_ultimate_scepter"
+    ],
+    "Other_Items": [
+     "item_aghanims_shard",
+     "item_urn_of_shadows",
+     "item_glimmer_cape",
+     "item_guardian_greaves",
+     "item_cyclone",
+     "item_sheepstick",
+     "item_veil_of_discord",
+     "item_aeon_disk",
+     "item_ghost",
+     "item_refresher",
+     "item_pipe",
+     "item_kaya",
+     "item_octarine_core",
+     "item_ethereal_blade",
+     "item_dagon_5",
+     "item_sphere",
+     "item_blink"
+    ]
+   }
+  },
+  "npc_dota_hero_rubick": {
+   "author": "Valve",
+   "sourceFile": "default_rubick.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_tango",
+     "item_tango",
+     "item_clarity",
+     "item_branches",
+     "item_branches",
+     "item_ward_observer",
+     "item_flask"
+    ],
+    "Early_Game": [
+     "item_boots",
+     "item_magic_stick"
+    ],
+    "Mid_Items": [
+     "item_arcane_boots",
+     "item_magic_wand",
+     "item_blink",
+     "item_aether_lens"
+    ],
+    "Late_Items": [
+     "item_cyclone",
+     "item_glimmer_cape",
+     "item_ultimate_scepter",
+     "item_aeon_disk"
+    ],
+    "Other_Items": [
+     "item_aghanims_shard",
+     "item_ghost",
+     "item_guardian_greaves",
+     "item_sheepstick",
+     "item_shivas_guard",
+     "item_force_staff",
+     "item_bloodstone",
+     "item_octarine_core",
+     "item_lotus_orb",
+     "item_sphere",
+     "item_ethereal_blade"
+    ]
+   }
+  },
+  "npc_dota_hero_sand_king": {
+   "author": "Valve",
+   "sourceFile": "default_sand_king.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_enchanted_mango",
+     "item_tango",
+     "item_flask",
+     "item_enchanted_mango",
+     "item_quelling_blade",
+     "item_branches",
+     "item_branches"
+    ],
+    "Early_Game": [
+     "item_magic_stick",
+     "item_boots",
+     "item_infused_raindrop"
+    ],
+    "Mid_Items": [
+     "item_magic_wand",
+     "item_travel_boots",
+     "item_blink",
+     "item_cyclone"
+    ],
+    "Late_Items": [
+     "item_black_king_bar",
+     "item_shivas_guard",
+     "item_ultimate_scepter"
+    ],
+    "Other_Items": [
+     "item_aether_lens",
+     "item_aghanims_shard",
+     "item_aeon_disk",
+     "item_heart",
+     "item_glimmer_cape",
+     "item_octarine_core",
+     "item_refresher",
+     "item_guardian_greaves",
+     "item_sheepstick",
+     "item_ghost",
+     "item_urn_of_shadows",
+     "item_spherer",
+     "item_lotus_orb"
+    ]
+   }
+  },
+  "npc_dota_hero_shadow_demon": {
+   "author": "Valve",
+   "sourceFile": "default_shadow_demon.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_ward_observer",
+     "item_tango",
+     "item_flask",
+     "item_clarity",
+     "item_branches",
+     "item_sobi_mask",
+     "item_enchanted_mango"
+    ],
+    "Early_Game": [
+     "item_boots",
+     "item_ring_of_basilius",
+     "item_wind_lace",
+     "item_infused_raindrop"
+    ],
+    "Mid_Items": [
+     "item_magic_wand",
+     "item_tranquil_boots",
+     "item_aether_lens",
+     "item_smoke_of_deceit"
+    ],
+    "Late_Items": [
+     "item_blink",
+     "item_glimmer_cape",
+     "item_force_staff",
+     "item_ultimate_scepter",
+     "item_aeon_disk"
+    ],
+    "Other_Items": [
+     "item_guardian_greaves",
+     "item_ghost",
+     "item_spirit_vessel",
+     "item_aghanims_shard",
+     "item_orchid",
+     "item_meteor_hammer",
+     "item_sheepstick",
+     "item_lotus_orb",
+     "item_octarine_core"
+    ]
+   }
+  },
+  "npc_dota_hero_shadow_shaman": {
+   "author": "Valve",
+   "sourceFile": "default_shadow_shaman.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_tango",
+     "item_tango",
+     "item_flask",
+     "item_enchanted_mango",
+     "item_clarity",
+     "item_branches",
+     "item_branches",
+     "item_ward_observer"
+    ],
+    "Early_Game": [
+     "item_magic_stick",
+     "item_boots",
+     "item_infused_raindrop"
+    ],
+    "Core_Items": [
+     "item_magic_wand",
+     "item_aether_lens",
+     "item_tranquil_boots",
+     "item_ultimate_scepter"
+    ],
+    "Late_Items": [
+     "item_ultimate_scepter",
+     "item_refresher",
+     "item_blink",
+     "item_black_king_bar"
+    ],
+    "Other_Items": [
+     "item_cyclone",
+     "item_glimmer_cape",
+     "item_octarine_core",
+     "item_bloodstone",
+     "item_shivas_guard",
+     "item_ghost",
+     "item_sphere",
+     "item_lotus_orb"
+    ]
+   }
+  },
+  "npc_dota_hero_shredder": {
+   "author": "Valve",
+   "sourceFile": "default_shredder.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_tango",
+     "item_flask",
+     "item_ring_of_protection",
+     "item_quelling_blade",
+     "item_branches"
+    ],
+    "Early_Game": [
+     "item_boots",
+     "item_soul_ring",
+     "item_infused_raindrop"
+    ],
+    "Mid_Items": [
+     "item_magic_wand",
+     "item_arcane_boots",
+     "item_cyclone",
+     "item_pipe"
+    ],
+    "Late_Items": [
+     "item_aghanims_shard",
+     "item_lotus_orb",
+     "item_bloodstone",
+     "item_shivas_guard",
+     "item_kaya_and_sange"
+    ],
+    "Other_Items": [
+     "item_travel_boots",
+     "item_black_king_bar",
+     "item_sphere",
+     "item_sheepstick",
+     "item_ultimate_scepter",
+     "item_crimson_guard",
+     "item_heavens_halberd",
+     "item_blink",
+     "item_eternal_shroud",
+     "item_bracer",
+     "item_octarine_core",
+     "item_heart",
+     "item_ethereal_blade"
+    ]
+   }
+  },
+  "npc_dota_hero_silencer": {
+   "author": "Valve",
+   "sourceFile": "default_silencer.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_tango",
+     "item_clarity",
+     "item_flask",
+     "item_circlet",
+     "item_mantle"
+    ],
+    "Early_Game": [
+     "item_boots",
+     "item_magic_stick",
+     "item_null_talisman"
+    ],
+    "Mid_Items": [
+     "item_magic_wand",
+     "item_power_treads",
+     "item_force_staff"
+    ],
+    "Late_Items": [
+     "item_hurricane_pike",
+     "item_sheepstick",
+     "item_aeon_disk",
+     "item_refresher"
+    ],
+    "Other_Items": [
+     "item_aghanims_shard",
+     "item_shivas_guard",
+     "item_cyclone",
+     "item_guardian_greaves",
+     "item_black_king_bar",
+     "item_invis_sword",
+     "item_assault",
+     "item_ultimate_scepter",
+     "item_moon_shard",
+     "item_glimmer_cape"
+    ]
+   }
+  },
+  "npc_dota_hero_skeleton_king": {
+   "author": "Valve",
+   "sourceFile": "default_skeleton_king.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_tango",
+     "item_flask",
+     "item_enchanted_mango",
+     "item_branches",
+     "item_quelling_blade"
+    ],
+    "Early_Game": [
+     "item_magic_stick",
+     "item_phase_boots",
+     "item_armlet"
+    ],
+    "Mid_Items": [
+     "item_magic_wand",
+     "item_radiance"
+    ],
+    "Late_Items": [
+     "item_blink",
+     "item_black_king_bar",
+     "item_assault",
+     "item_abyssal_blade",
+     "item_swift_blink"
+    ],
+    "Other_Items": [
+     "item_ultimate_scepter",
+     "item_aghanims_shard",
+     "item_rapier",
+     "item_heart",
+     "item_heavens_halberd",
+     "item_overwhelming_blink",
+     "item_blade_mail",
+     "item_mjollnir",
+     "item_monkey_king_bar",
+     "item_battle_fury",
+     "item_bloodthorn",
+     "item_rapier",
+     "item_moon_shard",
+     "item_hand_of_midas",
+     "item_sange_and_yasha"
+    ]
+   }
+  },
+  "npc_dota_hero_skywrath_mage": {
+   "author": "Valve",
+   "sourceFile": "default_skywrath_mage.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_tango",
+     "item_clarity",
+     "item_clarity",
+     "item_branches",
+     "item_branches",
+     "item_ward_observer",
+     "item_mantle",
+     "item_mantle"
+    ],
+    "Early_Game": [
+     "item_magic_stick",
+     "item_null_talisman",
+     "item_null_talisman",
+     "item_arcane_boots"
+    ],
+    "Mid_Items": [
+     "item_magic_wand",
+     "item_rod_of_atos",
+     "item_aether_lens"
+    ],
+    "Late_Items": [
+     "item_cyclone",
+     "item_glimmer_cape",
+     "item_ultimate_scepter",
+     "item_aeon_disk",
+     "item_blink"
+    ],
+    "Other_Items": [
+     "item_ethereal_blade",
+     "item_force_staff",
+     "item_ultimate_scepter",
+     "item_bloodstone",
+     "item_travel_boots",
+     "item_veil_of_discord",
+     "item_sheepstick",
+     "item_aghanims_shard",
+     "item_octarine_core",
+     "item_guardian_greaves",
+     "item_lotus_orb",
+     "item_invis_sword",
+     "item_black_king_bar"
+    ]
+   }
+  },
+  "npc_dota_hero_slardar": {
+   "author": "Valve",
+   "sourceFile": "default_slardar.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_enchanted_mango",
+     "item_flask",
+     "item_tango",
+     "item_quelling_blade",
+     "item_circlet"
+    ],
+    "Early_Game": [
+     "item_magic_stick",
+     "item_boots",
+     "item_bracer"
+    ],
+    "Mid_Items": [
+     "item_magic_wand",
+     "item_power_treads",
+     "item_blink"
+    ],
+    "Late_Items": [
+     "item_black_king_bar",
+     "item_solar_crest",
+     "item_assault",
+     "item_ultimate_scepter"
+    ],
+    "Other_Items": [
+     "item_echo_sabre",
+     "item_vladmir",
+     "item_force_staff",
+     "item_invis_sword",
+     "item_heart",
+     "item_crimson_guard",
+     "item_moon_shard",
+     "item_lotus_orb",
+     "item_aghanims_shard",
+     "item_orb_of_corrosion",
+     "item_hand_of_midas",
+     "item_monkey_king_bar",
+     "item_heavens_halberd",
+     "item_pipe"
+    ]
+   }
+  },
+  "npc_dota_hero_slark": {
+   "author": "Valve",
+   "sourceFile": "default_slark.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_tango",
+     "item_flask",
+     "item_branches",
+     "item_branches",
+     "item_quelling_blade"
+    ],
+    "Early_Game": [
+     "item_magic_stick",
+     "item_boots",
+     "item_orb_of_corrosion"
+    ],
+    "Mid_Items": [
+     "item_power_treads",
+     "item_magic_wand",
+     "item_echo_sabre",
+     "item_sange_and_yasha",
+     "item_black_king_bar"
+    ],
+    "Late_Items": [
+     "item_basher",
+     "item_abyssal_blade",
+     "item_skadi"
+    ],
+    "Other_Items": [
+     "item_ultimate_scepter",
+     "item_blink",
+     "item_butterfly",
+     "item_aghanims_shard",
+     "item_hand_of_midas",
+     "item_bloodthorn",
+     "item_swift_blink",
+     "item_diffusal_blade",
+     "item_heart",
+     "item_moon_shard",
+     "item_assault",
+     "item_monkey_king_bar",
+     "item_sphere",
+     "item_invis_sword"
+    ]
+   }
+  },
+  "npc_dota_hero_snapfire": {
+   "author": "Valve",
+   "sourceFile": "default_snapfire.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_tango",
+     "item_tango",
+     "item_flask",
+     "item_branches",
+     "item_branches",
+     "item_enchanted_mango",
+     "item_enchanted_mango"
+    ],
+    "Early_Game": [
+     "item_arcane_boots",
+     "item_magic_wand"
+    ],
+    "Mid_Items": [
+     "item_glimmer_cape",
+     "item_force_staff"
+    ],
+    "Late_Items": [
+     "item_blink",
+     "item_ultimate_scepter",
+     "item_aghanims_shard",
+     "item_guardian_greaves"
+    ],
+    "Other_Items": [
+     "item_heavens_halberd",
+     "item_black_king_bar",
+     "item_spirit_vessel",
+     "item_veil_of_discord",
+     "item_lotus_orb",
+     "item_pipe",
+     "item_aether_lens",
+     "item_sheepstick"
+    ]
+   }
+  },
+  "npc_dota_hero_sniper": {
+   "author": "Valve",
+   "sourceFile": "default_sniper.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_tango",
+     "item_flask",
+     "item_circlet",
+     "item_branches",
+     "item_slippers"
+    ],
+    "Early_Game": [
+     "item_boots",
+     "item_wraith_band"
+    ],
+    "Mid_Items": [
+     "item_magic_wand",
+     "item_power_treads",
+     "item_dragon_lance",
+     "item_maelstrom"
+    ],
+    "Late_Items": [
+     "item_hurricane_pike",
+     "item_mjollnir",
+     "item_greater_crit",
+     "item_swift_blink",
+     "item_black_king_bar"
+    ],
+    "Other_Items": [
+     "item_phase_boots",
+     "item_ultimate_scepter",
+     "item_manta",
+     "item_desolator",
+     "item_butterfly",
+     "item_sange_and_yasha",
+     "item_skadi",
+     "item_satanic",
+     "item_mask_of_madness",
+     "item_aghanims_shard",
+     "item_monkey_king_bar",
+     "item_silver_edge",
+     "item_sphere",
+     "item_moon_shard",
+     "item_rapier"
+    ]
+   }
+  },
+  "npc_dota_hero_spectre": {
+   "author": "Valve",
+   "sourceFile": "default_spectre.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_enchanted_mango",
+     "item_tango",
+     "item_flask",
+     "item_branches",
+     "item_branches",
+     "item_quelling_blade"
+    ],
+    "Early_Game": [
+     "item_magic_stick",
+     "item_boots",
+     "item_blade_mail"
+    ],
+    "Core_Items": [
+     "item_magic_wand",
+     "item_power_treads",
+     "item_manta",
+     "item_basher"
+    ],
+    "Late_Items": [
+     "item_abyssal_blade",
+     "item_butterfly",
+     "item_heart"
+    ],
+    "Other_Items": [
+     "item_phase_boots",
+     "item_urn_of_shadows",
+     "item_ultimate_scepter",
+     "item_radiance",
+     "item_aghanims_shard",
+     "item_sange_and_yasha",
+     "item_monkey_king_bar",
+     "item_refresher",
+     "item_skadi",
+     "item_rapier",
+     "item_moon_shard",
+     "item_bfury"
+    ]
+   }
+  },
+  "npc_dota_hero_spirit_breaker": {
+   "author": "Valve",
+   "sourceFile": "default_spirit_breaker.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_tango",
+     "item_flask",
+     "item_enchanted_mango",
+     "item_orb_of_venom"
+    ],
+    "Early_Game": [
+     "item_boots",
+     "item_magic_stick",
+     "item_urn_of_shadows",
+     "item_orb_of_corrosion"
+    ],
+    "Mid_Items": [
+     "item_phase_boots",
+     "item_magic_wand",
+     "item_ultimate_scepter"
+    ],
+    "Late_Items": [
+     "item_assault",
+     "item_black_king_bar"
+    ],
+    "Other_Items": [
+     "item_heavens_halberd",
+     "item_silver_edge",
+     "item_monkey_king_bar",
+     "item_ancient_janggo",
+     "item_glimmer_cape",
+     "item_lotus_orb",
+     "item_moon_shard",
+     "item_crimson_guard",
+     "item_pipe",
+     "item_bloodthorn",
+     "item_echo_sabre",
+     "item_blade_mail",
+     "item_aghanims_shard",
+     "item_heart",
+     "item_sange_and_yasha"
+    ]
+   }
+  },
+  "npc_dota_hero_storm_spirit": {
+   "author": "Valve",
+   "sourceFile": "default_storm_spirit.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_tango",
+     "item_null_talisman"
+    ],
+    "Early_Game": [
+     "item_magic_wand",
+     "item_boots",
+     "item_bottle"
+    ],
+    "Mid_Items": [
+     "item_orchid",
+     "item_power_treads",
+     "item_kaya"
+    ],
+    "Late_Items": [
+     "item_bloodstone",
+     "item_shivas_guard",
+     "item_sphere",
+     "item_black_king_bar"
+    ],
+    "Other_Items": [
+     "item_ultimate_scepter",
+     "item_aghanims_shard",
+     "item_cyclone",
+     "item_sheepstick",
+     "item_kaya_and_sange",
+     "item_yasha_and_kaya",
+     "item_bloodthorn",
+     "item_octarine_core"
+    ]
+   }
+  },
+  "npc_dota_hero_sven": {
+   "author": "Valve",
+   "sourceFile": "default_sven.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_tango",
+     "item_tango",
+     "item_flask",
+     "item_enchanted_mango",
+     "item_quelling_blade"
+    ],
+    "Early_Game": [
+     "item_magic_stick",
+     "item_boots"
+    ],
+    "Mid_Items": [
+     "item_magic_wand",
+     "item_power_treads",
+     "item_sange_and_yasha",
+     "item_mask_of_madness"
+    ],
+    "Late_Items": [
+     "item_black_king_bar",
+     "item_swift_blink",
+     "item_abyssal_blade",
+     "item_aghanims_shard",
+     "item_greater_crit",
+     "item_satanic"
+    ],
+    "Other_Items": [
+     "item_echo_sabre",
+     "item_armlet",
+     "item_hand_of_midas",
+     "item_heart",
+     "item_assault",
+     "item_ultimate_scepter",
+     "item_moon_shard",
+     "item_monkey_king_bar",
+     "item_satanic",
+     "item_heavens_halberd",
+     "item_bloodthorn",
+     "item_bfury",
+     "item_rapier"
+    ]
+   }
+  },
+  "npc_dota_hero_techies": {
+   "author": "Valve",
+   "sourceFile": "default_techies.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_tango",
+     "item_flask",
+     "item_ring_of_protection",
+     "item_gauntlets",
+     "item_faerie_fire"
+    ],
+    "Early_Game": [
+     "item_soul_ring",
+     "item_arcane_boots"
+    ],
+    "Mid_Items": [
+     "item_ultimate_scepter",
+     "item_force_staff",
+     "item_cyclone"
+    ],
+    "Late_Items": [
+     "item_bloodstone",
+     "item_octarine_core",
+     "item_sheepstick"
+    ],
+    "Other_Items": [
+     "item_blink",
+     "item_aether_lens",
+     "item_ethereal_blade",
+     "item_hurricane_pike",
+     "item_lotus_orb",
+     "item_rod_of_atos",
+     "item_helm_of_the_dominator",
+     "item_greater_crit",
+     "item_butterfly",
+     "item_swift_blink"
+    ]
+   }
+  },
+  "npc_dota_hero_templar_assassin": {
+   "author": "Valve",
+   "sourceFile": "default_templar_assassin.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_ward_observer",
+     "item_tango",
+     "item_slippers",
+     "item_circlet",
+     "item_circlet",
+     "item_branches"
+    ],
+    "Early_Game": [
+     "item_wraith_band",
+     "item_wraith_band",
+     "item_boots",
+     "item_blight_stone"
+    ],
+    "Mid_Items": [
+     "item_magic_wand",
+     "item_power_treads",
+     "item_desolator",
+     "item_blink"
+    ],
+    "Late_Items": [
+     "item_black_king_bar",
+     "item_bloodthorn",
+     "item_nullifier",
+     "item_sheepstick"
+    ],
+    "Other_Items": [
+     "item_greater_crit",
+     "item_monkey_king_bar",
+     "item_hurricane_pike",
+     "item_butterfly",
+     "item_manta",
+     "item_sange_and_yasha",
+     "item_satanic",
+     "item_skadi",
+     "item_assault",
+     "item_mjollnir",
+     "item_sphere",
+     "item_aghanims_shard",
+     "item_rapier",
+     "item_travel_boots",
+     "item_moon_shard",
+     "item_ultimate_scepter"
+    ]
+   }
+  },
+  "npc_dota_hero_terrorblade": {
+   "author": "Valve",
+   "sourceFile": "default_terrorblade.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_branches",
+     "item_branches",
+     "item_quelling_blade",
+     "item_tango",
+     "item_flask",
+     "item_circlet"
+    ],
+    "Early_Game": [
+     "item_boots",
+     "item_wraith_band",
+     "item_wraith_band"
+    ],
+    "Mid_Items": [
+     "item_power_treads",
+     "item_ultimate_scepter",
+     "item_manta"
+    ],
+    "Late_Items": [
+     "item_skadi",
+     "item_butterfly",
+     "item_greater_crit",
+     "item_black_king_bar"
+    ],
+    "Other_Items": [
+     "item_swift_blink",
+     "item_dragon_lance",
+     "item_satanic",
+     "item_sphere",
+     "item_sange_and_yasha",
+     "item_silver_edge",
+     "item_assault",
+     "item_black_king_bar",
+     "item_heart",
+     "item_hurricane_pike",
+     "item_rapier"
+    ]
+   }
+  },
+  "npc_dota_hero_tidehunter": {
+   "author": "Valve",
+   "sourceFile": "default_tidehunter.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_tango",
+     "item_flask",
+     "item_quelling_blade",
+     "item_ring_of_protection"
+    ],
+    "Early_Game": [
+     "item_magic_stick",
+     "item_boots",
+     "item_soul_ring"
+    ],
+    "Mid_Items": [
+     "item_magic_wand",
+     "item_phase_boots",
+     "item_blink",
+     "item_hood_of_defiance"
+    ],
+    "Late_Items": [
+     "item_solar_crest",
+     "item_aghanims_shard",
+     "item_ultimate_scepter",
+     "item_refresher"
+    ],
+    "Other_Items": [
+     "item_heart",
+     "item_shivas_guard",
+     "item_assault",
+     "item_force_staff",
+     "item_pipe",
+     "item_ancient_janggo",
+     "item_guardian_greaves",
+     "item_glimmer_cape",
+     "item_octarine_core",
+     "item_lotus_orb",
+     "item_crimson_guard",
+     "item_vladmir"
+    ]
+   }
+  },
+  "npc_dota_hero_tinker": {
+   "author": "Valve",
+   "sourceFile": "default_tinker.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_tango",
+     "item_faerie_fire",
+     "item_mantle",
+     "item_circlet",
+     "item_branches",
+     "item_branches"
+    ],
+    "Early_Game": [
+     "item_null_talisman",
+     "item_bottle",
+     "item_boots",
+     "item_soul_ring"
+    ],
+    "Mid_Items": [
+     "item_travel_boots",
+     "item_blink",
+     "item_aether_lens"
+    ],
+    "Late_Items": [
+     "item_sheepstick",
+     "item_bloodstone",
+     "item_ethereal_blade",
+     "item_dagon_5"
+    ],
+    "Other_Items": [
+     "item_cyclone",
+     "item_shivas_guard",
+     "item_sphere",
+     "item_bloodstone",
+     "item_travel_boots_2",
+     "item_aeon_disk",
+     "item_ultimate_scepter",
+     "item_force_staff",
+     "item_aghanims_shard",
+     "item_kaya_and_sange",
+     "item_bloodthorn",
+     "item_glimmer_cape",
+     "item_necronomicon_3"
+    ]
+   }
+  },
+  "npc_dota_hero_tiny": {
+   "author": "Valve",
+   "sourceFile": "default_tiny.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_ward_observer",
+     "item_tango",
+     "item_gauntlets",
+     "item_circlet",
+     "item_quelling_blade",
+     "item_branches"
+    ],
+    "Early_Game": [
+     "item_bracer",
+     "item_bottle",
+     "item_boots",
+     "item_wind_lace"
+    ],
+    "Core_Items": [
+     "item_magic_wand",
+     "item_phase_boots",
+     "item_blink",
+     "item_echo_sabre"
+    ],
+    "Late_Items": [
+     "item_silver_edge",
+     "item_black_king_bar",
+     "item_greater_crit",
+     "item_ultimate_scepter"
+    ],
+    "Other_Items": [
+     "item_power_treads",
+     "item_travel_boots",
+     "item_aghanims_shard",
+     "item_assault",
+     "item_sange_and_yasha",
+     "item_heavens_halberd",
+     "item_monkey_king_bar",
+     "item_heart",
+     "item_satanic",
+     "item_butterfly",
+     "item_moon_shard",
+     "item_ethereal_blade",
+     "item_dagon",
+     "item_cyclone",
+     "item_lotus_orb",
+     "item_sheepstick"
+    ]
+   }
+  },
+  "npc_dota_hero_treant": {
+   "author": "Valve",
+   "sourceFile": "default_treant.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_tango",
+     "item_enchanted_mango",
+     "item_clarity",
+     "item_flask",
+     "item_orb_of_venom"
+    ],
+    "Early_Game": [
+     "item_boots",
+     "item_magic_stick"
+    ],
+    "Mid_Items": [
+     "item_magic_wand",
+     "item_arcane_boots",
+     "item_meteor_hammer"
+    ],
+    "Late_Items": [
+     "item_blink",
+     "item_ultimate_scepter",
+     "item_refresher",
+     "item_aeon_disk"
+    ],
+    "Other_Items": [
+     "item_cyclone",
+     "item_heart",
+     "item_shivas_guard",
+     "item_assault",
+     "item_aghanims_shard",
+     "item_vladmir",
+     "item_heavens_halberd",
+     "item_radiance",
+     "item_necronomicon_3",
+     "item_octarine_core",
+     "item_guardian_greaves",
+     "item_blade_mail",
+     "item_tranquil_boots"
+    ]
+   }
+  },
+  "npc_dota_hero_troll_warlord": {
+   "author": "Valve",
+   "sourceFile": "default_troll_warlord.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_tango",
+     "item_flask",
+     "item_branches",
+     "item_branches",
+     "item_enchanted_mango",
+     "item_quelling_blade"
+    ],
+    "Early_Game": [
+     "item_ring_of_health",
+     "item_magic_stick",
+     "item_boots"
+    ],
+    "Mid_Items": [
+     "item_magic_wand",
+     "item_phase_boots",
+     "item_bfury",
+     "item_sange_and_yasha"
+    ],
+    "Late_Items": [
+     "item_abyssal_blade",
+     "item_black_king_bar",
+     "item_swift_blink",
+     "item_satanic"
+    ],
+    "Other_Items": [
+     "item_power_treads",
+     "item_butterfly",
+     "item_monkey_king_bar",
+     "item_aghanims_shard",
+     "item_hurricane_pike",
+     "item_ultimate_scepter",
+     "item_skadi",
+     "item_falcon_blade",
+     "item_bloodthorn",
+     "item_helm_of_the_dominator",
+     "item_armlet",
+     "item_bfury",
+     "item_moon_shard"
+    ]
+   }
+  },
+  "npc_dota_hero_tusk": {
+   "author": "Valve",
+   "sourceFile": "default_tusk.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_tango",
+     "item_flask",
+     "item_clarity",
+     "item_orb_of_venom",
+     "item_enchanted_mango"
+    ],
+    "Early_Game": [
+     "item_boots",
+     "item_magic_wand",
+     "item_wind_lace",
+     "item_infused_raindrop"
+    ],
+    "Mid_Items": [
+     "item_tranquil_boots",
+     "item_blink"
+    ],
+    "Late_Items": [
+     "item_aeon_disk",
+     "item_solar_crest",
+     "item_force_staff",
+     "item_aghanims_shard",
+     "item_ghost"
+    ],
+    "Other_Items": [
+     "item_phase_boots",
+     "item_desolator",
+     "item_heart",
+     "item_black_king_bar",
+     "item_heavens_halberd",
+     "item_orb_of_corrosion",
+     "item_assault",
+     "item_ultimate_scepter",
+     "item_lotus_orb",
+     "item_glimmer_cape",
+     "item_pipe",
+     "item_guardian_greaves"
+    ]
+   }
+  },
+  "npc_dota_hero_undying": {
+   "author": "Valve",
+   "sourceFile": "default_undying.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_enchanted_mango",
+     "item_flask",
+     "item_clarity",
+     "item_orb_of_venom",
+     "item_tango"
+    ],
+    "Early_Game": [
+     "item_boots",
+     "item_infused_raindrop",
+     "item_magic_stick",
+     "item_fluffy_hat"
+    ],
+    "Mid_Items": [
+     "item_arcane_boots",
+     "item_magic_wand",
+     "item_glimmer_cape"
+    ],
+    "Late_Items": [
+     "item_ghost",
+     "item_lotus_orb",
+     "item_solar_crest",
+     "item_aghanims_shard"
+    ],
+    "Other_Items": [
+     "item_pipe",
+     "item_cyclone",
+     "item_shivas_guard",
+     "item_heart",
+     "item_guardian_greaves",
+     "item_blade_mail",
+     "item_ultimate_scepter",
+     "item_crimson_guard",
+     "item_holy_locket",
+     "item_urn_of_shadows",
+     "item_refresher",
+     "item_vladmir",
+     "item_radiance"
+    ]
+   }
+  },
+  "npc_dota_hero_ursa": {
+   "author": "Valve",
+   "sourceFile": "default_ursa.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_tango",
+     "item_flask",
+     "item_branches",
+     "item_branches",
+     "item_enchanted_mango",
+     "item_quelling_blade"
+    ],
+    "Early_Game": [
+     "item_boots",
+     "item_magic_stick",
+     "item_orb_of_venom"
+    ],
+    "Mid_Items": [
+     "item_phase_boots",
+     "item_magic_wand",
+     "item_bfury",
+     "item_blink"
+    ],
+    "Late_Items": [
+     "item_abyssal_blade",
+     "item_black_king_bar",
+     "item_swift_blink",
+     "item_aghanims_shard"
+    ],
+    "Other_Items": [
+     "item_orb_of_corrosion",
+     "item_heart",
+     "item_sphere",
+     "item_ultimate_scepter",
+     "item_sange_and_yasha",
+     "item_mask_of_madness",
+     "item_sheepstick",
+     "item_desolater",
+     "item_monkey_king_bar",
+     "item_assault",
+     "item_bloodthorn",
+     "item_skadi",
+     "item_satanic"
+    ]
+   }
+  },
+  "npc_dota_hero_vengefulspirit": {
+   "author": "Valve",
+   "sourceFile": "default_vengefulspirit.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_tango",
+     "item_tango",
+     "item_clarity",
+     "item_branches",
+     "item_branches",
+     "item_ward_observer",
+     "item_flask",
+     "item_enchanted_mango",
+     "item_enchanted_mango"
+    ],
+    "Early_Game": [
+     "item_magic_stick",
+     "item_tranquil_boots"
+    ],
+    "Mid_Items": [
+     "item_magic_wand",
+     "item_glimmer_cape",
+     "item_medallion_of_courage",
+     "item_ancient_janggo"
+    ],
+    "Late_Items": [
+     "item_vladmir",
+     "item_ultimate_scepter",
+     "item_solar_crest"
+    ],
+    "Other_Items": [
+     "item_blink",
+     "item_desolator",
+     "item_hurricane_pike",
+     "item_butterfly",
+     "item_manta",
+     "item_heart",
+     "item_sange_and_yasha",
+     "item_lotus_orb",
+     "item_ghost",
+     "item_guardian_greaves",
+     "item_greater_crit",
+     "item_monkey_king_bar",
+     "item_aghanims_shard",
+     "item_aether_lens",
+     "item_force_staff",
+     "item_power_treads"
+    ]
+   }
+  },
+  "npc_dota_hero_venomancer": {
+   "author": "Valve",
+   "sourceFile": "default_venomancer.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_tango",
+     "item_flask",
+     "item_circlet",
+     "item_branches",
+     "item_branches",
+     "item_faerie_fire"
+    ],
+    "Early_Game": [
+     "item_magic_stick",
+     "item_boots",
+     "item_urn_of_shadows"
+    ],
+    "Mid_Items": [
+     "item_magic_wand",
+     "item_power_treads",
+     "item_spirit_vessel",
+     "item_hood_of_defiance",
+     "item_pipe"
+    ],
+    "Late_Items": [
+     "item_solar_crest",
+     "item_lotus_orb",
+     "item_aghanims_shard",
+     "item_guardian_greaves"
+    ],
+    "Other_Items": [
+     "item_blink",
+     "item_glimmer_cape",
+     "item_force_staff",
+     "item_ultimate_scepter",
+     "item_butterfly",
+     "item_orchid",
+     "item_shivas_guard",
+     "item_ancient_janggo",
+     "item_octarine_core",
+     "item_hurricane_pike",
+     "item_aether_lens",
+     "item_sange_and_yasha",
+     "item_sphere",
+     "item_pipe",
+     "item_bloodthorn"
+    ]
+   }
+  },
+  "npc_dota_hero_viper": {
+   "author": "Valve",
+   "sourceFile": "default_viper.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_tango",
+     "item_enchanted_mango",
+     "item_branch",
+     "item_slippers",
+     "item_circlet"
+    ],
+    "Early_Game": [
+     "item_magic_stick",
+     "item_boots",
+     "item_wraith_band",
+     "item_bottle"
+    ],
+    "Mid_Items": [
+     "item_magic_wand",
+     "item_travel_boots",
+     "item_rod_of_atos"
+    ],
+    "Late_Items": [
+     "item_black_king_bar",
+     "item_heavens_halberd",
+     "item_lotus_orb",
+     "item_ultimate_scepter",
+     "item_aghanims_shard"
+    ],
+    "Other_Items": [
+     "item_hurricane_pike",
+     "item_monkey_king_bar",
+     "item_butterfly",
+     "item_bloodthorn",
+     "item_heart",
+     "item_crimson_guard",
+     "item_mjollnir",
+     "item_greater_crit",
+     "item_blade_mail",
+     "item_moon_shard",
+     "item_heavens_halberd",
+     "item_skadi",
+     "item_sphere",
+     "item_assault",
+     "item_satanic"
+    ]
+   }
+  },
+  "npc_dota_hero_visage": {
+   "author": "Valve",
+   "sourceFile": "default_visage.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_tango",
+     "item_faerie_fire",
+     "item_mantle",
+     "item_circlet",
+     "item_branches",
+     "item_branches"
+    ],
+    "Early_Game": [
+     "item_null_talisman",
+     "item_boots",
+     "item_medallion_of_courage"
+    ],
+    "Mid_Items": [
+     "item_magic_wand",
+     "item_ultimate_scepter",
+     "item_aghanims_shard",
+     "item_travel_boots"
+    ],
+    "Late_Items": [
+     "item_sheepstick",
+     "item_solar_crest",
+     "item_assault"
+    ],
+    "Other_Items": [
+     "item_rod_of_atos",
+     "item_guardian_greaves",
+     "item_pipe",
+     "item_hurricane_pike",
+     "item_heavens_halberd",
+     "item_crimson_guard",
+     "item_lotus_orb",
+     "item_shivas_guard",
+     "item_black_king_bar",
+     "item_cyclone",
+     "item_bloodthorn",
+     "item_desolator",
+     "item_necronomicon_3"
+    ]
+   }
+  },
+  "npc_dota_hero_void_spirit": {
+   "author": "Valve",
+   "sourceFile": "default_void_spirit.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_tango",
+     "item_circlet",
+     "item_quelling_blade",
+     "item_mantle",
+     "item_branches"
+    ],
+    "Early_Game": [
+     "item_boots",
+     "item_magic_stick",
+     "item_bottle",
+     "item_null_talisman",
+     "item_null_talisman"
+    ],
+    "Mid_Items": [
+     "item_phase_boots",
+     "item_ultimate_scepter",
+     "item_cyclone"
+    ],
+    "Late_Items": [
+     "item_black_king_bar",
+     "item_octarine_core",
+     "item_shivas_guard"
+    ],
+    "Other_Items": [
+     "item_bloodthorn",
+     "item_mjollnir",
+     "item_sphere",
+     "item_lotus_orb",
+     "item_aether_lens",
+     "item_greater_crit",
+     "item_orchid",
+     "item_desolator",
+     "item_aghanims_shard",
+     "item_maelstrom",
+     "item_aeon_disk",
+     "item_kaya_and_sange",
+     "item_witch_blade"
+    ]
+   }
+  },
+  "npc_dota_hero_warlock": {
+   "author": "Valve",
+   "sourceFile": "default_warlock.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_clarity",
+     "item_flask",
+     "item_tango",
+     "item_tango",
+     "item_ward_observer",
+     "item_enchanted_mango",
+     "item_enchanted_mango",
+     "item_enchanted_mango"
+    ],
+    "Early_Game": [
+     "item_magic_stick",
+     "item_boots",
+     "item_ring_of_basilius"
+    ],
+    "Mid_Items": [
+     "item_magic_wand",
+     "item_arcane_boots",
+     "item_glimmer_cape"
+    ],
+    "Late_Items": [
+     "item_ultimate_scepter",
+     "item_refresher",
+     "item_aeon_disk"
+    ],
+    "Other_Items": [
+     "item_sheepstick",
+     "item_shivas_guard",
+     "item_necronomicon_3",
+     "item_octarine_core",
+     "item_guardian_greaves",
+     "item_ghost",
+     "item_force_staff",
+     "item_aether_lens",
+     "item_rod_of_atos",
+     "item_lotus_orb"
+    ]
+   }
+  },
+  "npc_dota_hero_weaver": {
+   "author": "Valve",
+   "sourceFile": "default_weaver.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_tango",
+     "item_flask",
+     "item_circlet",
+     "item_branches",
+     "item_branches",
+     "item_branches"
+    ],
+    "Early_Game": [
+     "item_magic_stick",
+     "item_boots",
+     "item_falcon_blade",
+     "item_power_treads"
+    ],
+    "Mid_Items": [
+     "item_magic_wand",
+     "item_maelstrom",
+     "item_sange_and_yasha"
+    ],
+    "Late_Items": [
+     "item_black_king_bar",
+     "item_greater_crit",
+     "item_aghanims_shard"
+    ],
+    "Other_Items": [
+     "item_gungir",
+     "item_monkey_king_bar",
+     "item_butterfly",
+     "item_heart",
+     "item_nullifier",
+     "item_sphere",
+     "item_ultimate_scepter",
+     "item_dragon_lance",
+     "item_bloodthorn",
+     "item_desolator",
+     "item_bottle",
+     "item_skadi",
+     "item_mjollnir",
+     "item_manta",
+     "item_satanic"
+    ]
+   }
+  },
+  "npc_dota_hero_windrunner": {
+   "author": "Valve",
+   "sourceFile": "default_windrunner.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_tango",
+     "item_flask",
+     "item_clarity",
+     "item_circlet",
+     "item_branches",
+     "item_branches"
+    ],
+    "Early_Game": [
+     "item_magic_wand",
+     "item_boots"
+    ],
+    "Mid_Items": [
+     "item_black_king_bar",
+     "item_blink",
+     "item_maelstrom"
+    ],
+    "Late_Items": [
+     "item_ultimate_scepter",
+     "item_travel_boots",
+     "item_greater_crit"
+    ],
+    "Other_Items": [
+     "item_gungir",
+     "item_sheepstick",
+     "item_aghanims_shard",
+     "item_shivas_guard",
+     "item_sphere",
+     "item_tranquil_boots",
+     "item_greater_crit",
+     "item_cyclone",
+     "item_monkey_king_bar",
+     "item_glimmer_cape",
+     "item_hurricane_pike",
+     "item_desolator",
+     "item_swift_blink",
+     "item_skadi"
+    ]
+   }
+  },
+  "npc_dota_hero_winter_wyvern": {
+   "author": "Valve",
+   "sourceFile": "default_winter_wyvern.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_tango",
+     "item_tango",
+     "item_clarity",
+     "item_clarity",
+     "item_branches",
+     "item_ward_observer",
+     "item_flask"
+    ],
+    "Early_Game": [
+     "item_magic_stick",
+     "item_boots",
+     "item_urn_of_shadows"
+    ],
+    "Mid_Items": [
+     "item_magic_wand",
+     "item_arcane_boots",
+     "item_glimmer_cape"
+    ],
+    "Late_Items": [
+     "item_blink",
+     "item_aghanims_shard",
+     "item_aether_lens",
+     "item_aeon_disk"
+    ],
+    "Other_Items": [
+     "item_orchid",
+     "item_sheepstick",
+     "item_cyclone",
+     "item_travel_boots",
+     "item_meteor_hammer",
+     "item_force_staff",
+     "item_ultimate_scepter",
+     "item_hurricane_pike",
+     "item_mjollnir",
+     "item_monkey_king_bar",
+     "item_ghost",
+     "item_refresher",
+     "item_bloodthorn",
+     "item_lotus_orb"
+    ]
+   }
+  },
+  "npc_dota_hero_wisp": {
+   "author": "Valve",
+   "sourceFile": "default_wisp.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_ward_observer",
+     "item_tango",
+     "item_flask",
+     "item_faerie_fire",
+     "item_ring_of_regen",
+     "item_branches",
+     "item_branches"
+    ],
+    "Early_Game": [
+     "item_magic_stick",
+     "item_headdress",
+     "item_bottle",
+     "item_infused_raindrop"
+    ],
+    "Mid_Items": [
+     "item_magic_wand",
+     "item_guardian_greaves",
+     "item_glimmer_cape"
+    ],
+    "Late_Items": [
+     "item_ghost",
+     "item_aeon_disk",
+     "item_holy_locket",
+     "item_ultimate_scepter"
+    ],
+    "Other_Items": [
+     "item_aghanims_shard",
+     "item_sheepstick",
+     "item_heart",
+     "item_pipe",
+     "item_solar_crest",
+     "item_lotus_orb",
+     "item_heavens_halberd",
+     "item_cyclone",
+     "item_helm_of_the_dominator",
+     "item_desolator",
+     "item_black_king_bar"
+    ]
+   }
+  },
+  "npc_dota_hero_witch_doctor": {
+   "author": "Valve",
+   "sourceFile": "default_witch_doctor.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_tango",
+     "item_tango",
+     "item_ward_observer",
+     "item_clarity",
+     "item_enchanted_mango",
+     "item_enchanted_mango",
+     "item_flask"
+    ],
+    "Early_Game": [
+     "item_magic_stick",
+     "item_arcane_boots"
+    ],
+    "Mid_Items": [
+     "item_magic_wand",
+     "item_aghanims_shard",
+     "item_glimmer_cape"
+    ],
+    "Late_Items": [
+     "item_ultimate_scepter",
+     "item_black_king_bar",
+     "item_aeon_disk"
+    ],
+    "Other_Items": [
+     "item_tranquil_boots",
+     "item_medallion_of_courage",
+     "item_sheepstick",
+     "item_holy_locket",
+     "item_dagon_5",
+     "item_guardian_greaves",
+     "item_aether_lens",
+     "item_ghost",
+     "item_cyclone",
+     "item_veil_of_discord",
+     "item_lotus_orb"
+    ]
+   }
+  },
+  "npc_dota_hero_zuus": {
+   "author": "Valve",
+   "sourceFile": "default_zuus.txt",
+   "phases": {
+    "Starting_Items": [
+     "item_circlet",
+     "item_circlet",
+     "item_mantle",
+     "item_tango"
+    ],
+    "Early_Game": [
+     "item_bottle",
+     "item_boots",
+     "item_null_talisman",
+     "item_null_talisman"
+    ],
+    "Mid_Items": [
+     "item_travel_boots",
+     "item_aether_lens",
+     "item_ultimate_scepter"
+    ],
+    "Late_Items": [
+     "item_blink",
+     "item_refresher",
+     "item_octarine_core"
+    ],
+    "Other_Items": [
+     "item_cyclone",
+     "item_sheepstick",
+     "item_bloodstone",
+     "item_aghanims_shard",
+     "item_aeon_disk",
+     "item_ethereal_blade",
+     "item_arcane_blink",
+     "item_yasha_and_kaya",
+     "item_sphere",
+     "item_black_king_bar",
+     "item_ghost"
+    ]
+   }
+  }
+ },
+ "itemPhases": {
+  "item_ward_observer": {
+   "Starting_Items": 36
+  },
+  "item_tango": {
+   "Starting_Items": 152
+  },
+  "item_flask": {
+   "Starting_Items": 85
+  },
+  "item_clarity": {
+   "Starting_Items": 46
+  },
+  "item_orb_of_venom": {
+   "Starting_Items": 12,
+   "Early_Game": 6,
+   "Starting_Items_Secondary": 1
+  },
+  "item_boots": {
+   "Early_Game": 102,
+   "Starting_Items": 2,
+   "Early_Game_Secondary": 1
+  },
+  "item_magic_stick": {
+   "Early_Game": 88,
+   "Starting_Items": 1
+  },
+  "item_ring_of_basilius": {
+   "Early_Game": 9
+  },
+  "item_medallion_of_courage": {
+   "Early_Game": 2,
+   "Mid_Items": 2,
+   "Other_Items": 1
+  },
+  "item_tranquil_boots": {
+   "Mid_Items": 6,
+   "Early_Game": 8,
+   "Core_Items": 3,
+   "Other_Items": 4
+  },
+  "item_magic_wand": {
+   "Mid_Items": 91,
+   "Early_Game": 13,
+   "Core_Items": 6
+  },
+  "item_urn_of_shadows": {
+   "Mid_Items": 1,
+   "Early_Game": 12,
+   "Other_Items": 16
+  },
+  "item_vladmir": {
+   "Mid_Items": 2,
+   "Other_Items": 14,
+   "Late_Items": 3
+  },
+  "item_aghanims_shard": {
+   "Mid_Items": 8,
+   "Other_Items": 54,
+   "Late_Items": 28
+  },
+  "item_solar_crest": {
+   "Late_Items": 13,
+   "Other_Items": 22
+  },
+  "item_assault": {
+   "Late_Items": 22,
+   "Other_Items": 34,
+   "Luxury": 1,
+   "Core_Items_Secondary": 1,
+   "Mid_Items": 1
+  },
+  "item_ultimate_scepter": {
+   "Late_Items": 59,
+   "Other_Items": 57,
+   "Mid_Items": 9,
+   "Core_Items": 1
+  },
+  "item_soul_ring": {
+   "Other_Items": 7,
+   "Early_Game": 12
+  },
+  "item_phase_boots": {
+   "Other_Items": 9,
+   "Early_Game": 4,
+   "Mid_Items": 18,
+   "Early_Game_Secondary": 1,
+   "Core_Items_Secondary": 1,
+   "Core_Items": 1
+  },
+  "item_sange_and_yasha": {
+   "Other_Items": 35,
+   "Mid_Items": 7,
+   "Late_Items": 10
+  },
+  "item_blade_mail": {
+   "Other_Items": 26,
+   "Late_Items": 1,
+   "Mid_Items": 3,
+   "Early_Game": 1
+  },
+  "item_echo_sabre": {
+   "Other_Items": 15,
+   "Late_Items": 1,
+   "Mid_Items": 1,
+   "Core_Items": 1
+  },
+  "item_mjollnir": {
+   "Other_Items": 30,
+   "Late_Items": 7
+  },
+  "item_radiance": {
+   "Other_Items": 21,
+   "Mid_Items": 2,
+   "Core_Items_Secondary": 1
+  },
+  "item_heart": {
+   "Other_Items": 50,
+   "Late_Items": 10,
+   "Luxury": 1
+  },
+  "item_guardian_greaves": {
+   "Other_Items": 34,
+   "Late_Items": 10,
+   "Mid_Items": 3,
+   "Luxury": 1
+  },
+  "item_glimmer_cape": {
+   "Other_Items": 24,
+   "Mid_Items": 19,
+   "Late_Items": 5,
+   "Core_Items": 1
+  },
+  "item_pipe": {
+   "Other_Items": 36,
+   "Late_Items": 2,
+   "Mid_Items": 2
+  },
+  "item_lotus_orb": {
+   "Other_Items": 59,
+   "Late_Items": 12
+  },
+  "item_ancient_janggo": {
+   "Other_Items": 9,
+   "Mid_Items": 3
+  },
+  "item_abyssal_blade": {
+   "Other_Items": 16,
+   "Late_Items": 24,
+   "Core_Items_Secondary": 1
+  },
+  "item_mask_of_madness": {
+   "Other_Items": 7,
+   "Core_Items_Secondary": 1,
+   "Mid_Items": 2
+  },
+  "item_aether_lens": {
+   "Other_Items": 25,
+   "Late_Items": 9,
+   "Luxury": 1,
+   "Mid_Items": 8,
+   "Core_Items": 1
+  },
+  "item_silver_edge": {
+   "Other_Items": 24,
+   "Late_Items": 2
+  },
+  "item_arcane_boots": {
+   "Other_Items": 3,
+   "Mid_Items": 22,
+   "Early_Game": 9
+  },
+  "item_orb_of_corrosion": {
+   "Other_Items": 6,
+   "Early_Game": 6
+  },
+  "item_branches": {
+   "Starting_Items": 130
+  },
+  "item_quelling_blade": {
+   "Starting_Items": 40,
+   "Starting_Items_Secondary": 1
+  },
+  "item_headdress": {
+   "Early_Game": 2,
+   "Starting_Items": 1
+  },
+  "item_mekansm": {
+   "Mid_Items": 5,
+   "Other_Items": 3,
+   "Late_Items": 3
+  },
+  "item_shivas_guard": {
+   "Late_Items": 16,
+   "Other_Items": 46
+  },
+  "item_black_king_bar": {
+   "Late_Items": 59,
+   "Other_Items": 24,
+   "Luxury": 1,
+   "Mid_Items": 11
+  },
+  "item_power_treads": {
+   "Other_Items": 15,
+   "Mid_Items": 35,
+   "Core_Items": 3,
+   "Early_Game": 3
+  },
+  "item_necronomicon_3": {
+   "Other_Items": 12,
+   "Mid_Items": 2
+  },
+  "item_sheepstick": {
+   "Other_Items": 47,
+   "Late_Items": 18,
+   "Luxury": 1
+  },
+  "item_crimson_guard": {
+   "Other_Items": 15,
+   "Late_Items": 3
+  },
+  "item_cyclone": {
+   "Other_Items": 39,
+   "Mid_Items": 16,
+   "Late_Items": 6
+  },
+  "item_sphere": {
+   "Other_Items": 66,
+   "Late_Items": 10,
+   "Luxury": 1
+  },
+  "item_blink": {
+   "Other_Items": 26,
+   "Mid_Items": 26,
+   "Late_Items": 19,
+   "Core_Items": 2
+  },
+  "item_veil_of_discord": {
+   "Other_Items": 20,
+   "Luxury": 1
+  },
+  "item_helm_of_the_dominator": {
+   "Other_Items": 7
+  },
+  "item_force_staff": {
+   "Other_Items": 26,
+   "Late_Items": 10,
+   "Mid_Items": 11,
+   "Luxury": 1,
+   "Core_Items": 1
+  },
+  "item_heavens_halberd": {
+   "Other_Items": 43,
+   "Late_Items": 3,
+   "Mid_Items": 1
+  },
+  "item_gauntlets": {
+   "Starting_Items": 9
+  },
+  "item_bottle": {
+   "Early_Game": 20,
+   "Other_Items": 1
+  },
+  "item_travel_boots_1": {
+   "Mid_Items": 2,
+   "Other_Items": 1
+  },
+  "item_bfury": {
+   "Other_Items": 10,
+   "Mid_Items": 7
+  },
+  "item_hand_of_midas": {
+   "Other_Items": 16,
+   "Early_Game": 2
+  },
+  "item_moon_shard": {
+   "Other_Items": 32,
+   "Late_Items": 2
+  },
+  "item_monkey_king_bar": {
+   "Other_Items": 50,
+   "Late_Items": 2
+  },
+  "item_skadi": {
+   "Other_Items": 28,
+   "Late_Items": 9,
+   "Mid_Items": 1
+  },
+  "item_faerie_fire": {
+   "Starting_Items": 14
+  },
+  "item_wind_lace": {
+   "Early_Game": 8,
+   "Starting_Items": 6,
+   "Mid_Items": 1
+  },
+  "item_octarine_core": {
+   "Late_Items": 10,
+   "Other_Items": 43
+  },
+  "item_aeon_disk": {
+   "Late_Items": 23,
+   "Other_Items": 19
+  },
+  "item_recipe_force_staff": {
+   "Late_Items": 1
+  },
+  "item_rod_of_atos": {
+   "Other_Items": 11,
+   "Late_Items": 2,
+   "Mid_Items": 2
+  },
+  "item_dagon_5": {
+   "Other_Items": 12,
+   "Late_Items": 2
+  },
+  "item_ethereal_blade": {
+   "Other_Items": 23,
+   "Core_Items": 1,
+   "Late_Items": 3
+  },
+  "item_refresher": {
+   "Other_Items": 24,
+   "Luxury": 1,
+   "Late_Items": 10
+  },
+  "item_spirit_vessel": {
+   "Other_Items": 15,
+   "Mid_Items": 5
+  },
+  "item_circlet": {
+   "Starting_Items": 42
+  },
+  "item_ring_of_health": {
+   "Early_Game": 6
+  },
+  "item_recipe_wraith_band": {
+   "Early_Game": 1
+  },
+  "item_manta": {
+   "Late_Items": 3,
+   "Other_Items": 16,
+   "Mid_Items": 6,
+   "Core_Items": 1
+  },
+  "item_butterfly": {
+   "Late_Items": 12,
+   "Other_Items": 22
+  },
+  "item_travel_boots_2": {
+   "Other_Items": 2
+  },
+  "item_greater_crit": {
+   "Other_Items": 27,
+   "Late_Items": 13
+  },
+  "item_bloodthorn": {
+   "Other_Items": 37,
+   "Late_Items": 6
+  },
+  "item_rapier": {
+   "Other_Items": 20
+  },
+  "item_mango": {
+   "Starting_Items": 3
+  },
+  "item_boots_of_speed": {
+   "Early_Game": 1
+  },
+  "item_maelstrom": {
+   "Mid_Items": 9,
+   "Late_Items": 1,
+   "Other_Items": 3
+  },
+  "item_recipe_orchid": {
+   "Mid_Items": 1
+  },
+  "item_diffusal_blade_2": {
+   "Other_Items": 1,
+   "Late_Items": 1
+  },
+  "item_dagon": {
+   "Other_Items": 2
+  },
+  "item_vanguard": {
+   "Mid_Items": 3
+  },
+  "item_overwhelming_blink": {
+   "Late_Items": 4,
+   "Other_Items": 4
+  },
+  "item_enchanted_mango": {
+   "Starting_Items": 73,
+   "Starting_Items_Secondary": 1
+  },
+  "item_ghost": {
+   "Other_Items": 31,
+   "Luxury": 1,
+   "Late_Items": 9
+  },
+  "item_shadow_blade": {
+   "Other_Items": 2
+  },
+  "item_invis_sword": {
+   "Other_Items": 10,
+   "Mid_Items": 1
+  },
+  "item_null_talisman": {
+   "Early_Game": 17,
+   "Starting_Items": 4
+  },
+  "item_infused_raindrop": {
+   "Early_Game": 25
+  },
+  "item_travel_boots": {
+   "Mid_Items": 10,
+   "Late_Items": 3,
+   "Other_Items": 11
+  },
+  "item_yasha_and_kaya": {
+   "Other_Items": 7
+  },
+  "item_necronomicon": {
+   "Early_Game": 2
+  },
+  "item_slippers": {
+   "Starting_Items": 18
+  },
+  "item_wraith_band": {
+   "Early_Game": 24,
+   "Starting_Items": 1
+  },
+  "item_satanic": {
+   "Late_Items": 12,
+   "Other_Items": 21
+  },
+  "item_desolator": {
+   "Other_Items": 28,
+   "Mid_Items": 4,
+   "Late_Items": 4,
+   "Core_Items_Secondary": 1
+  },
+  "item_nullifier": {
+   "Other_Items": 11,
+   "Late_Items": 1
+  },
+  "item_ring_of_protection": {
+   "Starting_Items": 10
+  },
+  "item_hood_of_defiance": {
+   "Mid_Items": 6,
+   "Other_Items": 1,
+   "Early_Game": 1
+  },
+  "item_eternal_shroud": {
+   "Late_Items": 2,
+   "Other_Items": 1
+  },
+  "item_orchid": {
+   "Mid_Items": 4,
+   "Late_Items": 1,
+   "Other_Items": 6
+  },
+  "item_diffusal_blade": {
+   "Other_Items": 3,
+   "Mid_Items": 1
+  },
+  "item_assault_cuirass": {
+   "Other_Items": 1
+  },
+  "item_armlet": {
+   "Mid_Items": 4,
+   "Other_Items": 7,
+   "Early_Game": 1
+  },
+  "item_swift_blink": {
+   "Other_Items": 9,
+   "Late_Items": 7
+  },
+  "item_buckler": {
+   "Early_Game": 1
+  },
+  "item_holy_locket": {
+   "Other_Items": 3,
+   "Mid_Items": 1,
+   "Late_Items": 1
+  },
+  "item_falcon_blade": {
+   "Mid_Items": 1,
+   "Early_Game": 4,
+   "Other_Items": 6
+  },
+  "item_hurricane_pike": {
+   "Other_Items": 21,
+   "Late_Items": 6
+  },
+  "item_helm_of_the_dominator_2": {
+   "Other_Items": 1
+  },
+  "item_bloodstone": {
+   "Other_Items": 11,
+   "Mid_Items": 1,
+   "Late_Items": 4
+  },
+  "item_wind_waker": {
+   "Other_Items": 1
+  },
+  "item_mantle": {
+   "Starting_Items": 15
+  },
+  "item_blood_stone": {
+   "Luxury": 1
+  },
+  "item_kaya_and_sange": {
+   "Luxury": 1,
+   "Other_Items": 5,
+   "Late_Items": 1
+  },
+  "item_arcane_blink": {
+   "Luxury": 1,
+   "Other_Items": 3,
+   "Late_Items": 1
+  },
+  "item_bracer": {
+   "Early_Game": 9,
+   "Other_Items": 1
+  },
+  "item_dragon_lance": {
+   "Mid_Items": 4,
+   "Other_Items": 5
+  },
+  "item_blight_stone": {
+   "Starting_Items": 2,
+   "Early_Game": 2,
+   "Early_Game_Secondary": 1
+  },
+  "item_necromonicon_3": {
+   "Other_Items": 1
+  },
+  "item_hand_midas": {
+   "Other_Items": 1
+  },
+  "item_refresher_orb": {
+   "Other_Items": 1
+  },
+  "item_kaya": {
+   "Other_Items": 3,
+   "Mid_Items": 1
+  },
+  "item_manta_style": {
+   "Other_Items": 1
+  },
+  "item_ghost_scepter": {
+   "Other_Items": 2
+  },
+  "item_moonshard": {
+   "Other_Items": 3
+  },
+  "item_harpoon": {
+   "Late_Items": 1
+  },
+  "item_ward_sentry": {
+   "Starting_Items": 3
+  },
+  "item_pavise": {
+   "Late_Items": 1
+  },
+  "item_basher": {
+   "Late_Items": 4,
+   "Core_Items_Secondary": 1,
+   "Mid_Items": 1,
+   "Other_Items": 1,
+   "Core_Items": 1
+  },
+  "item_witch_blade": {
+   "Other_Items": 4,
+   "Mid_Items": 1
+  },
+  "item_gungir": {
+   "Other_Items": 4,
+   "Late_Items": 1
+  },
+  "item_lifesteal": {
+   "Early_Game": 1
+  },
+  "item_meteor_hammer": {
+   "Other_Items": 4,
+   "Early_Game": 1,
+   "Mid_Items": 1
+  },
+  "item_crown": {
+   "Starting_Items": 1
+  },
+  "item_spherer": {
+   "Other_Items": 1
+  },
+  "item_sobi_mask": {
+   "Starting_Items": 1
+  },
+  "item_smoke_of_deceit": {
+   "Mid_Items": 1
+  },
+  "item_battle_fury": {
+   "Other_Items": 1
+  },
+  "item_fluffy_hat": {
+   "Early_Game": 1
+  },
+  "item_desolater": {
+   "Other_Items": 1
+  },
+  "item_branch": {
+   "Starting_Items": 1
+  },
+  "item_ring_of_regen": {
+   "Starting_Items": 1
+  }
+ }
+}

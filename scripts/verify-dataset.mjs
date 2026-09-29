@@ -23,6 +23,20 @@ async function main() {
   console.log(`  source=${meta.source}  heroMetadataSource=${meta.heroMetadataSource}  patch=${meta.latestPatch}`);
   console.log(`  heroes=${heroes.length}  tables=${Object.keys(matchups).length}`);
 
+  // Hero identity gate: every hero must carry a valid, unique, authoritative
+  // npc_dota_hero_* key. Fail closed — an older snapshot without `key` must not
+  // be waved through, because the previous loader silently re-derived one from
+  // the display name and that was wrong for 20 heroes (ТЗ §18.1).
+  const keys = new Set();
+  for (const h of heroes) {
+    if (typeof h.key !== 'string' || !/^npc_dota_hero_[a-z0-9_]+$/.test(h.key)) {
+      throw new Error(`hero ${h.id} (${h.name}) has no valid npc_dota_hero key in heroes.json`);
+    }
+    if (keys.has(h.key)) throw new Error(`duplicate hero key ${h.key}`);
+    keys.add(h.key);
+  }
+  console.log(`✓ hero keys valid and unique (${keys.size} npc_dota_hero_* keys)`);
+
   // The full 13-gate STRATZ contract, applied to what is actually on disk.
   if (meta.source === 'STRATZ') {
     const res = validateProductionContract(heroes, matchups);

@@ -95,6 +95,9 @@ export interface Dataset {
 let cache: Dataset | null = null;
 let inflight: Promise<Dataset> | null = null;
 
+/** heroes.json as committed: every Hero field except the loader-added `nameRu`. */
+type RawHeroFile = Omit<Hero, 'nameRu'>;
+
 export async function loadDataset(): Promise<Dataset> {
   if (cache) return cache;
   if (inflight) return inflight;
@@ -116,12 +119,20 @@ export async function loadDataset(): Promise<Dataset> {
     if (!itemsRes.ok) throw new Error(`Failed to load item metadata (${itemsRes.status}).`);
     if (!itemStatsRes.ok) throw new Error(`Failed to load item statistics (${itemStatsRes.status}).`);
     if (!metaRes.ok) throw new Error(`Failed to load dataset metadata (${metaRes.status}).`);
-    const raw = (await heroesRes.json()) as Array<Omit<Hero, 'key' | 'nameRu'>>;
-    const heroes: Hero[] = raw.map((h) => ({
-      ...h,
-      key: `npc_dota_hero_${h.name.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '')}`,
-      nameRu: RU_NAMES[h.name] ?? '',
-    }));
+    // The raw file already carries the authoritative `key` (written by
+    // normalizeHero). It is read as-is: no display-name slugification, because
+    // that produced wrong keys for 20 heroes and broke the itembuild join
+    // (ТЗ №18.1). An older snapshot without `key` fails closed below.
+    const raw = (await heroesRes.json()) as RawHeroFile[];
+    const heroes: Hero[] = raw.map((h) => ({ ...h, nameRu: RU_NAMES[h.name] ?? '' }));
+    for (const h of heroes) {
+      if (typeof h.key !== 'string' || !/^npc_dota_hero_[a-z0-9_]+$/.test(h.key)) {
+        throw new Error(
+          `Hero ${h.id} (${h.name}) has no valid npc_dota_hero key in heroes.json — ` +
+          'regenerate the dataset. Deriving one from the display name is not safe.',
+        );
+      }
+    }
     const matchupsRaw = (await matchupsRes.json()) as Record<string, MatchupRow[]>;
     const positionsRaw = (await positionsRes.json()) as Record<string, HeroPositionEntry>;
     const meta = (await metaRes.json()) as DatasetMeta;

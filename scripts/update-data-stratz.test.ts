@@ -199,7 +199,7 @@ const IDS_100 = Array.from({ length: 100 }, (_, i) => i + 1);
 
 function heroFixture(ids: number[], over: Partial<Hero> = {}): Hero[] {
   return ids.map((id) => ({
-    id, name: `Hero ${id}`, roles: ['Carry'],
+    id, name: `Hero ${id}`, key: `npc_dota_hero_hero_${id}`, roles: ['Carry'],
     img: `https://cdn/x${id}.png`, pubPick: 1, ...over,
   }));
 }

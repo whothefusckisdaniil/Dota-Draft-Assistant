@@ -27,7 +27,7 @@ type RawHero = {
 
 /** Minimal OpenDota /heroes entry. */
 function rawHero(id: number, over: Partial<RawHero> = {}): RawHero {
-  return { id, localized_name: `Hero ${id}`, primary_attr: 'STR', attack_type: 'Melee', roles: ['Carry'], ...over };
+  return { id, name: `npc_dota_hero_hero_${id}`, localized_name: `Hero ${id}`, primary_attr: 'STR', attack_type: 'Melee', roles: ['Carry'], ...over };
 }
 
 /** Minimal OpenDota /heroStats entry. */
@@ -64,6 +64,7 @@ describe('normalizeHero — the committed heroes.json contract', () => {
     const h = normalizeHero(rawHero(74, { localized_name: 'Invoker' }), new Map([[74, rawStat(74)]]));
     expect(h).toEqual({
       id: 74,
+      key: 'npc_dota_hero_hero_74',
       name: 'Invoker',
       primaryAttr: 'STR',
       attackType: 'Melee',
@@ -79,7 +80,7 @@ describe('normalizeHero — the committed heroes.json contract', () => {
 
   it('emits exactly the 11 contract keys, in order', () => {
     expect(Object.keys(normalizeHero(rawHero(1), new Map([[1, rawStat(1)]])))).toEqual([
-      'id', 'name', 'primaryAttr', 'attackType', 'roles',
+      'id', 'key', 'name', 'primaryAttr', 'attackType', 'roles',
       'img', 'icon', 'proPick', 'proWin', 'pubPick', 'pubWin',
     ]);
   });
@@ -152,8 +153,41 @@ describe('validateHeroMetadata — gates that stop a stale snapshot shipping', (
 
   it('rejects duplicate ids, which would silently drop a hero from the STRATZ query', () => {
     const bad = roster();
+    // Same id AND same key — the id gate and the key gate both apply.
     bad[7] = { ...bad[6] };
-    expect(() => validateHeroMetadata(bad, '7.41')).toThrow(/duplicate hero id 7/);
+    expect(() => validateHeroMetadata(bad, '7.41')).toThrow(/duplicate/);
+  });
+
+  it('rejects a duplicate key even when the ids differ', () => {
+    const bad = roster();
+    bad[7] = { ...bad[6], id: 7, name: 'npc_dota_hero_hero_6' };
+    expect(() => validateHeroMetadata(bad, '7.41')).toThrow(/duplicate hero key/);
+  });
+
+  it('rejects a hero with no authoritative key instead of deriving one', () => {
+    const bad = roster();
+    delete (bad[3] as Record<string, unknown>).key;
+    expect(() => validateHeroMetadata(bad, '7.41')).toThrow(/refusing to derive one/);
+  });
+
+  it('rejects a malformed key', () => {
+    const bad = roster();
+    (bad[4] as Record<string, unknown>).key = 'Anti-Mage';
+    expect(() => validateHeroMetadata(bad, '7.41')).toThrow(/malformed hero key/);
+  });
+
+  it('exposes the key set for downstream joins', () => {
+    const res = validateHeroMetadata(roster(), '7.41');
+    expect(res.heroKeys).toHaveLength(res.heroCount);
+    expect(res.heroKeys).toContain('npc_dota_hero_hero_1');
+  });
+
+  it('preserves the exact OpenDota key, verbatim', () => {
+    // Anti-Mage: display name slugs to npc_dota_hero_anti_mage, which is WRONG.
+    const h = normalizeHero(
+      rawHero(1, { name: 'npc_dota_hero_antimage', localized_name: 'Anti-Mage' }), new Map());
+    expect(h.key).toBe('npc_dota_hero_antimage');
+    expect(h.key).not.toBe('npc_dota_hero_anti_mage');
   });
 });
 

@@ -73,13 +73,19 @@ export async function fetchJson(
 }
 
 /**
- * The committed `heroes.json` contract. Field-for-field identical to the
- * pre-migration implementation — the on-disk format does not change.
+ * The committed `heroes.json` contract. This file contains the normalized
+ * OpenDota hero metadata, including the authoritative `key`.
  */
 export function normalizeHero(h, statsById) {
   const s = statsById.get(h.id) ?? {};
   return {
     id: h.id,
+    // The authoritative Valve/OpenDota internal name, used verbatim as the
+    // canonical hero identity. It is NOT derived from `localized_name`:
+    // slugifying the display name produces wrong keys for many heroes
+    // (Anti-Mage -> npc_dota_hero_anti_mage, but Valve says npc_dota_hero_antimage),
+    // and that silently broke the itembuild join for 20 of 127 heroes (ТЗ №18).
+    key: h.name,
     name: h.localized_name,
     primaryAttr: h.primary_attr,
     attackType: h.attack_type,
@@ -117,11 +123,28 @@ export function validateHeroMetadata(heroes, latestPatch) {
     );
   }
   const seen = new Set();
+  const seenKeys = new Set();
   for (const h of heroes) {
     if (!Number.isInteger(h.id) || h.id <= 0) throw new Error(`invalid hero id: ${h.id}`);
     if (typeof h.name !== 'string' || h.name.length === 0) {
       throw new Error(`invalid name for hero ${h.id}`);
     }
+    // The authoritative internal key must be present, well-formed and unique.
+    // There is deliberately NO fallback to a display-name slug: a silent
+    // fallback is how the 20-hero mismatch came back in the first place.
+    if (typeof h.key !== 'string' || h.key.length === 0) {
+      throw new Error(
+        `missing authoritative npc_dota_hero key for hero ${h.id} (${h.name}) — ` +
+        'refusing to derive one from the display name',
+      );
+    }
+    if (!/^npc_dota_hero_[a-z0-9_]+$/.test(h.key)) {
+      throw new Error(`malformed hero key "${h.key}" for hero ${h.id} (${h.name})`);
+    }
+    if (seenKeys.has(h.key)) {
+      throw new Error(`duplicate hero key ${h.key} (heroes ${[...seenKeys].indexOf(h.key)} and ${h.id})`);
+    }
+    seenKeys.add(h.key);
     if (!Array.isArray(h.roles)) throw new Error(`invalid roles for hero ${h.id}`);
     if (typeof h.img !== 'string' || h.img.length === 0) {
       throw new Error(`missing portrait image for hero ${h.id} (${h.name})`);
@@ -132,7 +155,7 @@ export function validateHeroMetadata(heroes, latestPatch) {
   if (typeof latestPatch !== 'string' || !/^\d+\.\d+/.test(latestPatch)) {
     throw new Error(`OpenDota patch metadata unusable: ${JSON.stringify(latestPatch)}`);
   }
-  return { heroCount: heroes.length, heroIds: [...seen] };
+  return { heroCount: heroes.length, heroIds: [...seen], heroKeys: [...seenKeys] };
 }
 
 /**
