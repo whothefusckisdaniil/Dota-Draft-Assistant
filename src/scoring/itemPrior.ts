@@ -94,9 +94,9 @@ interface LaneAggregate {
  * about. `WeakMap` keyed on the Dataset so a reloaded dataset never serves
  * stale aggregates and nothing is retained once the dataset is dropped.
  */
-const baselineCache = new WeakMap<Dataset, Map<string, LaneAggregate>>();
+const baselineCache = new WeakMap<ItemPriorDataset, Map<string, LaneAggregate>>();
 
-function buildBaselines(dataset: Dataset): Map<string, LaneAggregate> {
+function buildBaselines(dataset: ItemPriorDataset): Map<string, LaneAggregate> {
   const byPosition = new Map<string, LaneAggregate>();
   for (const heroPositions of Object.values(dataset.itemStats)) {
     for (const [pos, byItem] of Object.entries(heroPositions)) {
@@ -121,7 +121,7 @@ function buildBaselines(dataset: Dataset): Map<string, LaneAggregate> {
   return byPosition;
 }
 
-function baselinesFor(dataset: Dataset): Map<string, LaneAggregate> {
+function baselinesFor(dataset: ItemPriorDataset): Map<string, LaneAggregate> {
   let cached = baselineCache.get(dataset);
   if (!cached) {
     cached = buildBaselines(dataset);
@@ -148,7 +148,16 @@ function baselineIntensity(agg: LaneAggregate | undefined, itemId: number): numb
  * missing position means "we do not know", and a future consumer must be able
  * to tell that apart from "this hero buys nothing here".
  */
-export function getItemPrior(dataset: Dataset, heroId: number, position: string): ItemPrior[] {
+/**
+ * The read-only slice `getItemPrior` needs (ТЗ §19.1 §4).
+ *
+ * Declared here so callers holding a narrower object — a research fixture, a
+ * subset snapshot — can call it without a cast. `Dataset` satisfies it
+ * structurally, so existing callers are unaffected.
+ */
+export type ItemPriorDataset = Pick<Dataset, 'items' | 'itemStats'>;
+
+export function getItemPrior(dataset: ItemPriorDataset, heroId: number, position: string): ItemPrior[] {
   const byItem = dataset.itemStats[heroId]?.[position];
   if (!byItem) return [];
 

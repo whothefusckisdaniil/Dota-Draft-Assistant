@@ -182,10 +182,16 @@ Why this shape:
 
 ## 19. Next step
 
-1. Add `itemData` to `DatasetMeta` (deferred tech debt from ТЗ №12).
+1. ~~Add `itemData` to `DatasetMeta`~~ — **done** in ТЗ №14: `itemData?: ItemDataMeta`
+   now lives in `src/data/dataset.ts`, so `meta.json`'s item block is typed.
 2. Decide whether neutral items and Agh's Shard/Scepter form a separate class —
    the data supports it (low lift, late median) but it is a product decision.
-3. Only then build the build engine on top of this baseline.
+   Still open.
+3. Build the build engine on top of this baseline — **not recommended yet**, see
+   `docs/build-profile-research.md`: the honest outcome of that research is that
+   `core` / `situational` is **not identifiable** from these aggregates, and
+   `position_est` from OpenDota turned out to be a round-robin
+   (`docs/public-position-research.md`).
 
 ## 20. Reproducing
 

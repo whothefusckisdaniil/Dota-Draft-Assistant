@@ -78,15 +78,19 @@ The 20 distinct unresolved names split into two kinds:
   `item_ghost_scepter`, `item_hand_midas`, `item_hood_of_defiance`,
   `item_diffusal_blade_2`, `item_eternal_shroud`. Mostly removed from the game.
 
-## 5. Coverage — and the hero-key fix (§18.1)
+## 5. Coverage — current status is 126/127 (§18.1)
 
-| | before | after |
-| --- | --- | --- |
-| Valve hero files | 127 | 127 |
-| canonical heroes | 127 | 127 |
-| **join on the hero key** | **107** | **126** |
-| cells with >=1 Valve phase | 365 (80 %) | **440 (96 %)** |
-| (hero, item) pairs with a phase | 2 936 | 3 466 |
+| metric | value |
+| --- | --- |
+| Valve hero files | 127 |
+| canonical heroes | 127 |
+| **hero join** | **126 / 127** |
+| cells with ≥1 Valve phase | 440 (96 %) |
+| (hero, item) pairs with a phase | 3 466 |
+
+For reference, before the ТЗ §18.1 fix the join was **107/127** with 80 % cell
+coverage. The authoritative OpenDota key is now persisted in `heroes.json`; no
+alias table exists or is needed.
 
 > Previous versions derived the key from the localized display name, which
 > caused 20 mismatches; the authoritative OpenDota key is now persisted in
@@ -189,9 +193,9 @@ Sniper pos1 shows the intended shape:
 | Satanic | 0.21 | 0.21 | 41 | Other_Items | unknown |
 
 **Battle Fury (§12)**: Anti-Mage pos1 → rank 1, `ev/g 1.30`, median 14 min, and
-**no Valve evidence** — because Anti-Mage is one of the 20 broken hero joins.
-Sniper pos1 → absent from STRATZ and from Valve, with **no fallback applied**.
-The absence is preserved rather than filled in, which is what §12 asks for.
+**Valve phase evidence exists**: `Mid_Items`. Sniper pos1 → absent from STRATZ
+and from Valve, with **no fallback applied**; the absence is preserved rather
+than filled in, which is what §12 asks for.
 
 Core-like items (Battle Fury, Maelstrom, Manta, BKB, Skodi, Butterfly, Satanic)
 get a **phase profile**, never an `isCore` flag (§14). Late/luxury items (Moon
@@ -240,13 +244,220 @@ score.
 6. Snapshot is pinned to one commit and will drift from live game data.
 7. Nothing is wired into the UI; the module is unexercised in the app.
 
-## 20. Next step
+## 20. Remaining gaps and next step
 
-The highest-value fix is small and needs approval: **persist the Valve
-`npc_dota_hero_*` key in `heroes.json`** at generation time. That would take the
-hero join is already 126/127; the remaining two gaps need a Valve-side refresh
-or an alias policy, not a code change — which is what the §12 Battle Fury check currently
-cannot demonstrate. Until then, any phase prior must be reported with its
-20-hero blind spot attached.
+The authoritative `npc_dota_hero_*` key **is** persisted in `heroes.json`
+(ТЗ №18.1), which is what took the join from 107/127 to 126/127. That work is
+done; what remains are two gaps that are not code defects:
 
-> benchmark heroes are among them (§12).
+| gap | project side | Valve side | why no alias |
+| --- | --- | --- | --- |
+| Skywrath Mage | `npc_dota_hero_skywrath_mage` | `npc_dota_hero_bird_samurai` | Valve's itembuild file predates the rename. The project side is current and correct; the mirror is stale. An alias would encode a fact about the mirror's history into production identity. |
+| Kez | `npc_dota_hero_kez` | *(no itembuild file)* | The hero has no build file in the pinned snapshot. Nothing to join to. |
+
+Both are pinned by `scripts/hero-identity.test.ts`, which asserts the exact set
+of two — so a future Valve refresh that closes either one fails the test loudly
+instead of silently changing coverage.
+
+**126/127 is a coverage limitation of one Valve snapshot, not a defect.** A
+Build Engine must handle "Valve evidence present" and "Valve evidence absent"
+as equally normal states, and must never read absence as a negative signal about
+the item.
+
+Next step is the production-safe `BuildPhasePrior` (ТЗ №19), which must keep the
+three signals separate rather than blending them into one score — with 75 % of
+
+---
+
+# ТЗ §19 — production Evidence Model (`BuildPhasePrior`)
+
+> **Not wired into the app.** `getBuildPhasePrior` is importable and tested, but
+> nothing in the UI, draft ranking or `scoreCandidates` calls it. Hero ranking is
+> unchanged (§29).
+
+## Architecture (ТЗ §19.1)
+
+```
+Canonical production layer
+  src/scoring/buildPhasePrior.ts      evidence model + Valve mapping helpers
+  src/scoring/buildPhaseAgreement.ts  phase families + agreement rule
+
+Research
+  scripts/build-phase-research.mjs    imports the canonical modules
+  scripts/fetch-valve-itembuilds.mjs  pinned snapshot fetcher
+```
+
+There is **one** implementation of `ValvePhase`, `PHASE_FAMILY`,
+`VALVE_PHASE_ORDER` and the item-name mapping. The earlier
+`src/scoring/buildPhase.ts` duplicate (and its test file) was **removed** in
+ТЗ §19.1; its still-relevant cases moved into `buildPhasePrior.test.ts`. The
+research script imports from the canonical modules only.
+
+## Purpose
+
+For one `(hero, position, item)` triple, collect the independent evidence a
+future Build Candidate Engine will need — **without merging it into a score**.
+
+```
+STRATZ item prior        ─┐
+STRATZ purchase timing   ─┤
+Valve hero evidence      ─┼─→  BuildPhasePrior  (5 signals, no magic number)
+Valve item evidence      ─┤
+Valve phase evidence     ─┘
+```
+
+## Evidence model
+
+```ts
+type Evidence<T> =
+  | { status: 'available';   source: string; value: T }
+  | { status: 'unavailable'; source: string; reason: UnavailableReason };
+```
+
+A discriminated union, not an optional field. `status` is always explicit, and
+`value` cannot be read without first narrowing on it.
+
+## The rule the whole type exists to enforce (§0)
+
+**Absence of evidence is never a negative signal.** Two situations that are
+opposites in meaning, and which this model refuses to conflate:
+
+| | status | reason | meaning |
+| --- | --- | --- | --- |
+| Valve does not know the hero | `unavailable` | `hero_data_unavailable` | ignorance |
+| Valve knows the hero, item not in its build | **`available`**, `present: false` | — | real, measured negative |
+
+Both are exercised by tests, and the Kez benchmark row shows the first in the
+wild: `valveHero=no_build_file` while the STRATZ prior stays `0.05` and timing
+`med 2m`. A missing Valve file never lowers a STRATZ signal.
+
+## Hero evidence (§2)
+
+The join is on the authoritative `hero.key` stored in `heroes.json` (ТЗ §18.1) —
+**no slugification, no alias table** (§13).
+
+```ts
+{ status: 'available', heroKey, buildFile }
+{ status: 'unavailable', heroKey, reason: 'no_build_file' | 'hero_key_mismatch' }
+```
+
+## Item evidence (§3, §14)
+
+Present when the hero is known and the item maps exactly on `dname`. When Valve
+knows the hero but the item is not in the build, the result is
+`{ available, present: false, phases: [] }` — never `unavailable`.
+
+Mapping is exact or nothing: an id with no catalogue entry gives
+`item_not_in_catalogue`; a duplicated `dname` gives `item_mapping_unresolved`.
+
+## Timing evidence (§5)
+
+From the existing STRATZ `byMinute` histogram via `histogramStats` — never
+recomputed, never back-filled from a global or neighbouring-lane value.
+
+```ts
+{ status: 'available', value: { p25Minute, medianMinute, p75Minute, meanMinute, earlyShare, … } }
+{ status: 'unavailable', reason: 'no_stratz_cell' | 'zero_purchases' | 'empty_histogram' }
+```
+
+## Valve phase evidence (§4)
+
+Carries every phase Valve authored for the item, deduplicated, plus
+`phaseExclusive` (false when the item sits in several phases — the label is
+fuzzy, and the model says so rather than picking one, §16–17).
+
+## Agreement (§19–§21)
+
+```ts
+type AgreementDecision = 'supported' | 'undecided' | 'conflicting' | 'unavailable';
+```
+
+`getPhaseAgreement(valvePhases, timing)` compares Valve's phase family with the
+STRATZ median. Boundaries are explicit, exported constants:
+
+```ts
+AGREEMENT_BOUNDARIES = { earlyMedianBelow: 15, lateMedianAtOrAbove: 30 }
+```
+
+`undecided` is a first-class outcome. Measured on the current snapshot: **supported
+25 %, undecided 75 %, conflicting 0 %**. The rule is not tuned to make that look
+better; rounding the middle into agreement would manufacture a signal the data
+does not have (§21).
+
+## Reason codes (§22)
+
+Deterministic identifiers, never prose. A UI may render them as text later.
+
+| scope | codes |
+| --- | --- |
+| hero | `no_build_file`, `hero_key_mismatch` |
+| item | `hero_data_unavailable`, `item_mapping_unresolved`, `item_not_in_catalogue` |
+| stratz | `no_stratz_cell`, `zero_purchases`, `empty_histogram` |
+| phase | `no_phase`, `hero_data_unavailable`, `item_mapping_unresolved`, `item_not_in_catalogue` |
+| agreement | `no_phase`, `no_timing`, `not_decidable`, `agreement`, `conflict` |
+
+`PhaseUnavailableReason` and `ItemUnavailableReason` are separate literal unions,
+and `phase.reason` is the **upstream** reason verbatim (ТЗ §19.1 §5). A broken
+item identity is reported as `item_mapping_unresolved`, not as a missing hero —
+those are different defects with different fixes, and collapsing them would hide
+one behind the other. The compiler enforces it: assigning a stratz-scoped reason
+to `phase.reason` is a type error.
+
+## What is deliberately absent
+
+| excluded | why |
+| --- | --- |
+| `finalScore` / `combinedScore` (§9) | with 75 % undecided, a blend hides an arbitrary weight choice inside one number |
+| enemy input (§10) | Level 1 only; the data cannot support enemy conditioning honestly (ТЗ §11) |
+| slots / inventory / current build (§11) | slot semantics are still `unknown` project-wide (ТЗ №15.1, №17) |
+| `nextItem` / ordering (§12) | an unordered phase set plus a histogram cannot yield `A → B → C` |
+| hero/item hardcoding (§28) | verified by grep and by tests that assert the exact input/output key sets |
+
+A test asserts the exact input and output shapes, so a future addition of any
+forbidden field fails rather than slipping in.
+
+## Benchmarks (§25)
+
+```
+AntiMage p1 BF         prior=0.93 timing=med 14m valveHero=available valveItem=Mid_Items    phase=Mid_Items -> undecided
+Sniper p1 BF           prior=unavailable timing=unavailable valveHero=available valveItem=present:false phase=no_phase
+Puck p2 WitchBlade     prior=1.17 timing=med 14m valveHero=available valveItem=Mid_Items    phase=Mid_Items -> undecided
+Bane p4 AetherLens     prior=0.72 timing=med 21m valveHero=available valveItem=Late_Items   phase=Late_Items -> undecided
+Bane p5 AetherLens     prior=0.69 timing=med 22m valveHero=available valveItem=Late_Items   phase=Late_Items -> undecided
+WraithKing p1 Radiance prior=0.93 timing=med 16m valveHero=available valveItem=Mid_Items    phase=Mid_Items -> undecided
+Kez p1 WraithBand      prior=0.05 timing=med  2m valveHero=no_build_file valveItem=hero_data_unavailable phase=hero_data_unavailable
+```
+
+The Kez row is the whole thesis in one line: no Valve file, and the STRATZ
+signals are untouched. The Sniper row shows the §3 rule from the other side —
+Valve knows Sniper, Battle Fury is simply not in the build, so item evidence is
+`available` with `present: false`, and prior/timing are `unavailable` because
+STRATZ has no cell either.
+
+## Limitations
+
+1. Valve coverage is **126/127** (ТЗ §18.1); `bird_samurai` and `kez` are the two
+   documented gaps.
+2. Agreement 25 %; 75 % undecided by construction.
+3. `Other_Items` is a catch-all with no timing meaning.
+4. Phase families come from Valve's opinion, not measured play.
+5. The snapshot is pinned to one commit and will drift.
+6. Unused in the app: nothing is rendered, and no ranking reads it.
+
+## Future Build Candidate layer
+
+The consumer this exists for. It will need to decide what to do with
+`undecided` and with `unavailable` — and that decision is deliberately not made
+here, because it is a policy choice, not a derivation. The model hands over
+evidence; the next layer owns the judgement.
+
+## Reproducing
+
+```bash
+node --experimental-strip-types scripts/build-phase-research.mjs benchmarks
+npx vitest run src/scoring/buildPhasePrior.test.ts
+```
+
+Offline. No token, no network.
+
+No best-effort fuzzy join (§14).
