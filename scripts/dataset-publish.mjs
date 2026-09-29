@@ -29,7 +29,14 @@ export const NEXT_SUFFIX = 'data.__next';
 export const PREV_SUFFIX = 'data.__prev';
 
 /** Every file a complete dataset must contain. */
-export const DATASET_FILES = ['heroes.json', 'matchups.json', 'positions.json', 'meta.json'];
+export const DATASET_FILES = [
+  'heroes.json',
+  'matchups.json',
+  'positions.json',
+  'items.json',
+  'item-stats.json',
+  'meta.json',
+];
 
 /**
  * Re-read the staged files and prove they are complete, parseable and
@@ -51,12 +58,14 @@ export async function verifyStagedDataset(stagedDir, { heroCount, requireComplet
       DATASET_FILES.map(async (f) => [f, await readFile(path.join(stagedDir, f), 'utf8')]),
     ),
   );
-  let heroes, matchups, positions, meta;
+  let heroes, matchups, positions, items, itemStats, meta;
   try {
-    ({ heroes, matchups, positions, meta } = {
+    ({ heroes, matchups, positions, items, itemStats, meta } = {
       heroes: JSON.parse(raw['heroes.json']),
       matchups: JSON.parse(raw['matchups.json']),
       positions: JSON.parse(raw['positions.json']),
+      items: JSON.parse(raw['items.json']),
+      itemStats: JSON.parse(raw['item-stats.json']),
       meta: JSON.parse(raw['meta.json']),
     });
   } catch (e) {
@@ -69,6 +78,12 @@ export async function verifyStagedDataset(stagedDir, { heroCount, requireComplet
   }
   if (!positions || typeof positions !== 'object' || Array.isArray(positions)) {
     throw new Error('staged positions.json is not an object');
+  }
+  if (!items || typeof items !== 'object' || Array.isArray(items)) {
+    throw new Error('staged items.json is not an object');
+  }
+  if (!itemStats || typeof itemStats !== 'object' || Array.isArray(itemStats)) {
+    throw new Error('staged item-stats.json is not an object');
   }
   if (!meta || typeof meta !== 'object') throw new Error('staged meta.json is not an object');
 
@@ -113,6 +128,18 @@ export async function verifyStagedDataset(stagedDir, { heroCount, requireComplet
   }
   for (const id of positionIds) {
     if (!ids.has(id)) throw new Error(`staged positions.json has an entry for unknown hero ${id}`);
+  }
+  // Same invariant for the item layers: the catalogue covers the roster, and the
+  // statistics may only reference catalogue ids (§16).
+  const itemIds = new Set(Object.keys(items));
+  if (itemIds.size === 0) throw new Error('staged items.json is empty');
+  for (const [hid, byPos] of Object.entries(itemStats)) {
+    if (!ids.has(Number(hid))) throw new Error(`staged item-stats.json has an entry for unknown hero ${hid}`);
+    for (const byItem of Object.values(byPos)) {
+      for (const iid of Object.keys(byItem)) {
+        if (!itemIds.has(iid)) throw new Error(`staged item-stats.json references item ${iid} that is not in items.json`);
+      }
+    }
   }
   // Optional external expectation (the caller's in-memory count), when given.
   if (heroCount !== undefined && meta.heroCount !== heroCount) {

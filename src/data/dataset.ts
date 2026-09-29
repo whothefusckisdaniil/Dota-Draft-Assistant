@@ -1,7 +1,16 @@
 import { APP_CONFIG } from '../config';
 import { RU_NAMES } from './ruNames';
 import { searchHeroes as searchHeroesLocal } from './heroes';
-import type { Hero, HeroPositionEntry, MatchupRow, PositionDataset } from '../types';
+import type {
+  Hero,
+  HeroPositionEntry,
+  ItemEntry,
+  ItemStatEntry,
+  ItemCatalogue,
+  ItemStatsDataset,
+  MatchupRow,
+  PositionDataset,
+} from '../types';
 
 /** Static snapshot produced by scripts/update-data-stratz.mjs (see meta.json for freshness).
  *  Matchups come from STRATZ weekly buckets, hero metadata from OpenDota.
@@ -46,6 +55,10 @@ export interface Dataset {
   matchups: Map<number, MatchupRow[]>;
   /** Real pick rates per lane (ТЗ №9) — the hard eligibility gate. */
   positions: PositionDataset;
+  /** Item metadata (ТЗ §12). */
+  items: ItemCatalogue;
+  /** Hero + Position -> item purchase statistics (ТЗ §12, LEVEL 1 only). */
+  itemStats: ItemStatsDataset;
   meta: DatasetMeta;
 }
 
@@ -56,10 +69,12 @@ export async function loadDataset(): Promise<Dataset> {
   if (cache) return cache;
   if (inflight) return inflight;
   inflight = (async () => {
-    const [heroesRes, matchupsRes, positionsRes, metaRes] = await Promise.all([
+    const [heroesRes, matchupsRes, positionsRes, itemsRes, itemStatsRes, metaRes] = await Promise.all([
       fetch(`${import.meta.env.BASE_URL}data/heroes.json`),
       fetch(`${import.meta.env.BASE_URL}data/matchups.json`),
       fetch(`${import.meta.env.BASE_URL}data/positions.json`),
+      fetch(`${import.meta.env.BASE_URL}data/items.json`),
+      fetch(`${import.meta.env.BASE_URL}data/item-stats.json`),
       fetch(`${import.meta.env.BASE_URL}data/meta.json`),
     ]);
     if (!heroesRes.ok) throw new Error(`Failed to load hero data (${heroesRes.status}).`);
@@ -68,6 +83,8 @@ export async function loadDataset(): Promise<Dataset> {
     // them we cannot tell a real pos-4 pick from a forced one, so the app must
     // refuse to rank rather than fall back to the old generic role tags.
     if (!positionsRes.ok) throw new Error(`Failed to load position data (${positionsRes.status}).`);
+    if (!itemsRes.ok) throw new Error(`Failed to load item metadata (${itemsRes.status}).`);
+    if (!itemStatsRes.ok) throw new Error(`Failed to load item statistics (${itemStatsRes.status}).`);
     if (!metaRes.ok) throw new Error(`Failed to load dataset metadata (${metaRes.status}).`);
     const raw = (await heroesRes.json()) as Array<Omit<Hero, 'key' | 'nameRu'>>;
     const heroes: Hero[] = raw.map((h) => ({
@@ -95,7 +112,42 @@ export async function loadDataset(): Promise<Dataset> {
         `Position data covers ${Object.keys(positions).length} of ${heroes.length} heroes — refusing to rank on incomplete position data.`,
       );
     }
-    const ds: Dataset = { heroes, heroById, matchups, positions, meta };
+
+    // Item layers are keyed by hero, so a partial catalogue or a mismatched
+    // statistics file would silently mislabel builds later. Coerce the numeric
+    // keys here and assert the roster lines up.
+    const items: ItemCatalogue = {};
+    for (const [id, entry] of Object.entries((await itemsRes.json()) as Record<string, ItemEntry>)) {
+      items[Number(id)] = entry;
+    }
+    const itemStats: ItemStatsDataset = {};
+    for (const [id, byPos] of Object.entries(
+      (await itemStatsRes.json()) as Record<string, Record<string, Record<string, ItemStatEntry>>>,
+    )) {
+      const numId = Number(id);
+      if (!heroById.has(numId)) continue;
+      const positionsForHero: Record<string, Record<number, ItemStatEntry>> = {};
+      for (const [pos, byItem] of Object.entries(byPos)) {
+        const numericItems: Record<number, ItemStatEntry> = {};
+        for (const [iid, cell] of Object.entries(byItem)) numericItems[Number(iid)] = cell;
+        positionsForHero[pos] = numericItems;
+      }
+      itemStats[numId] = positionsForHero;
+    }
+    if (Object.keys(items).length === 0) {
+      throw new Error('Item catalogue is empty — refusing to serve a dataset without item metadata.');
+    }
+    for (const byPos of Object.values(itemStats)) {
+      for (const byItem of Object.values(byPos)) {
+        for (const iid of Object.keys(byItem)) {
+          if (!items[Number(iid)]) {
+            throw new Error(`Item statistics reference item ${iid}, which is not in items.json.`);
+          }
+        }
+      }
+    }
+
+    const ds: Dataset = { heroes, heroById, matchups, positions, items, itemStats, meta };
     cache = ds;
     return ds;
   })();

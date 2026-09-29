@@ -47,6 +47,50 @@ export interface HeroPositionEntry {
 
 export type PositionDataset = Record<number, HeroPositionEntry>;
 
+/** Canonical item metadata (public/data/items.json). */
+export interface ItemEntry {
+  id: number;
+  /** Display name, e.g. "Battle Fury". */
+  name: string;
+  /** STRATZ internal name, e.g. "item_bfury". */
+  dname: string;
+  shortName: string;
+  cost: number;
+  isPurchasable: boolean;
+  isStackable: boolean;
+  isSideShop: boolean;
+  stockMax: number;
+  isSupportFullItem: boolean;
+  image: string;
+  components: number[];
+}
+
+export type ItemCatalogue = Record<number, ItemEntry>;
+
+/**
+ * Purchase statistics for one item on one hero/position (ТЗ §12).
+ *
+ * `purchases` counts purchase EVENTS, not distinct games — it can and does
+ * exceed `heroGames` (measured: Battle Fury 130% for Anti-Mage). There is
+ * deliberately no `rate` field: a consumer that wants one must decide what it
+ * means, and "purchases / games" is purchases-per-game, not a percentage of
+ * games. `wins / purchases` is a winrate *among purchases*, not a causal
+ * "this item gives you X%".
+ */
+export interface ItemStatEntry {
+  purchases: number;
+  wins: number;
+  /** Hero games in the same window/brackets/position, from the position layer. */
+  heroGames: number;
+  /** minute -> purchase events. A histogram on purpose, not a precomputed mean. */
+  byMinute: Record<number, number>;
+  /** purchase-events copy index -> count. 0 is the first copy owned. */
+  instances: Record<number, number>;
+}
+
+/** heroId -> position ('1'..'5') -> itemId -> statistics. */
+export type ItemStatsDataset = Record<number, Record<string, Record<number, ItemStatEntry>>>;
+
 export interface Hero {
   id: number;
   key: string; // npc_dota_hero_*

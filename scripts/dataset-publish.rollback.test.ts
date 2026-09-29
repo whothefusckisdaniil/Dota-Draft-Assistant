@@ -40,17 +40,28 @@ const posLayer = (ids: number[]) =>
   Object.fromEntries(
     ids.map((id) => [
       id,
-      {
-        totalGames: 5000,
-        positions: Object.fromEntries(['1', '2', '3', '4', '5'].map((p) => [p, { games: 1000, share: 0.2 }])),
-      },
+      { totalGames: 500, positions: Object.fromEntries(['1', '2', '3', '4', '5'].map((p) => [p, { games: 100, share: 0.2 }])) },
     ]),
+  );
+/** Item catalogue + statistics — part of the same snapshot since ТЗ §12 §26. */
+const itemLayer = (ids: number[]) =>
+  Object.fromEntries(
+    ids.map((id) => [
+      id,
+      { id, name: `Item ${id}`, dname: `item_${id}`, shortName: '', cost: 100, isPurchasable: true, isStackable: false, isSideShop: false, stockMax: 0, isSupportFullItem: false, image: '', components: [] },
+    ]),
+  );
+const statLayer = (ids: number[]) =>
+  Object.fromEntries(
+    ids.map((id) => [id, { 1: { 1: { purchases: 5, wins: 2, heroGames: 100, byMinute: { 8: 5 }, instances: { 0: 5 } } } }]),
   );
 
 const OLD_SNAPSHOT = {
   'heroes.json': [{ id: 111 }],
   'matchups.json': { 111: [] },
   'positions.json': posLayer([111]),
+  'items.json': itemLayer([1]),
+  'item-stats.json': statLayer([111]),
   'meta.json': { source: 'OLD', heroCount: 1 },
 };
 
@@ -58,6 +69,8 @@ const newSnapshot = () => ({
   'heroes.json': [{ id: 1 }, { id: 2 }, { id: 3 }],
   'matchups.json': { 1: [{ hero_id: 2 }, { hero_id: 3 }], 2: [{ hero_id: 1 }, { hero_id: 3 }], 3: [{ hero_id: 1 }, { hero_id: 2 }] },
   'positions.json': posLayer([1, 2, 3]),
+  'items.json': itemLayer([1, 145, 108]),
+  'item-stats.json': statLayer([1, 2, 3]),
   'meta.json': { source: 'NEW', heroCount: 3 },
 });
 
@@ -97,7 +110,7 @@ describe('publishDatasetAtomically — when the restore itself fails', () => {
     await expect(publishDatasetAtomically(dir, newSnapshot())).rejects.toThrow(/CRITICAL/);
 
     // The whole point: the last good dataset is still on disk, intact.
-    expect(await readdir(backup)).toEqual(['heroes.json', 'matchups.json', 'meta.json', 'positions.json']);
+    expect(await readdir(backup)).toEqual(['heroes.json', 'item-stats.json', 'items.json', 'matchups.json', 'meta.json', 'positions.json']);
     expect(await readFile(path.join(backup, 'meta.json'), 'utf8')).toBe(JSON.stringify(OLD_SNAPSHOT['meta.json']));
     expect(await readFile(path.join(backup, 'heroes.json'), 'utf8')).toBe(JSON.stringify(OLD_SNAPSHOT['heroes.json']));
 
@@ -134,7 +147,7 @@ describe('publishDatasetAtomically — when the restore itself fails', () => {
 
     // --- B. state left behind -------------------------------------------------
     expect(await readdir(root)).not.toContain('data');       // live tree is gone
-    expect(await readdir(backup)).toEqual(['heroes.json', 'matchups.json', 'meta.json', 'positions.json']);
+    expect(await readdir(backup)).toEqual(['heroes.json', 'item-stats.json', 'items.json', 'matchups.json', 'meta.json', 'positions.json']);
     expect(await readFile(path.join(backup, 'meta.json'), 'utf8')).toBe(JSON.stringify(OLD_SNAPSHOT['meta.json']));
     const preserved = await readAll(backup);
 
@@ -177,7 +190,7 @@ describe('publishDatasetAtomically — when the restore itself fails', () => {
     expect(String(err)).not.toContain('CRITICAL');
 
     // Old dataset is live again, byte for byte.
-    expect(await readdir(dir)).toEqual(['heroes.json', 'matchups.json', 'meta.json', 'positions.json']);
+    expect(await readdir(dir)).toEqual(['heroes.json', 'item-stats.json', 'items.json', 'matchups.json', 'meta.json', 'positions.json']);
     expect(await readFile(path.join(dir, 'meta.json'), 'utf8')).toBe(JSON.stringify(OLD_SNAPSHOT['meta.json']));
     // And the backup was reclaimed, since the restore consumed it.
     expect(await readdir(root)).toEqual(['data']);

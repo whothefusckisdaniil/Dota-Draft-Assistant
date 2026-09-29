@@ -32,6 +32,7 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { getCompleteWeeklyBuckets, BUCKET_SEC } from './stratz/buckets.mjs';
 import { fetchPositionsFromStratz, validatePositionData } from './stratz/positions.mjs';
+import { fetchItemStats, fetchItemsMetadata, pruneItemCatalogue, validateItemData } from './stratz/items.mjs';
 import { POSITION_ELIGIBILITY } from './stratz/eligibility.mjs';
 import { fetchOpenDotaMetadata, validateHeroMetadata } from './opendota/metadata.mjs';
 import { publishDatasetAtomically } from './dataset-publish.mjs';
@@ -371,6 +372,8 @@ export async function buildDataset({
   fetchMetadata = fetchOpenDotaMetadata,
   fetchMatchups = fetchMatchupsFromStratz,
   fetchPositions = fetchPositionsFromStratz,
+  fetchItems = fetchItemsMetadata,
+  fetchItemsStats = fetchItemStats,
   now = new Date(),
   log = console.log,
 } = {}) {
@@ -396,6 +399,22 @@ export async function buildDataset({
   // can never describe different weeks (§6).
   const matchups = await fetchMatchups(heroIds, windowInfo, { log });
   const positions = await fetchPositions(heroIds, windowInfo, { log });
+  // §11 order: matchups -> positions -> item metadata -> item stats. A failure
+  // in ANY of these aborts the whole run; nothing is published partially.
+  //
+  // §10: the hero-game denominator for each (hero, position) comes from the
+  // position layer we JUST fetched, not from the item endpoint (which cannot
+  // supply it) and not from summing purchases (which would be nonsense). It has
+  // to be assembled here, before the item fetch, not after it.
+  const heroGamesByPosition = new Map();
+  for (const h of heroes) {
+    const entry = positions[String(h.id)];
+    for (const lane of ['1', '2', '3', '4', '5']) {
+      heroGamesByPosition.set(`${h.id}:${lane}`, entry?.positions?.[lane]?.games ?? 0);
+    }
+  }
+  const rawItems = await fetchItems({ log });
+  const itemStats = await fetchItemsStats(heroIds, windowInfo, { log, heroGamesByPosition });
 
   // 5. Strict 13-point data contract validation, against the FRESH roster.
   log('5/6 Validating dataset integrity contract...');
@@ -405,6 +424,17 @@ export async function buildDataset({
   log(`    Wins sum skew median: ${validationResult.winsSumSkew.medianPct}% (p99: ${validationResult.winsSumSkew.p99Pct}%, max: ${validationResult.winsSumSkew.maxPct}%)`);
   const positionInfo = validatePositionData(positions, { heroes, windowInfo });
   log(`    Position data passed! ${positionInfo.heroCount} heroes across buckets [${positionInfo.buckets.join(', ')}]`);
+
+  // §6/§10: item statistics are keyed by the position we REQUESTED. The catalogue
+  // is narrowed only after the statistics are in, so that neutral items (not
+  // shop items, but genuinely bought) survive while internal-only entities do not.
+  const pruned = pruneItemCatalogue(rawItems, itemStats);
+  const items = pruned.items;
+  log(`    Catalogue pruned to ${pruned.keptCount} items (${pruned.shopOnly} shop, ` +
+      `${pruned.nonShopButBought} non-shop but purchased, e.g. neutral items)`);
+  const itemInfo = validateItemData(items, itemStats, { heroes, windowInfo });
+  log(`    Item data passed! ${itemInfo.itemCount} items, ${itemInfo.heroesWithData} heroes, ` +
+      `${itemInfo.positions} hero-position cells, ${itemInfo.cells} item cells`);
 
   const totalPairGames = Object.values(matchups).reduce(
     (s, rows) => s + rows.reduce((x, r) => x + r.games_played, 0),
@@ -451,6 +481,27 @@ export async function buildDataset({
         rule: 'hard gate — a hero must clear both thresholds for a position to be ranked there',
       },
     },
+    itemData: {
+      source: 'STRATZ',
+      weeks: windowInfo.buckets.length,
+      weeklyBuckets: windowInfo.buckets,
+      completeWeeksOnly: true,
+      population: {
+        type: 'rank-bracket',
+        description: 'Rank-bracket data (calibrated ranks: Herald through Immortal)',
+        brackets: BRACKETS,
+      },
+      statistics: {
+        type: 'item-purchases',
+        matchCountSemantics: 'purchase-events',
+        note:
+          'purchases counts purchase EVENTS, not distinct games — it may exceed ' +
+          'heroGames. wins is a subset of purchases. No rate is precomputed here, ' +
+          'and nothing in this layer is conditioned on the enemy draft.',
+      },
+      // itemFullPurchase is not patch-filtered; it is bucketed by week only.
+      patchFiltered: false,
+    },
     schema: {
       matchupsFile: '{ "<enemyHeroId>": [{ "hero_id": <opponentHeroId>, "games_played": n, "wins": n }] }',
       winsPerspective:
@@ -467,7 +518,7 @@ export async function buildDataset({
     },
   };
 
-  return { heroes, matchups, positions, meta, validationResult, positionInfo };
+  return { heroes, matchups, positions, items, itemStats, meta, validationResult, positionInfo, itemInfo };
 }
 
 async function main() {
@@ -476,21 +527,27 @@ async function main() {
 
   // 1-5: fetch fresh metadata, query STRATZ, validate. Any throw aborts the run
   // before a single byte of the live dataset is touched.
-  const { heroes, matchups, positions, meta } = await buildDataset({
+  const { heroes, matchups, positions, items, itemStats, meta } = await buildDataset({
     fetchMatchups: (heroIds, windowInfo, opts) =>
       fetchMatchupsFromStratz(heroIds, windowInfo, { ...opts, token }),
     fetchPositions: (heroIds, windowInfo, opts) =>
       fetchPositionsFromStratz(heroIds, windowInfo, { ...opts, token }),
+    fetchItems: (opts) => fetchItemsMetadata({ ...opts, token }),
+    fetchItemsStats: (heroIds, windowInfo, opts) =>
+      fetchItemStats(heroIds, windowInfo, { ...opts, token }),
   });
 
-  // 6. Publish heroes + matchups + positions + meta as ONE directory swap.
-  console.log('6/6 Publishing dataset atomically (heroes, matchups, positions, meta)...');
+  // 6. Publish every layer as ONE directory swap — items cannot lag behind the
+  // heroes they are keyed by.
+  console.log('6/6 Publishing dataset atomically (heroes, matchups, positions, items, item-stats, meta)...');
   const sizes = await publishDatasetAtomically(
     DATA_DIR,
     {
       'heroes.json': heroes,
       'matchups.json': matchups,
       'positions.json': positions,
+      'items.json': items,
+      'item-stats.json': itemStats,
       'meta.json': meta,
     },
     // STRATZ always returns a full matrix; enforce it at the last gate too.

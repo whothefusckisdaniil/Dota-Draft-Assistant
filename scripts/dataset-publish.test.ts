@@ -23,20 +23,27 @@ function dataset(overrides: Record<string, unknown> = {}, n = 3) {
   for (const h of heroes) {
     matchups[String(h.id)] = heroes.filter((o) => o.id !== h.id).map((o) => ({ hero_id: o.id }));
   }
-  // positions.json is part of the same snapshot (ТЗ №9 §16).
+  // positions.json is part of the same snapshot (ТЗ №9 §16); so are the item
+  // layers (ТЗ §12 §26) — a dataset without them cannot be published.
   const positions: Record<string, unknown> = {};
+  const items: Record<string, unknown> = {};
+  const itemStats: Record<string, unknown> = {};
   for (const h of heroes) {
-    positions[String(h.id)] = {
-      totalGames: 5000,
-      positions: Object.fromEntries(
-        ['1', '2', '3', '4', '5'].map((p) => [p, { games: 1000, share: 0.2 }]),
-      ),
+    const posCells = Object.fromEntries(['1', '2', '3', '4', '5'].map((p) => [p, { games: 100, share: 0.2 }]));
+    positions[String(h.id)] = { totalGames: 500, positions: posCells };
+    items[String(h.id)] = {
+      id: h.id, name: `Item ${h.id}`, dname: `item_${h.id}`, shortName: '', cost: 100,
+      isPurchasable: true, isStackable: false, isSideShop: false, stockMax: 0,
+      isSupportFullItem: false, image: '', components: [],
     };
+    itemStats[String(h.id)] = { 1: { 1: { purchases: 10, wins: 5, heroGames: 100, byMinute: { 8: 10 }, instances: { 0: 10 } } } };
   }
   return {
     'heroes.json': heroes,
     'matchups.json': matchups,
     'positions.json': positions,
+    'items.json': items,
+    'item-stats.json': itemStats,
     'meta.json': { source: 'STRATZ', heroCount: n, ...overrides },
     ...overrides,
   };
@@ -53,7 +60,7 @@ describe('publishDatasetAtomically — success path', () => {
     const dir = path.join(root, 'data');
     const sizes = await publishDatasetAtomically(dir, dataset());
 
-    expect(Object.keys(sizes).sort()).toEqual(['heroes.json', 'matchups.json', 'meta.json', 'positions.json']);
+    expect(Object.keys(sizes).sort()).toEqual(['heroes.json', 'item-stats.json', 'items.json', 'matchups.json', 'meta.json', 'positions.json']);
     for (const [name, bytes] of Object.entries(sizes)) {
       expect(bytes, name).toBe(Buffer.byteLength(JSON.stringify(dataset()[name])));
     }
@@ -79,7 +86,7 @@ describe('publishDatasetAtomically — success path', () => {
 
     await publishDatasetAtomically(dir, dataset());
 
-    expect((await readdir(dir)).sort()).toEqual(['heroes.json', 'matchups.json', 'meta.json', 'positions.json']);
+    expect((await readdir(dir)).sort()).toEqual(['heroes.json', 'item-stats.json', 'items.json', 'matchups.json', 'meta.json', 'positions.json']);
     await rm(root, { recursive: true, force: true });
   });
 
@@ -87,7 +94,7 @@ describe('publishDatasetAtomically — success path', () => {
     const root = await tmpRoot();
     const dir = path.join(root, 'nested', 'data');
     await publishDatasetAtomically(dir, dataset());
-    expect((await readdir(dir)).sort()).toEqual(['heroes.json', 'matchups.json', 'meta.json', 'positions.json']);
+    expect((await readdir(dir)).sort()).toEqual(['heroes.json', 'item-stats.json', 'items.json', 'matchups.json', 'meta.json', 'positions.json']);
     await rm(root, { recursive: true, force: true });
   });
 
@@ -135,12 +142,9 @@ describe('publishDatasetAtomically — the old dataset survives every failure', 
     const old = {
       'heroes.json': [{ id: 111 }],
       'matchups.json': { 111: [] },
-      'positions.json': {
-        111: {
-          totalGames: 5000,
-          positions: Object.fromEntries(['1', '2', '3', '4', '5'].map((p) => [p, { games: 1000, share: 0.2 }])),
-        },
-      },
+      'positions.json': { 111: { totalGames: 500, positions: Object.fromEntries(['1', '2', '3', '4', '5'].map((p) => [p, { games: 100, share: 0.2 }])) } },
+      'items.json': { 555: { id: 555, name: 'Old Item', dname: 'item_old', shortName: '', cost: 100, isPurchasable: true, isStackable: false, isSideShop: false, stockMax: 0, isSupportFullItem: false, image: '', components: [] } },
+      'item-stats.json': { 111: { 1: { 1: { purchases: 7, wins: 3, heroGames: 100, byMinute: { 8: 7 }, instances: { 0: 7 } } } } },
       'meta.json': { source: 'OLD' },
     };
     for (const [name, data] of Object.entries(old)) await writeFile(path.join(dir, name), JSON.stringify(data));
@@ -158,7 +162,7 @@ describe('publishDatasetAtomically — the old dataset survives every failure', 
 
     const after = await readAll(dir);
     for (const [name, expected] of Object.entries(old)) expect(after[name], name).toBe(JSON.stringify(expected));
-    expect(Object.keys(after).sort()).toEqual(['heroes.json', 'matchups.json', 'meta.json', 'positions.json']);
+    expect(Object.keys(after).sort()).toEqual(['heroes.json', 'item-stats.json', 'items.json', 'matchups.json', 'meta.json', 'positions.json']);
     await rm(root, { recursive: true, force: true });
   });
 
@@ -181,6 +185,8 @@ describe('publishDatasetAtomically — the old dataset survives every failure', 
       'matchups.json': dataset()['matchups.json'],
       // Positions from the OLD 3-hero roster: another layer out of step (§6).
       'positions.json': dataset()['positions.json'],
+      'items.json': dataset()['items.json'],
+      'item-stats.json': dataset()['item-stats.json'],
       'meta.json': { source: 'STRATZ', heroCount: 4 },
     };
     await expect(publishDatasetAtomically(dir, mixed)).rejects.toThrow(/count mismatch|rows, expected/);
@@ -193,7 +199,7 @@ describe('publishDatasetAtomically — the old dataset survives every failure', 
     await expect(
       publishDatasetAtomically(dir, { ...dataset(), 'meta.json': { source: 'STRATZ', heroCount: 99 } }),
     ).rejects.toThrow(/heroCount=99/);
-    expect((await readdir(dir)).sort()).toEqual(['heroes.json', 'matchups.json', 'meta.json', 'positions.json']);
+    expect((await readdir(dir)).sort()).toEqual(['heroes.json', 'item-stats.json', 'items.json', 'matchups.json', 'meta.json', 'positions.json']);
     await rm(root, { recursive: true, force: true });
   });
 
