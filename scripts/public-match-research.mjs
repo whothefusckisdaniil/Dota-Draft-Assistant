@@ -24,12 +24,7 @@ mkdirSync(CACHE, { recursive: true });
  * OpenDota rank tiers, one bucket per game. `min` is what the endpoint accepts;
  * the returned `avg_rank_tier` values are strictly above it in practice.
  */
-export const RANK_BUCKETS = [
-  { key: 'herald_guardian', label: 'Herald/Guardian', min: 10, max: 15 },
-  { key: 'crusader_archon', label: 'Crusader/Archon', min: 20, max: 25 },
-  { key: 'legend_ancient', label: 'Legend/Ancient', min: 30, max: 35 },
-  { key: 'divine_immortal', label: 'Divine/Immortal', min: 40, max: 45 },
-];
+import { BROAD_BUCKETS as RANK_BUCKETS, bracketLabel, exactStrata } from './opendota/rank-buckets.mjs';
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 

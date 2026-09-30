@@ -27,12 +27,7 @@ const API = 'https://api.opendota.com/api';
 const CACHE = '/tmp/opendota-position-research';
 mkdirSync(CACHE, { recursive: true });
 
-const BUCKETS = [
-  { key: 'herald_guardian', label: 'Herald/Guardian', min: 10, max: 15 },
-  { key: 'crusader_archon', label: 'Crusader/Archon', min: 20, max: 25 },
-  { key: 'legend_ancient', label: 'Legend/Ancient', min: 30, max: 35 },
-  { key: 'divine_immortal', label: 'Divine/Immortal', min: 40, max: 45 },
-];
+import { BROAD_BUCKETS as BUCKETS, bracketLabel, exactStrata } from './opendota/rank-buckets.mjs';
 const MODE_NAMES = { 1: 'All Pick', 2: 'Captains Mode', 13: 'All Pick (13)', 22: 'Ranked All Draft', 23: 'Turbo' };
 const BENCH_HEROES = { 1: 'Anti-Mage', 22: 'Sniper', 44: 'Wraith King', 13: 'Puck', 29: 'Kunkka', 52: 'Bane' };
 

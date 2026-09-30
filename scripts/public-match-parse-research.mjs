@@ -31,12 +31,7 @@ const API = 'https://api.opendota.com/api';
 const CACHE = '/tmp/opendota-parse-research';
 mkdirSync(CACHE, { recursive: true });
 
-const BUCKETS = [
-  { key: 'herald_guardian', label: 'Herald/Guardian', min: 10, max: 15 },
-  { key: 'crusader_archon', label: 'Crusader/Archon', min: 20, max: 25 },
-  { key: 'legend_ancient', label: 'Legend/Ancient', min: 30, max: 35 },
-  { key: 'divine_immortal', label: 'Divine/Immortal', min: 40, max: 45 },
-];
+import { BROAD_BUCKETS as BUCKETS, bracketLabel, exactStrata } from './opendota/rank-buckets.mjs';
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const key = (u) => path.join(CACHE, u.replace(/[^a-z0-9]+/gi, '_').slice(-150) + '.json');
