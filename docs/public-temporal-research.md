@@ -56,6 +56,63 @@ heroes" while still labelling it Hero × Item.
 `aggregateItemPresence()` requires both identifiers and throws a named
 `TypeError` if either is missing. A silent fallback would recreate the bug.
 
+### The hero dimension must survive aggregation
+
+Fixing the identity of a presence row is necessary but not sufficient. Once
+presence is keyed correctly, `aggregateItemPresence()` still projects the hero
+dimension **out**: it answers "how often is this item seen across the corpus".
+That is a *pooled item diagnostic*, and it cannot support a `Hero × Item`
+claim, because pooling hides the very thing that matters:
+
+```text
+Anti-Mage + Battle Fury  x 5 matches
+Sniper    + Battle Fury  x 5 matches
+Puck      + Battle Fury  x 5 matches
+```
+
+Pooled, that is one cell with support 15. At hero grain it is three cells of
+support 5 — and none of them clears a floor of 10. A support floor applied to
+pooled rows therefore reports a relation as "supported" when no single hero
+supports it.
+
+The report therefore labels three different things separately, and never lets
+one stand in for another:
+
+| Section | Grain | May be used to claim |
+| --- | --- | --- |
+| Corpus retention | pooled events | how much item activity exists by cutoff |
+| Pooled item diagnostic | pooled items | how item *rankings* move with the cutoff |
+| **Hero × Item stability** | `(heroId, itemId)` | stability of a `Hero × Item` relation |
+
+Stability, rank splits and mode splits are computed **per hero**
+(`stabilityByHero`). A hero below the minimum is reported as insufficient
+sample and is **never merged** with other heroes — merging is exactly the
+projection that produced the pooled number. A mode with many matches spread
+thinly over many heroes is *not* sufficient: the support lives in heroes.
+
+### Hydration outcomes are typed, not `null`
+
+"Not parsed" and "our request failed" used to be the same `null`, so a rate
+limit was silently counted as evidence that OpenDota had not parsed a match,
+and `parsed / candidates` was quoted as a parser rate. Every candidate now gets
+exactly one outcome from an exhaustive taxonomy:
+
+```text
+hydrate_ok      hydrate_cached    fetch succeeded
+hydrate_429     hydrate_timeout   hydrate_http_error    hydrate_invalid_payload   request failed
+```
+
+and, separately, what the payload contained:
+
+```text
+parsed          not_parsed       not_public
+```
+
+`parsed / classified` uses only candidates we actually received a payload for;
+failed requests are excluded from the denominator rather than counted as
+negative evidence. The ratio is reported as a **discovery hit rate, not a
+parser rate**.
+
 ## 5. Two independent views
 
 `purchase_log` is event-based, so the same data is summarised twice:
@@ -174,15 +231,19 @@ correct outcome — see §10.
 The report prints, in order:
 
 ```text
-=== Corpus ===               === Presence signal ===       === Support sensitivity ===
-=== Rank buckets ===         === Event signal ===          === Benchmark heroes ===
-=== Game modes ===           === Stability vs 100% ===     === Sampling stability ===
-=== Patch/time coverage ===  === Rank stability ===        === Special items ===
-=== Purchase timing distribution ===                       === Conclusion ===
+=== Corpus ===                === Analytical grain ===      === Support sensitivity ===
+=== Rank buckets ===          === Presence signal ===      === Benchmark heroes ===
+=== Game modes ===            === Event signal ===         === Sampling stability ===
+=== Patch/time coverage ===   === Stability vs 100% ===    === Special items ===
+=== Purchase timing distribution ===                        === Conclusion ===
 === Post-hoc fractions ===
 === Pre-horn ===
 === Mode stability ===
 ```
+
+`=== Analytical grain ===` states up front how many heroes and hero × item
+cells exist, how many hero strata reached the minimum, and the hydration
+breakdown, so no later number can be read at the wrong grain.
 
 Every figure is printed with its `n`. Patch coverage is reported explicitly, and
 if the corpus spans several patches with no dominant patch above 70%, that is

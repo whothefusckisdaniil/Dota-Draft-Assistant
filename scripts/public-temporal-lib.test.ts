@@ -13,12 +13,15 @@ import {
   SUPPORT_FLOORS,
   aggregateItemPresence,
   classifyPurchaseTiming,
+  groupRowsByHero,
+  heroItemCells,
   isInWindow,
   isValidPurchaseTime,
   lateFraction,
   rankCorrelation,
   rankedRows,
   relativePurchaseTime,
+  supportByHeroItem,
   topKOverlap,
 } from './public-temporal-lib.mjs';
 
@@ -234,6 +237,96 @@ describe('all four views agree on one event set (§4)', () => {
     const a = aggregateItemPresence([{ heroId: 1, matchId: 'm1', duration, events }], 1.0);
     expect(a.medianRelativeTime).toBeLessThanOrEqual(1);
     for (const r of a.rows) expect(r.medianRelativeTime).toBeLessThanOrEqual(1);
+  });
+});
+
+describe('analytical grain keeps the hero dimension (§1, §7, §8)', () => {
+  // The ТЗ §26.4 fixture: Anti-Mage has Battle Fury in 8 matches, Sniper in 8.
+  // Pooled, that is ONE well-supported cell. At hero grain it is two cells of 8,
+  // and neither clears the smallest pre-registered floor.
+  const heroIdOf = { AM: 1, SNIPER: 22 };
+  const fixture = [...Object.entries(heroIdOf)].flatMap(([name, heroId]) => (
+    Array.from({ length: 8 }, (_, i) => ({
+      name, heroId, matchId: `m${heroId}_${i}`, duration: 1800, events: [{ key: 'bfury', time: 300 }],
+    }))
+  ));
+
+  it('groups rows by hero without inventing new maths', () => {
+    const g = groupRowsByHero(fixture);
+    expect(g.size).toBe(2);
+    expect(g.get(1)).toHaveLength(8);
+    expect(g.get(22)).toHaveLength(8);
+  });
+
+  it('ignores rows without a heroId rather than merging them', () => {
+    const g = groupRowsByHero([...fixture, { matchId: 'x', duration: 1800, events: [] }, null, undefined]);
+    expect(g.size).toBe(2);
+    expect([...g.values()].flat()).toHaveLength(16);
+  });
+
+  it('shows the pooled count that hides the problem', () => {
+    const pooled = aggregateItemPresence(fixture, 1.0).rows.find((r) => r.itemId === 'bfury');
+    expect(pooled.presenceMatches).toBe(16); // 8 AM + 8 Sniper
+  });
+
+  it('splits the same data into two hero × item cells', () => {
+    const cells = heroItemCells(fixture, 1.0);
+    expect(cells).toHaveLength(2);
+    expect(cells.map((c) => [c.heroId, c.itemId, c.presenceMatches])).toEqual([
+      [1, 'bfury', 8], [22, 'bfury', 8],
+    ]);
+  });
+
+  it('reports each cell against that HERO\'s own match count', () => {
+    for (const c of heroItemCells(fixture, 1.0)) {
+      expect(c.heroMatches).toBe(8);
+      expect(c.presenceRate).toBe(1);
+    }
+  });
+
+  it('counts 0 supported cells at floor 10 even though pooled support is 16', () => {
+    const s = supportByHeroItem(fixture, 1.0);
+    expect(s.map((x) => x.floor)).toEqual(SUPPORT_FLOORS);
+    for (const f of s) {
+      expect(f.totalCells).toBe(2);
+      expect(f.cellsKept).toBe(0);
+    }
+  });
+
+  it('keeps floors on the same cells so the comparison is meaningful', () => {
+    const s = supportByHeroItem(fixture, 1.0);
+    expect(new Set(s.map((x) => x.totalCells)).size).toBe(1);
+    expect(s.every((x) => x.cellsKept + x.cellsDropped === x.totalCells)).toBe(true);
+  });
+
+  it('narrows cells as the cutoff tightens', () => {
+    const late = fixture.map((r) => ({ ...r, events: [{ key: 'bfury', time: 1700 }] }));
+    expect(heroItemCells(fixture, 0.5)).toHaveLength(2);
+    expect(heroItemCells(late, 0.5)).toHaveLength(0);
+  });
+
+  it('counts a hero once per match even with repeated purchases', () => {
+    const dup = fixture.map((r) => ({ ...r, events: [{ key: 'bfury', time: 100 }, { key: 'bfury', time: 400 }] }));
+    const c = heroItemCells(dup, 1.0);
+    expect(c.every((x) => x.presenceMatches === 8)).toBe(true);
+    expect(c.every((x) => x.events === 16)).toBe(true);
+  });
+});
+
+describe('groupRowsByHero handles degenerate input (§1)', () => {
+  it('returns an empty map for an empty corpus', () => {
+    expect(groupRowsByHero([]).size).toBe(0);
+    expect(groupRowsByHero(null).size).toBe(0);
+    expect(heroItemCells([], 1.0)).toEqual([]);
+  });
+
+  it('keeps heroId 0, which is falsy but valid', () => {
+    const g = groupRowsByHero([{ heroId: 0, matchId: 'm', duration: 1800, events: [] }]);
+    expect(g.has(0)).toBe(true);
+  });
+
+  it('reports no cells rather than throwing when every floor is unmet', () => {
+    expect(supportByHeroItem([], 1.0).every((f) => f.cellsKept === 0)).toBe(true);
   });
 });
 

@@ -204,6 +204,77 @@ export function byPresenceThenEvents(a, b) {
     || byItemId(a, b);
 }
 
+/** §1 — canonical grouping: heroId -> that hero's (match) rows. */
+export function groupRowsByHero(rows) {
+  const byHero = new Map();
+  for (const r of rows ?? []) {
+    if (r?.heroId === undefined || r?.heroId === null) continue;
+    const list = byHero.get(r.heroId);
+    if (list) list.push(r);
+    else byHero.set(r.heroId, [r]);
+  }
+  return byHero;
+}
+
+/**
+ * §7 — support counted on `(heroId, itemId)` cells, not on pooled items.
+ *
+ * `aggregateItemPresence` answers "how often is this item seen across the
+ * corpus". That is a pooled item diagnostic, and pooling hides the fact that
+ * three heroes each seen five times is NOT one well-supported cell — it is three
+ * cells that are all under any sane floor. A support floor applied to pooled
+ * rows therefore reports "supported" for a relation no single hero supports.
+ *
+ * This reuses `aggregateItemPresence` per hero rather than inventing a second
+ * aggregation, and emits one row per hero × item.
+ */
+export function heroItemCells(playerMatches, cutoff) {
+  const cells = [];
+  for (const [heroId, heroRows] of groupRowsByHero(playerMatches)) {
+    const a = aggregateItemPresence(heroRows, cutoff);
+    for (const r of a.rows) {
+      cells.push({
+        heroId,
+        itemId: r.itemId,
+        presenceMatches: r.presenceMatches,
+        heroMatches: a.heroMatches,
+        presenceRate: r.presenceRate,
+        events: r.events,
+        eventsPerHeroMatch: r.eventsPerHeroMatch,
+        medianRelativeTime: r.medianRelativeTime,
+      });
+    }
+  }
+  return cells;
+}
+
+/** §7 — how many hero × item cells clear each pre-registered floor. */
+export function supportByHeroItem(playerMatches, cutoff, floors = SUPPORT_FLOORS) {
+  const cells = heroItemCells(playerMatches, cutoff);
+  return floors.map((floor) => {
+    const kept = cells.filter((c) => c.presenceMatches >= floor);
+    return { floor, cellsKept: kept.length, cellsDropped: cells.length - kept.length, totalCells: cells.length };
+  });
+}
+
+/**
+ * §11 — exhaustive hydration outcome taxonomy.
+ *
+ * "Not parsed" and "our GET failed" used to be the same `null`, so a rate
+ * limit was silently counted as evidence that OpenDota had not parsed a match.
+ * These names keep the two apart in the report.
+ */
+export const HYDRATION = {
+  OK: 'hydrate_ok',
+  CACHED: 'hydrate_cached',
+  RATE_LIMITED: 'hydrate_429',
+  HTTP_ERROR: 'hydrate_http_error',
+  TIMEOUT: 'hydrate_timeout',
+  INVALID_PAYLOAD: 'hydrate_invalid_payload',
+  NOT_PARSEABLE: 'not_parsed',
+  FAILED: 'request_failed',
+};
+
 function medianOf(values) {
   const s = values.filter((v) => v !== null).sort((a, b) => a - b);
   if (!s.length) return null;

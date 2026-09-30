@@ -18,20 +18,24 @@
  * prints.
  */
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { BRACKETS, BROAD_BUCKETS as BUCKETS, broadBucketOf, bracketLabel } from './opendota/rank-buckets.mjs';
 import {
   CUTOFFS,
+  HYDRATION,
   MIN_SAMPLE_FOR_CONCLUSION,
   SUPPORT_FLOORS,
   aggregateItemPresence,
+  heroItemCells,
+  groupRowsByHero,
   isValidPurchaseTime,
   lateFraction,
   rankCorrelation,
   rankedRows,
   relativePurchaseTime,
+  supportByHeroItem,
   topKOverlap,
 } from './public-temporal-lib.mjs';
 
@@ -85,37 +89,53 @@ const log = (...a) => process.stderr.write(`${a.join(' ')}\n`);
 /**
  * GET only. Nothing is ever written back to OpenDota.
  *
- * Requests are PACED. The public endpoint allows ~60/min; the first crawl of
- * this script ignored that and the API answered 429 with a 38-byte JSON error
- * body, which `res.ok` would have thrown away silently — the first draft of the
- * corpus build reported a 0% parse rate that was entirely this artefact.
+ * §11 — the outcome is a TYPED result, never a bare `null`. "OpenDota has not
+ * parsed this match" and "our request failed" used to be the same value, so a
+ * rate limit was silently counted as evidence about parser coverage and the
+ * report divided `parsed` by all candidates as if that were a parser rate.
+ *
+ * Requests are PACED. The public endpoint allows ~60/min; exceeding it returns
+ * HTTP 429 with a small JSON error body that `res.ok` would throw away — the
+ * first draft of the corpus build reported a 0% parse rate that was entirely
+ * this artefact.
  */
 const MIN_REQUEST_GAP_MS = 1300;
 let lastRequestAt = 0;
 
 async function get(url) {
   const f = path.join(CACHE, url.replace(/[^a-z0-9]+/gi, '_').slice(-150) + '.json');
-  if (existsSync(f)) return JSON.parse(readFileSync(f, 'utf8'));
+  if (existsSync(f)) {
+    try {
+      return { status: HYDRATION.CACHED, data: JSON.parse(readFileSync(f, 'utf8')) };
+    } catch {
+      // A truncated file from an interrupted run: drop it and refetch rather
+      // than crashing the whole crawl on one bad byte.
+      rmSync(f, { force: true });
+    }
+  }
   for (let a = 1; a <= 4; a += 1) {
     const gap = MIN_REQUEST_GAP_MS - (Date.now() - lastRequestAt);
     if (gap > 0) await sleep(gap);
     lastRequestAt = Date.now();
     try {
       const res = await fetch(url, { signal: AbortSignal.timeout(45000) });
-      if (res.status === 429) { log(`429, backing off`); await sleep(6000 * a); continue; }
-      if (!res.ok) return null;
+      if (res.status === 429) { log('429, backing off'); await sleep(6000 * a); continue; }
+      if (!res.ok) return { status: HYDRATION.HTTP_ERROR, http: res.status, data: null };
       const json = await res.json();
-      // A 429 body can be cached only if it slipped through; refuse anything
-      // that is not the payload we asked for.
-      if (json && json.error) return null;
+      if (json && json.error) return { status: HYDRATION.INVALID_PAYLOAD, data: null };
       writeFileSync(f, JSON.stringify(json));
-      return json;
-    } catch {
-      if (a === 4) return null;
+      return { status: HYDRATION.OK, data: json };
+    } catch (e) {
+      if (e?.name === 'TimeoutError' || e?.name === 'AbortError') {
+        if (a === 4) return { status: HYDRATION.TIMEOUT, data: null };
+        await sleep(2000 * a);
+        continue;
+      }
+      if (a === 4) return { status: HYDRATION.HTTP_ERROR, data: null };
       await sleep(2000 * a);
     }
   }
-  return null;
+  return { status: HYDRATION.RATE_LIMITED, data: null };
 }
 
 
@@ -132,13 +152,26 @@ async function get(url) {
  */
 async function buildCorpus() {
   const seen = new Set();
-  const buckets = BUCKETS.map((b) => ({ ...b, parsed: [], scanned: 0, pages: 0 }));
+  const buckets = BUCKETS.map((b) => ({ ...b, parsed: [], scanned: 0, pages: 0, hydration: { transport: {}, class: {} } }));
+  // §11 — TWO separate namespaces. Keeping them in one bag double-counts every
+  // candidate (once for how the GET ended, once for what it contained) and
+  // halves the reported hit rate.
+  const hydration = { transport: {}, class: {} };
+
+  const bump = (bag, key) => { bag[key] = (bag[key] ?? 0) + 1; };
+  const record = (bucketBag, transportStatus, classKey) => {
+    bump(hydration.transport, transportStatus);
+    bump(hydration.class, classKey);
+    bump(bucketBag.transport, transportStatus);
+    bump(bucketBag.class, classKey);
+  };
 
   for (const b of buckets) {
     log(`[corpus] ${b.label}: scanning (cap ${MAX_DISCOVERY_PER_BUCKET} discovery rows)`);
     let cursor = null;
     while (b.scanned < MAX_DISCOVERY_PER_BUCKET && b.parsed.length < TARGET_PARSED_PER_BUCKET) {
-      const rows = await get(`${API}/publicMatches${cursor ? `?less_than_match_id=${cursor}` : ''}`);
+      const page = await get(`${API}/publicMatches${cursor ? `?less_than_match_id=${cursor}` : ''}`);
+      const rows = page?.data;
       if (!rows || rows.length === 0) break;
       b.pages += 1;
 
@@ -152,13 +185,15 @@ async function buildCorpus() {
         seen.add(m.match_id);
 
         const detail = await get(`${API}/matches/${m.match_id}`);
-        // §2: public only, already-parsed only. A missing detail is NOT
-        // silently treated as unparsed.
+        if (!detail.data) { record(b.hydration, detail.status, HYDRATION.FAILED); continue; }
+        const d = detail.data;
         //
         // `has_parsed` lives under `od_data` on /matches/{id}; there is no
         // top-level field. Reading `detail.has_parsed` yields undefined for
         // every match and rejects the entire corpus.
-        if (!detail || detail.leagueid !== 0 || detail.od_data?.has_parsed !== true) continue;
+        if (d.leagueid !== 0) { record(b.hydration, detail.status, 'not_public'); continue; }
+        if (d.od_data?.has_parsed !== true) { record(b.hydration, detail.status, HYDRATION.NOT_PARSEABLE); continue; }
+        record(b.hydration, detail.status, 'parsed');
 
         const sample = b.pages % 2 === 1 ? 'A' : 'B';
         b.parsed.push({
@@ -167,12 +202,12 @@ async function buildCorpus() {
           bracket: bracketLabel(m.avg_rank_tier),
           bucket: b.key,
           sample,
-          gameMode: detail.game_mode,
-          lobbyType: detail.lobby_type,
-          patch: detail.patch,
-          startTime: detail.start_time,
-          duration: detail.duration,
-          players: (detail.players ?? []).map(toPlayerRow),
+          gameMode: d.game_mode,
+          lobbyType: d.lobby_type,
+          patch: d.patch,
+          startTime: d.start_time,
+          duration: d.duration,
+          players: (d.players ?? []).map(toPlayerRow),
         });
         if (b.parsed.length >= TARGET_PARSED_PER_BUCKET) break;
       }
@@ -185,7 +220,7 @@ async function buildCorpus() {
       log(`[corpus] ${b.label}: LIMITATION available=${b.parsed.length} target=${TARGET_PARSED_PER_BUCKET} (crawl cap reached)`);
     }
   }
-  return buckets;
+  return { buckets, hydration };
 }
 
 /** One player's purchases for one match, flattened to what the maths needs. */
@@ -204,6 +239,77 @@ function toPlayerRow(p) {
 const pct1 = (x) => (x === null || x === undefined ? 'n/a' : `${(100 * x).toFixed(1)}%`);
 const num = (x, d = 3) => (x === null || x === undefined ? 'n/a' : x.toFixed(d));
 const H = (t) => `\n=== ${t} ===`;
+
+/**
+ * §2/§3 — stability computed PER HERO.
+ *
+ * A pooled ranking says "Battle Fury is a core item of this corpus". It cannot
+ * say "Battle Fury is stable FOR ANY PARTICULAR HERO", which is the question the
+ * future enemy-conditioned `Hero + Position + Item` analysis will actually ask.
+ *
+ * A hero below the pre-registered minimum is reported as insufficient sample
+ * and is NEVER merged with other heroes — merging is exactly the projection
+ * that produced the pooled number in the first place.
+ */
+const matchCount_ = (rows) => new Set(rows.map((r) => r.matchId)).size;
+
+function stabilityByHero(rows) {
+  const out = [];
+  for (const [heroId, heroRows] of groupRowsByHero(rows)) {
+    const matchCount = matchCount_(heroRows);
+    out.push({
+      heroId,
+      matchCount,
+      rowCount: heroRows.length,
+      eligible: matchCount >= MIN_SAMPLE_FOR_CONCLUSION,
+      cutoffs: stability(heroRows, `hero:${heroId}`).cutoffs,
+    });
+  }
+  out.sort((a, b) => b.matchCount - a.matchCount || a.heroId - b.heroId);
+  return out;
+}
+
+/** Hero strata that reached the minimum, plus a census of the rest. */
+function heroCensus(rows) {
+  const strata = stabilityByHero(rows);
+  return {
+    strata,
+    heroesSeen: strata.length,
+    eligible: strata.filter((s) => s.eligible),
+    bestMatchCount: strata[0]?.matchCount ?? 0,
+  };
+}
+
+/**
+ * §11 — hydration outcomes, split into "asked and answered" vs "failed".
+ *
+ * `transport` (how the GET ended) and `class` (what it contained) are counted
+ * separately. Collapsing them into one bag counts every candidate twice and
+ * halves the reported hit rate.
+ */
+function hydrationReport(hydration = {}) {
+  const t = hydration.transport ?? {};
+  const c = hydration.class ?? {};
+  const failedKeys = [HYDRATION.RATE_LIMITED, HYDRATION.HTTP_ERROR, HYDRATION.TIMEOUT, HYDRATION.INVALID_PAYLOAD];
+  const candidates = Object.values(t).reduce((a, v) => a + v, 0);
+  const failures = failedKeys.map((k) => [k, t[k] ?? 0]).filter(([, v]) => v > 0);
+  const fetched = t[HYDRATION.OK] ?? 0;
+  const cached = t[HYDRATION.CACHED] ?? 0;
+  const answered = fetched + cached;
+  return {
+    candidates,
+    succeeded: answered,
+    fetched,
+    cached,
+    failed: failures.reduce((a, [, v]) => a + v, 0),
+    failures,
+    // Only candidates we actually received a payload for may be classified.
+    classified: answered,
+    notParseable: c[HYDRATION.NOT_PARSEABLE] ?? 0,
+    notPublic: c.not_public ?? 0,
+    parsed: c.parsed ?? 0,
+  };
+}
 
 /** Flatten the corpus into (hero, match, duration) rows for a given slice. */
 function playerRows(matches, { heroId = null, mode = null, sample = null } = {}) {
@@ -381,7 +487,7 @@ const iso = (t) => (t ? new Date(t * 1000).toISOString().slice(0, 10) : 'n/a');
  * Every figure is printed with its `n`, because a stability number computed on
  * 19 matches and the same number on 800 mean different things.
  */
-function printReport(buckets) {
+function printReport(buckets, hydration = {}) {
   const all = buckets.flatMap((b) => b.parsed);
   const rows = playerRows(all);
   const out = [];
@@ -392,6 +498,36 @@ function printReport(buckets) {
   p(`player-match rows       : ${rows.length}`);
   p(`purchase events         : ${rows.reduce((a, r) => a + r.events.length, 0)}`);
   p(`crawl cap / bucket      : ${MAX_DISCOVERY_PER_BUCKET} discovery rows`);
+
+  const hyd = hydrationReport(hydration);
+  const census = heroCensus(rows);
+  const cells = heroItemCells(rows, 1.0);
+
+  p(H('Analytical grain'));
+  p('pooled item diagnostic (hero dimension PROJECTED OUT — not a Hero x Item claim):');
+  p(`  rows (hero-matches)   : ${rows.length}`);
+  p(`  distinct items       : ${aggregateItemPresence(rows, 1.0).rows.length}`);
+  p('hero x item:');
+  p(`  unique heroes        : ${census.heroesSeen}`);
+  p(`  hero-item cells      : ${cells.length}`);
+  p(`hero strata eligible for stability (n >= ${MIN_SAMPLE_FOR_CONCLUSION} matches): ${census.eligible.length}`);
+  p(`  best hero by matches : ${census.bestMatchCount}`);
+  p('support floors on hero x item cells:');
+  const heroSupport = supportByHeroItem(rows, 1.0);
+  p(`  ${heroSupport.map((f) => `floor${f.floor}=${f.cellsKept}/${f.totalCells}`).join('  ')}`);
+  p('hydration (every candidate gets exactly one outcome, §11):');
+  p(`  discovery candidates : ${hyd.candidates}`);
+  p(`  hydrate successful   : ${hyd.succeeded}  (fetched ${hyd.fetched}, cached ${hyd.cached})`);
+  p(`  hydrate failed       : ${hyd.failed}${hyd.failures.length ? `  (${hyd.failures.map(([k, v]) => `${k.replace('hydrate_', '')}=${v}`).join(', ')})` : ''}`);
+  p(`  classified           : ${hyd.classified}  (candidates we actually received a payload for)`);
+  p(`  public, not parsed   : ${hyd.notParseable}`);
+  p(`  not public           : ${hyd.notPublic}`);
+  p(`  parsed (kept)        : ${hyd.parsed}`);
+  p(`  parsed / classified  : ${hyd.classified ? pct1(hyd.parsed / hyd.classified) : 'n/a'} — a DISCOVERY hit rate, not a parser rate`);
+  if (hyd.failed > 0) {
+    p(`  NOTE: ${hyd.failed} candidates were never successfully asked, so they are`);
+    p(`  excluded from the hit rate above rather than counted as "not parsed".`);
+  }
 
   p(H('Rank buckets'));
   for (const b of buckets) {
@@ -456,53 +592,84 @@ function printReport(buckets) {
 
   const overall = stability(rows, 'ALL');
   p(H('Stability vs 100%'));
-  p(`corpus rows=${overall.nRows}  matches n=${overall.nMatches}`);
+  p('--- (a) POOLED ITEM-ONLY DIAGNOSTIC');
+  p('    The hero dimension is projected out here. These numbers describe how');
+  p('    item RANKINGS move with the cutoff across the whole corpus, and must');
+  p('    NOT be read as stability of any Hero x Item relation.');
+  p(`    corpus rows=${overall.nRows}  matches n=${overall.nMatches}`);
   p('cutoff   presence: rho  top5  top10  top15    events: rho  top5  top10  top15');
   for (const c of overall.cutoffs) {
     p(`${(c.cutoff * 100).toFixed(0).padStart(5)}%   ${num(c.presence.spearman).padStart(15)} ${pct1(c.presence.top5).padStart(6)} ${pct1(c.presence.top10).padStart(6)} ${pct1(c.presence.top15).padStart(6)}    ${num(c.events.spearman).padStart(10)} ${pct1(c.events.top5).padStart(6)} ${pct1(c.events.top10).padStart(6)} ${pct1(c.events.top15).padStart(6)}`);
   }
+  p('');
+  p('--- (b) HERO x ITEM STABILITY (primary answer to Q2)');
+  const perHero = stabilityByHero(rows);
+  const eligibleHeroes = perHero.filter((s) => s.eligible);
+  p(`    hero strata seen: ${perHero.length}   eligible (n >= ${MIN_SAMPLE_FOR_CONCLUSION} matches): ${eligibleHeroes.length}`);
+  if (!eligibleHeroes.length) {
+    p(`    insufficient sample — no hero reached ${MIN_SAMPLE_FOR_CONCLUSION} matches;`);
+    p(`    best hero has ${census.bestMatchCount}. Hero strata are NOT merged.`);
+    p('    Hero x Item stability was NOT measured. This is a measurement gap,');
+    p('    NOT a finding that the signal is unstable.');
+  } else {
+    p('hero     matches   25%:rho/top10   50%:rho/top10   70%:rho/top10   80%:rho/top10');
+    for (const s of eligibleHeroes) {
+      const at = (c) => s.cutoffs.find((x) => x.cutoff === c)?.presence;
+      p(`${String(s.heroId).padStart(4)} ${String(s.matchCount).padStart(8)}   ${CUTOFFS.filter((c) => c !== 1).map((c) => `${num(at(c)?.spearman)}/${pct1(at(c)?.top10)}`.padEnd(14)).join(' ')}`);
+    }
+  }
+  p(`    hero strata below the minimum (reported, not merged): ${perHero.length - eligibleHeroes.length}`);
+  if (perHero.length && !eligibleHeroes.length) {
+    const top = perHero.slice(0, 5);
+    p(`    largest: ${top.map((s) => `hero ${s.heroId}=${s.matchCount}`).join(', ')}${perHero.length > 5 ? ', ...' : ''}`);
+  }
 
   p(H('Rank stability'));
+  p('bucket -> hero -> stability. Heroes below the minimum are not pooled.');
   for (const b of buckets) {
     const r = playerRows(b.parsed);
     if (!r.length) { p(`${b.label}: no data`); continue; }
-    p(`--- ${b.label} (matches n=${b.parsed.length}, rows n=${r.length})`);
-    const st = stability(r, b.label);
-    for (const c of [0.5, 0.7]) {
-      const s = st.cutoffs.find((x) => x.cutoff === c);
-      p(`  ${(c * 100).toFixed(0)}% vs 100%: presence rho=${num(s.presence.spearman)} top10=${pct1(s.presence.top10)} | events rho=${num(s.events.spearman)} top10=${pct1(s.events.top10)}`);
+    const c = heroCensus(r);
+    p(`--- ${b.label} (matches n=${b.parsed.length}, heroes n=${c.heroesSeen}, eligible n=${c.eligible.length})`);
+    if (!c.eligible.length) p(`  insufficient sample — best hero has ${c.bestMatchCount} matches`);
+    for (const s of c.eligible) {
+      for (const cut of [0.5, 0.7]) {
+        const x = s.cutoffs.find((y) => y.cutoff === cut);
+        p(`  hero ${s.heroId} (n=${s.matchCount}) ${(cut * 100).toFixed(0)}% vs 100%: presence rho=${num(x.presence.spearman)} top10=${pct1(x.presence.top10)} | events rho=${num(x.events.spearman)} top10=${pct1(x.events.top10)}`);
+      }
     }
   }
 
   p(H('Mode stability'));
+  p('mode -> hero -> stability. A mode with many matches spread thinly over many');
+  p('heroes is NOT sufficient: the support lives in heroes, not in the mode.');
   for (const [mode, n] of modes) {
     const r = playerRows(all, { mode });
-    p(`--- ${modeLabel(mode)} (n=${n})${n < MIN_SAMPLE_FOR_CONCLUSION ? '  insufficient sample — no conclusion drawn' : ''}`);
-    if (n < MIN_SAMPLE_FOR_CONCLUSION) continue;
-    const st = stability(r, modeLabel(mode));
-    for (const c of [0.5, 0.7]) {
-      const s = st.cutoffs.find((x) => x.cutoff === c);
-      p(`  ${(c * 100).toFixed(0)}% vs 100%: presence rho=${num(s.presence.spearman)} top10=${pct1(s.presence.top10)} | events rho=${num(s.events.spearman)} top10=${pct1(s.events.top10)}`);
+    const c = heroCensus(r);
+    p(`--- ${modeLabel(mode)} (matches n=${n}, heroes n=${c.heroesSeen}, eligible heroes n=${c.eligible.length})`);
+    if (n < MIN_SAMPLE_FOR_CONCLUSION) { p('  insufficient sample — mode below the minimum — no conclusion drawn'); continue; }
+    if (!c.eligible.length) { p(`  insufficient sample — no hero in this mode reached ${MIN_SAMPLE_FOR_CONCLUSION} matches (best ${c.bestMatchCount})`); continue; }
+    for (const s of c.eligible) {
+      for (const cut of [0.5, 0.7]) {
+        const x = s.cutoffs.find((y) => y.cutoff === cut);
+        p(`  hero ${s.heroId} (n=${s.matchCount}) ${(cut * 100).toFixed(0)}% vs 100%: presence rho=${num(x.presence.spearman)} top10=${pct1(x.presence.top10)} | events rho=${num(x.events.spearman)} top10=${pct1(x.events.top10)}`);
+      }
     }
   }
 
   p(H('Support sensitivity'));
-  p('floor  cellsKept  cellsDropped   (presence rows at the 100% window)');
+  p('(a) POOLED item cells — hero dimension projected out, shown for contrast only');
+  p('floor  cellsKept  cellsDropped');
   const support = supportSensitivity(rows, 'presenceRate');
   for (const s of support) p(`${String(s.floor).padStart(5)}  ${String(s.cellsKept).padStart(9)}  ${String(s.cellsDropped).padStart(12)}`);
-  p('top-10 overlap at 50% vs 100%, per bucket and floor:');
-  for (const b of buckets) {
-    const r = playerRows(b.parsed);
-    if (!meetsMinimum(r)) { p(`  ${b.label.padEnd(18)} insufficient sample (matches n=${matchCount(r)})`); continue; }
-    const cur = byCutoff(r, 0.5, 'presenceRate');
-    const ref = byCutoff(r, 1.0, 'presenceRate');
-    const line = SUPPORT_FLOORS.map((f) => {
-      const a = cur.ranked.filter((x) => x.presenceMatches >= f);
-      const c = ref.ranked.filter((x) => x.presenceMatches >= f);
-      return `floor${f}=${pct1(topKOverlap(a, c, 10).ratio)}(${a.length})`;
-    });
-    p(`  ${b.label.padEnd(18)} ${line.join('  ')}`);
+  p('');
+  p('(b) HERO x ITEM cells — the grain that a Hero x Item claim requires');
+  p('floor  cellsKept  cellsDropped  totalCells   keptShare');
+  for (const s of heroSupport) {
+    p(`${String(s.floor).padStart(5)}  ${String(s.cellsKept).padStart(9)}  ${String(s.cellsDropped).padStart(12)}  ${String(s.totalCells).padStart(10)}   ${pct1(s.totalCells ? s.cellsKept / s.totalCells : null)}`);
   }
+  p('A pooled cell can clear a floor that none of its hero-item parts clear:');
+  p('three heroes seen 5x each pool to 15, but each hero-item cell is still 5.');
 
 
   p(H('Benchmark heroes'));
@@ -538,13 +705,15 @@ function printReport(buckets) {
   }
 
   p(H('Special items'));
-  p('item                      events  excl  presence  presenceRate  median  p25    p75');
+  p('CORPUS DIAGNOSTIC. `presence` and `presenceRate` are over POOLED');
+  p('hero-match observations across all heroes, not single-hero support.');
+  p('item                      events  excl  presence  presenceRate(hero-match obs)  median  p25    p75');
   for (const s of specialItems(rows)) {
     p(`${s.label.padEnd(25)} ${String(s.events).padStart(6)}  ${String(s.excluded).padStart(4)}  ${String(s.presence).padStart(8)}  ${pct1(s.presenceRate).padStart(12)}  ${num(s.median).padStart(6)}  ${num(s.p25).padStart(6)}  ${num(s.p75).padStart(6)}`);
   }
   p('`excl` = timestamps past match end, excluded from timing (§3). NOT folded into the core item rankings above (§17).');
 
-  printConclusion(out, { buckets, rows, all, modes, support, overall });
+  printConclusion(out, { buckets, rows, all, modes, support, overall, heroSupport, census });
 
   console.log(out.join('\n'));
 }
@@ -569,7 +738,7 @@ function tvd(a, b) {
  * looked tidy. Splits below the pre-registered minimum are EXCLUDED from the
  * verdict rather than averaged in as zeros.
  */
-function printConclusion(out, { buckets, rows, all, modes, support, overall }) {
+function printConclusion(out, { buckets, rows, all, modes, support, overall, heroSupport, census }) {
   const p = (s) => out.push(s);
   const ret = retention(rows);
 
@@ -579,56 +748,69 @@ function printConclusion(out, { buckets, rows, all, modes, support, overall }) {
     p(`    ${(r.cutoff * 100).toFixed(0).padStart(3)}%  events ${pct1(r.eventsRetained).padStart(7)}  presence ${pct1(r.presenceRetained).padStart(7)}  (events=${ret.totalEvents}, presenceRows=${ret.totalPresence})`);
   }
 
-  p(`Q2. How stable is item ranking when the cutoff changes? (rows n=${overall.nRows}, matches n=${overall.nMatches})`);
+  p('Q2a. POOLED item-only diagnostic (hero dimension projected out).');
+  p(`    NOT a Hero x Item claim. rows n=${overall.nRows}, matches n=${overall.nMatches}.`);
   for (const c of overall.cutoffs) {
     p(`    ${(c.cutoff * 100).toFixed(0).padStart(3)}%  presence rho=${num(c.presence.spearman)} top10=${pct1(c.presence.top10)}   events rho=${num(c.events.spearman)} top10=${pct1(c.events.top10)}`);
   }
 
-  // Q3 — does the stability survive the splits?
+  // Q2b — the primary answer, at the grain the future analysis will need.
+  const eligible = census.eligible;
+  p(`Q2b. Hero x Item stability (PRIMARY). heroes seen n=${census.heroesSeen}, eligible at n>=${MIN_SAMPLE_FOR_CONCLUSION} matches: ${eligible.length}.`);
+  if (!eligible.length) {
+    p(`    NOT MEASURABLE — no hero reached the minimum (best hero ${census.bestMatchCount} matches).`);
+    p('    Hero strata were NOT merged into a pooled answer.');
+  } else {
+    for (const s of eligible) {
+      for (const cut of [0.5, 0.7]) {
+        const x = s.cutoffs.find((y) => y.cutoff === cut);
+        p(`    hero ${s.heroId} (n=${s.matchCount}) ${(cut * 100).toFixed(0)}%: rho=${num(x.presence.spearman)} top10=${pct1(x.presence.top10)}`);
+      }
+    }
+  }
+
+  // Q3 — rank/mode splits, now only hero strata that reached the minimum.
   const splits = [];
   for (const b of buckets) {
-    const r = playerRows(b.parsed);
-    // §21 — gate on MATCHES, and report how many were used.
-    if (!meetsMinimum(r)) continue;
-    const st = stability(r, b.label);
-    for (const c of [0.5, 0.7]) {
-      const s = st.cutoffs.find((x) => x.cutoff === c);
-      splits.push({ what: `${b.label}@${c * 100}%`, rho: s.presence.spearman, top10: s.presence.top10, n: matchCount(r) });
+    for (const s of heroCensus(playerRows(b.parsed)).eligible) {
+      for (const c of [0.5, 0.7]) {
+        const x = s.cutoffs.find((y) => y.cutoff === c);
+        splits.push({ what: `${b.label}/hero${s.heroId}@${c * 100}%`, rho: x.presence.spearman, top10: x.presence.top10, n: s.matchCount });
+      }
     }
   }
   for (const [mode, n] of modes) {
     if (n < MIN_SAMPLE_FOR_CONCLUSION) continue;
-    const mr = playerRows(all, { mode });
-    const st = stability(mr, modeLabel(mode));
-    for (const c of [0.5, 0.7]) {
-      const s = st.cutoffs.find((x) => x.cutoff === c);
-      splits.push({ what: `${modeLabel(mode)}@${c * 100}%`, rho: s.presence.spearman, top10: s.presence.top10, n });
+    for (const s of heroCensus(playerRows(all, { mode })).eligible) {
+      for (const c of [0.5, 0.7]) {
+        const x = s.cutoffs.find((y) => y.cutoff === c);
+        splits.push({ what: `${modeLabel(mode)}/hero${s.heroId}@${c * 100}%`, rho: x.presence.spearman, top10: x.presence.top10, n: s.matchCount });
+      }
     }
   }
-  p(`Q3. Does stability survive rank/mode splits? (${splits.length} splits at n >= ${MIN_SAMPLE_FOR_CONCLUSION} MATCHES)`);
+  p(`Q3. Does stability survive rank/mode splits? (${splits.length} hero strata at n >= ${MIN_SAMPLE_FOR_CONCLUSION} MATCHES)`);
   if (!splits.length) {
-    // §5 — do not let an empty table read as a negative result.
-    p('    insufficient sample — no rank or mode split reached the minimum, so');
-    p('    stability ACROSS splits was not measured. This is not a finding of');
-    p('    instability.');
+    p('    insufficient sample — no hero strata in any rank bucket or mode reached');
+    p('    the minimum, so stability ACROSS splits was not measured. This is not');
+    p('    a finding of instability.');
   }
-  for (const s of splits) p(`    ${s.what.padEnd(26)} n=${String(s.n).padStart(4)} rho=${num(s.rho)} top10=${pct1(s.top10)}`);
+  for (const s of splits) p(`    ${s.what.padEnd(30)} n=${String(s.n).padStart(3)} rho=${num(s.rho)} top10=${pct1(s.top10)}`);
 
 
   const rhos = splits.map((s) => s.rho).filter((x) => x !== null && !Number.isNaN(x));
   const held = splits.filter((s) => s.rho !== null && s.rho >= 0.8).length;
 
   p('Q4. What support floor is needed before the signal stops being noisy?');
-  p(`    pre-registered floors: ${support.map((s) => `${s.floor}->${s.cellsKept} cells`).join('  ')}`);
-  const useful = support.filter((s) => s.cellsKept >= 50).map((s) => s.floor);
-  // §5 — absence of evidence is not evidence of noise. If even the smallest
-  // pre-registered floor cannot be evaluated, say so instead of implying the
-  // signal failed.
-  if (!useful.length && support.every((s) => s.cellsKept === 0)) {
-    p('    insufficient sample — no pre-registered floor could be evaluated.');
+  p('    HERO x ITEM cells (the grain a Hero x Item claim requires):');
+  p(`      ${heroSupport.map((s) => `${s.floor}->${s.cellsKept}/${s.totalCells} cells`).join('  ')}`);
+  const useful = heroSupport.filter((s) => s.cellsKept >= 50).map((s) => s.floor);
+  if (!heroSupport.length || heroSupport.every((s) => s.cellsKept === 0)) {
+    p('      insufficient sample — no pre-registered floor could be evaluated at hero grain.');
   } else {
-    p(`    smallest floor keeping >=50 cells: ${useful.length ? useful[0] : 'none of the pre-registered floors'}`);
+    p(`      smallest floor keeping >=50 cells: ${useful.length ? useful[0] : 'none of the pre-registered floors'}`);
   }
+  p('    POOLED item cells (contrast only — NOT hero-item support):');
+  p(`      ${support.map((s) => `${s.floor}->${s.cellsKept} cells`).join('  ')}`);
 
   p('');
   p('Does this justify choosing a temporal eligibility rule for future');
@@ -660,9 +842,11 @@ function printConclusion(out, { buckets, rows, all, modes, support, overall }) {
   p(`VERDICT: ${verdict}`);
   p(`    splits evaluated: ${splits.length} (minimum n = ${MIN_SAMPLE_FOR_CONCLUSION}); with rho >= 0.8: ${held}/${rhos.length}; mean rho: ${num(mean)}`);
   if (verdict === 'TEMPORAL_INCONCLUSIVE') {
-    p('    reason: too few rank/mode splits reached the pre-registered minimum.');
-    p('    This is a measurement gap, NOT a finding that the signal is unstable.');
-    p('    Re-run with a larger corpus before treating any cutoff as validated.');
+    p('    reason: no HERO stratum reached the pre-registered minimum, so Hero x');
+    p('    Item stability was never measured. This is a measurement gap, NOT a');
+    p('    finding that the signal is unstable.');
+    p('    Cause: parsed PUBLIC match supply, not an aggregation defect — the');
+    p('    hero dimension is preserved end-to-end and the floors are pre-set.');
   }
 }
 
@@ -696,16 +880,20 @@ if (cmd === 'plan') {
 }
 
 if (cmd === 'all') {
-  let buckets;
+  let payload;
   if (existsSync(CORPUS_FILE) && process.argv.includes('--cached')) {
     log(`[corpus] reusing ${CORPUS_FILE}`);
-    buckets = JSON.parse(readFileSync(CORPUS_FILE, 'utf8'));
+    payload = JSON.parse(readFileSync(CORPUS_FILE, 'utf8'));
   } else {
-    buckets = await buildCorpus();
-    writeFileSync(CORPUS_FILE, JSON.stringify(buckets));
+    payload = await buildCorpus();
+    writeFileSync(CORPUS_FILE, JSON.stringify(payload));
     log(`[corpus] wrote ${CORPUS_FILE}`);
   }
-  printReport(buckets);
+  // §12 — an older cache holds a bare bucket array; hydration counts simply
+  // come out as zero rather than crashing the report.
+  const buckets = Array.isArray(payload) ? payload : payload.buckets;
+  const hydration = Array.isArray(payload) ? {} : payload.hydration;
+  printReport(buckets, hydration);
   process.exit(0);
 }
 
