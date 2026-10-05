@@ -50,8 +50,12 @@ per-ability `attrib.key` strings.
 | leash / fear_taunt | NO | 0 | — |
 | forced_movement | not measured this run | — | — |
 
-All ten categories have *at least one* marker. The problem is not the absence of
-a concept — it is coverage and ownership.
+Eight of the eight **measured** categories have at least one marker;
+`forced_movement` was not measured at all, and `leash` / `fear_taunt` have
+none. The verdict logic counts `markersPerCategory` over the nine non-excluded
+categories and excludes `forced_movement` from the denominator, which is why the
+code and this table agree. The problem is not the absence of a concept — it is
+coverage and ownership.
 
 ## 4. Why the markers are not enough
 
@@ -117,10 +121,10 @@ VERDICT: CONTROL_NOT_IDENTIFIABLE
 ```
 
 The designated primary source tracks no ability data, and the secondary source
-exposes no machine-readable hero → ability join (0/127). All ten categories have
-at least one explicit marker covering only 229/3084 abilities, and canonical
-mechanics such as Lion's Impale carry no marker at all — so absence of a marker
-cannot distinguish "does not do it" from "not measured".
+exposes no machine-readable hero → ability join (0/127). All eight measured
+categories have at least one explicit marker, covering only 229/3084 abilities,
+and canonical mechanics such as Lion's Impale carry no marker at all — so
+absence of a marker cannot distinguish "does not do it" from "not measured".
 
 This is a **measurement** about the sources, not a judgement about Dota. The
 mechanics are real and well documented; they are simply not exposed as
