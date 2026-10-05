@@ -26,11 +26,13 @@ import { fileURLToPath } from 'node:url';
 import { StratzTransport } from './update-data-stratz.mjs';
 import {
   MODIFIER_CONTROL_FLAGS,
+  PROVENANCE_FIELDS,
   STATE,
   WANTED_ABILITY_FIELDS,
   WANTED_STAT_FIELDS,
   modifierFlagCoverage,
   normalizeModifier,
+  provenanceCoverage,
   resolveHeroAbilities,
   semanticFieldCoverage,
   upgradeProvenance,
@@ -229,12 +231,20 @@ function printReport(a) {
   p('  A flag that is DECLARED but never returns a boolean is `unknown`, never');
   p('  `not_present`: STRATZ ships the schema shape without the data.');
 
-  p(H('Upgrade semantics (§11)'));
+  p(H('Upgrade semantics (§11) — six independent facts, not one label'));
   const prov = a.heroAbilities.flatMap((x) => x.resolved.abilities.map((z) => upgradeProvenance(z)));
-  const tally = new Map();
-  for (const list of prov) for (const k of list) tally.set(k, (tally.get(k) ?? 0) + 1);
-  p(`  provenance across ${prov.length} abilities : ${[...tally.entries()].sort().map(([k, v]) => `${k}=${v}`).join('  ') || 'none'}`);
-  p('  base/shard/scepter/talent/innate come from TYPED booleans, never from names.');
+  const cov = provenanceCoverage(prov);
+  p(`  across ${prov.length} abilities:`);
+  p('  field                   yes    no  unknown');
+  for (const f of PROVENANCE_FIELDS) {
+    const c = cov[f];
+    p(`    ${f.padEnd(22)} ${String(c.yes).padStart(4)} ${String(c.no).padStart(5)} ${String(c.unknown).padStart(9)}`);
+  }
+  p('');
+  p('  isGrantedByShard and hasShardUpgrade are DIFFERENT facts and are reported');
+  p('  separately: an ability that APPEARS because of a shard is not the same as');
+  p('  one that merely HAS a shard upgrade. `unknown` means the field was not');
+  p('  returned — never a negative.');
 
   p(H('Control markers audit (§6/§12)'));
   p(`  declared control flags : ${a.flagCoverage.length}`);

@@ -36,10 +36,12 @@ export const MODIFIER_CONTROL_FLAGS = [
   'isKnockback', 'isSleep', 'isCyclone', 'isBlind', 'isEthereal',
 ];
 
-/** §11 — upgrade provenance, taken only from typed booleans. */
+/** §11 — upgrade provenance field names, for the two INDEPENDENT dimensions. */
 export const UPGRADE_FIELDS = {
-  shard: 'hasShardUpgrade',
-  scepter: 'hasScepterUpgrade',
+  grantedByShard: 'isGrantedByShard',
+  hasShardUpgrade: 'hasShardUpgrade',
+  grantedByScepter: 'isGrantedByScepter',
+  hasScepterUpgrade: 'hasScepterUpgrade',
 };
 
 /** Normalise a hero record. Absent fields stay null rather than defaulting. */
@@ -101,22 +103,64 @@ export function semanticFieldCoverage(declaredFields, wantedFields) {
 }
 
 /**
- * §4/§8 — upgrade provenance, from TYPED booleans only.
+ * §1/§2/§3 — provenance as SIX INDEPENDENT tri-state facts, not one label.
  *
- * "can stun with a shard" and "the base ability stuns" are different facts, so
- * the provenance travels with the evidence instead of being collapsed into a
- * bare boolean.
+ * Two bugs made the previous version wrong, and both produced plausible output:
+ *
+ *  - `isTalent` lives on `AbilityType`, not on `AbilityStatType`. The helper read
+ *    `stat.isTalent`, which is always undefined, so a talent ability produced
+ *    NO talent provenance at all. The unit test passed only because its fixture
+ *    used the impossible shape `{ stat: { isTalent: true } }`.
+ *  - `isGrantedByShard` and `hasShardUpgrade` are different facts: an ability
+ *    that APPEARS because of a shard is not the same as an ability that HAS a
+ *    shard upgrade. Collapsing them into one `shard` label made
+ *    (granted, no upgrade) and (not granted, upgrade) indistinguishable.
+ *
+ * `true` = explicit positive, `false` = explicit negative, `null` = the source
+ * did not provide the field. A missing field is never read as `false`.
  */
 export function upgradeProvenance(ability) {
   const stat = ability?.stat ?? {};
-  const out = [];
-  for (const [kind, field] of Object.entries(UPGRADE_FIELDS)) {
-    if (stat[field] === true) out.push(kind);
-    else if (stat[field] === false) out.push(`no_${kind}`);
+  return {
+    // isTalent is on AbilityType — the top level of the ability object.
+    isTalent: tri(ability?.isTalent),
+    isInnate: tri(stat.isInnate),
+    isGrantedByShard: tri(stat.isGrantedByShard),
+    hasShardUpgrade: tri(stat.hasShardUpgrade),
+    isGrantedByScepter: tri(stat.isGrantedByScepter),
+    hasScepterUpgrade: tri(stat.hasScepterUpgrade),
+  };
+}
+
+/** Keep true / false / null distinct. A boolean is evidence; absence is not. */
+function tri(v) {
+  return typeof v === 'boolean' ? v : null;
+}
+
+/** Field order is fixed, so the object serialises deterministically. */
+export const PROVENANCE_FIELDS = [
+  'isTalent', 'isInnate', 'isGrantedByShard', 'hasShardUpgrade',
+  'isGrantedByScepter', 'hasScepterUpgrade',
+];
+
+/**
+ * Tally provenance across abilities, reporting true / false / null SEPARATELY.
+ *
+ * A `null` column is the important one: it says the source declared the field
+ * and returned nothing for it, which is not the same as a negative.
+ */
+export function provenanceCoverage(provenanceList) {
+  const out = {};
+  for (const f of PROVENANCE_FIELDS) {
+    let yes = 0; let no = 0; let unknown = 0;
+    for (const p of provenanceList ?? []) {
+      if (p?.[f] === true) yes += 1;
+      else if (p?.[f] === false) no += 1;
+      else unknown += 1;
+    }
+    out[f] = { yes, no, unknown };
   }
-  if (stat.isTalent === true) out.push('talent');
-  if (stat.isInnate === true) out.push('innate');
-  return out.sort();
+  return out;
 }
 
 /**

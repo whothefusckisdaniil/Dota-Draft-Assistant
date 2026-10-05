@@ -9,11 +9,13 @@
 import { describe, expect, it } from 'vitest';
 import {
   MODIFIER_CONTROL_FLAGS,
+  PROVENANCE_FIELDS,
   STATE,
+  modifierFlagCoverage,
   normalizeAbility,
   normalizeHero,
   normalizeModifier,
-  modifierFlagCoverage,
+  provenanceCoverage,
   resolveHeroAbilities,
   semanticFieldCoverage,
   upgradeProvenance,
@@ -96,24 +98,77 @@ describe('semanticFieldCoverage reports absence instead of crashing (§4/§17)',
   });
 });
 
-describe('upgrade provenance comes from typed booleans only (§11)', () => {
-  it('records shard and scepter when the boolean is true', () => {
-    expect(upgradeProvenance({ id: 1, stat: { hasShardUpgrade: true, hasScepterUpgrade: true } }))
-      .toEqual(['scepter', 'shard']);
+describe('upgrade provenance is SIX independent facts (§1/§2/§3 of ТЗ §30.1)', () => {
+  it('reads isTalent from the ABILITY, not from stat (§2)', () => {
+    // The real GraphQL shape: `isTalent` is on AbilityType. The previous helper
+    // read `stat.isTalent`, so this returned no talent provenance at all.
+    expect(upgradeProvenance({ id: 1, isTalent: true, stat: {} }).isTalent).toBe(true);
+    expect(upgradeProvenance({ id: 1, isTalent: false, stat: {} }).isTalent).toBe(false);
   });
 
-  it('records the NEGATIVE explicitly rather than omitting it', () => {
-    expect(upgradeProvenance({ id: 1, stat: { hasShardUpgrade: false, hasScepterUpgrade: false } }))
-      .toEqual(['no_scepter', 'no_shard']);
+  it('does NOT read a stat.isTalent that the schema does not have', () => {
+    // A fabricated fixture must not be able to produce talent provenance.
+    expect(upgradeProvenance({ id: 1, stat: { isTalent: true } }).isTalent).toBeNull();
   });
 
-  it('marks talent and innate', () => {
-    expect(upgradeProvenance({ id: 1, stat: { isTalent: true, isInnate: true } })).toEqual(['innate', 'talent']);
+  it('reads isInnate from stat', () => {
+    expect(upgradeProvenance({ id: 1, stat: { isInnate: true } }).isInnate).toBe(true);
+    expect(upgradeProvenance({ id: 1, stat: { isInnate: false } }).isInnate).toBe(false);
   });
 
-  it('never invents provenance from a missing stat', () => {
-    expect(upgradeProvenance({ id: 1 })).toEqual([]);
-    expect(upgradeProvenance(null)).toEqual([]);
+  it('keeps grantedBy and hasUpgrade independent for shard (§3)', () => {
+    const A = upgradeProvenance({ id: 1, stat: { isGrantedByShard: true, hasShardUpgrade: false } });
+    const B = upgradeProvenance({ id: 1, stat: { isGrantedByShard: false, hasShardUpgrade: true } });
+    const C = upgradeProvenance({ id: 1, stat: { isGrantedByShard: true, hasShardUpgrade: true } });
+    expect([A.isGrantedByShard, A.hasShardUpgrade]).toEqual([true, false]);
+    expect([B.isGrantedByShard, B.hasShardUpgrade]).toEqual([false, true]);
+    expect([C.isGrantedByShard, C.hasShardUpgrade]).toEqual([true, true]);
+    expect(A).not.toEqual(B);
+    expect(B).not.toEqual(C);
+  });
+
+  it('keeps grantedBy and hasUpgrade independent for scepter (§3)', () => {
+    const A = upgradeProvenance({ id: 1, stat: { isGrantedByScepter: true, hasScepterUpgrade: false } });
+    const B = upgradeProvenance({ id: 1, stat: { isGrantedByScepter: false, hasScepterUpgrade: true } });
+    expect([A.isGrantedByScepter, A.hasScepterUpgrade]).toEqual([true, false]);
+    expect([B.isGrantedByScepter, B.hasScepterUpgrade]).toEqual([false, true]);
+  });
+
+  it('distinguishes null (not provided) from false (explicit negative) (§8)', () => {
+    const p = upgradeProvenance({ id: 1, stat: {} });
+    expect(p.hasShardUpgrade).toBeNull();
+    expect(upgradeProvenance({ id: 1, stat: { hasShardUpgrade: false } }).hasShardUpgrade).toBe(false);
+    expect(p.hasShardUpgrade).not.toBe(false);
+  });
+
+  it('reports all six fields for a completely empty ability', () => {
+    const p = upgradeProvenance({ id: 1 });
+    expect(Object.keys(p).sort()).toEqual([...PROVENANCE_FIELDS].sort());
+    expect(Object.values(p).every((v) => v === null)).toBe(true);
+    expect(upgradeProvenance(null).isTalent).toBeNull();
+  });
+
+  it('serialises in a deterministic key order', () => {
+    expect(Object.keys(upgradeProvenance({ id: 1 }))).toEqual(PROVENANCE_FIELDS);
+  });
+});
+
+describe('provenanceCoverage reports yes / no / unknown separately (§5)', () => {
+  const list = [
+    { isTalent: true, isInnate: false },
+    { isTalent: false, isInnate: true },
+    { isTalent: null, isInnate: null },
+  ];
+
+  it('counts the three states without collapsing them', () => {
+    const c = provenanceCoverage(list);
+    expect(c.isTalent).toEqual({ yes: 1, no: 1, unknown: 1 });
+    expect(c.isInnate).toEqual({ yes: 1, no: 1, unknown: 1 });
+  });
+
+  it('handles an empty and a missing list', () => {
+    expect(provenanceCoverage([]).isTalent).toEqual({ yes: 0, no: 0, unknown: 0 });
+    expect(provenanceCoverage(undefined).isTalent).toEqual({ yes: 0, no: 0, unknown: 0 });
   });
 });
 

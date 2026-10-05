@@ -30,10 +30,10 @@ not a bare id list.
 `hasScepterUpgrade`, `isInnate`, plus `isUltimate`, `dispellable`, `duration`,
 `damage`, `castRange`, `unitDamageType`, `unitTargetTeam`, `unitTargetFlags`.
 
-Measured across 848 abilities: `scepter=134`, `shard=103`, `innate=126`,
-with explicit `no_scepter=712` / `no_shard=743` negatives. "Can stun with a
-shard" and "the base ability stuns" are now separable without a single manual
-mapping — which is exactly what ТЗ №8 and §11 asked for.
+Measured across 848 abilities: see **§9** for the corrected per-field figures,
+which supersede the single-label summary this section originally carried.
+"Can stun with a shard", "has a shard upgrade" and "the base ability stuns" are
+separable without any manual mapping, which is what ТЗ §8 and §11 asked for.
 
 ## 3. The join, measured
 
@@ -137,3 +137,43 @@ test asserts that a modifier NAME containing "stun" yields no evidence (§12).
 Read-only: one GraphQL `query` operation. `assertReadOnly()` rejects `mutation`,
 `subscription` and any write-shaped field before anything is sent. The token is
 read from env/`.env`, never cached and never printed.
+
+## 9. ТЗ §30.1 — provenance correction
+
+The original §30 report collapsed two independent facts into one label and
+read `isTalent` from the wrong object. Both produced plausible output, which is
+why they survived a first review.
+
+**Bug 30.1.** `isTalent` is a field of `AbilityType`, not of `AbilityStatType`.
+The helper read `stat.isTalent`, which is always undefined, so a talent ability
+produced **no talent provenance at all**. The unit test passed only because its
+fixture used the impossible shape `{ stat: { isTalent: true } }`.
+
+**Bug 30.2.** `isGrantedByShard` and `hasShardUpgrade` are different facts. An
+ability that *appears because of* a shard is not an ability that *has* a shard
+upgrade. Collapsing them made `(granted, no upgrade)` and `(not granted,
+upgrade)` return the identical string.
+
+Provenance is now six independent tri-state facts, where `null` means the field
+was not provided and is never read as `false`:
+
+```text
+field                   yes    no  unknown     (848 abilities)
+  isTalent                  0   848         0
+  isInnate                126   720         2
+  isGrantedByShard         37   809         2
+  hasShardUpgrade         103   743         2
+  isGrantedByScepter       32   814         2
+  hasScepterUpgrade       134   712         2
+```
+
+**What the correction actually recovered:** `isGrantedByShard` (37) and
+`isGrantedByScepter` (32) were previously invisible — the old report showed only
+`shard=103` and `scepter=134`, silently discarding 69 real facts.
+
+A separate observation from the same run: `isTalent` is `false` for all 848
+abilities, and `isUltimate` is true for none. Both are declared in the schema
+and populated, yet carry no information at this level — talents live on
+`HeroTalentType` and ultimates are presumably identified elsewhere. Neither is
+usable as a feature on `AbilityType` as queried.
+
