@@ -24,6 +24,8 @@ const STRATZ_CACHE = '/tmp/stratz-ability-properties-research';
 const CACHE = '/tmp/stratz-ability-semantic-bridge';
 mkdirSync(CACHE, { recursive: true });
 const OD_FILE = `${CACHE}/opendota.json`;
+/** §33 consumes the bridge's validated verdicts rather than re-deciding them. */
+export const MAPPINGS_FILE = `${CACHE}/confirmed-mappings.json`;
 const REPO = 'odota/dotaconstants';
 const UA = 'dota-draft-assistant-research';
 
@@ -120,13 +122,13 @@ function report(stratz, od) {
   p(`  B (validation only)       ${b.length} abilities, first key "${b[0]?.key}"`);
   p();
 
-  const summaries = fieldSections(p, pairs, a, b);
+  const summaries = fieldSections(p, pairs, a, b, gv, od);
   heroSection(p, heroes, od, summaries);
   alignmentSection(p, gv, stratz, od);
   verdictSection(p, summaries, join, distinctNames, heroHit, heroes);
   console.log(out.join('\n'));
 }
-function fieldSections(p, pairs, a, b) {
+function fieldSections(p, pairs, a, b, gv, od) {
   const summaries = {};
   for (const { stratz: sf, opendota: of } of FIELD_PAIRS) {
     p(`## 4. ${sf} <- ${of ?? '(no counterpart)'}`);
@@ -160,6 +162,28 @@ function fieldSections(p, pairs, a, b) {
     p();
     summaries[sf] = { verdict: confirmed.length === full.entries.length ? 'EXACT' : confirmed.length > 0 ? 'PARTIAL' : 'BLOCKED', confirmed, entries: full.entries };
   }
+  // §14 provenance: persist the validated mapping so downstream research reads
+  // §32's verdicts instead of re-deriving them from the raw join.
+  writeFileSync(MAPPINGS_FILE, JSON.stringify({
+    generatedFrom: 'ТЗ §32 opendota-stratz-semantic-bridge',
+    stratzGameVersionId: gv,
+    opendotaCommit: od.sha,
+    fields: Object.fromEntries(FIELD_PAIRS.filter((x) => x.opendota).map((x) => [x.stratz, {
+      opendotaField: x.opendota,
+      mapping: (summaries[x.stratz]?.confirmed ?? []).map((m) => ({
+        rawValue: m.rawValue,
+        semantic: m.semantic,
+        source: 'OpenDota dotaconstants',
+        abilityCoverage: m.observations,
+        validationStatus: m.validationStatus,
+        outOfSample: m.outOfSample,
+      })),
+    }])),
+    unmapped: Object.fromEntries(FIELD_PAIRS.filter((x) => x.opendota).map((x) => [x.stratz,
+      (summaries[x.stratz]?.entries ?? []).filter((e) => !summaries[x.stratz].confirmed.some((c) => c.rawValue === e.rawValue)).map((e) => ({ rawValue: e.rawValue, semantic: null, validationStatus: 'UNKNOWN', observations: e.count }))])),
+  }, null, 1));
+  p(`  mappings persisted -> ${MAPPINGS_FILE}`);
+  p();
   return summaries;
 }
 
