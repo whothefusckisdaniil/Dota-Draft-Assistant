@@ -259,7 +259,7 @@ function printReport(a) {
   p(H('Comparison with ТЗ §29 (§15)'));
   p('                          OpenDota    Valve     STRATZ');
   p(`  Hero -> Ability         NO (0/127)  NO        YES (${withAb.length}/${a.heroes.length})`);
-  p(`  Upgrade provenance      NO          NO        YES (${statUpgrades}/5 typed fields)`);
+  p(`  Upgrade provenance      NO          NO        YES (${statUpgrades}/5 requested provenance fields exist; isTalent is on AbilityType)`);
   p(`  Control markers         partial     NO        DECLARED, UNPOPULATED (${populated.length}/${a.flagCoverage.length})`);
   p('  Version / provenance    snapshot    n/a       timestamp + gameVersionId');
   p('  No weighting: this records what each source exposes, not which is better.');

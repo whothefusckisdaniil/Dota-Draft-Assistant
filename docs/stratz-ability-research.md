@@ -8,7 +8,7 @@
 ```text
 Hero -> Ability            127 / 127   (100%)
 unique abilities linked    789
-upgrade provenance         typed, 5/5 stat fields
+upgrade provenance         5/5 requested provenance fields exist
 control flags              16 DECLARED, 0 POPULATED
 ```
 
@@ -109,17 +109,39 @@ data problem with a known address, not an architecture dead end.
 
 ## 7. What it unlocks
 
-The graph itself is production-usable *today* for things that need no modifier
-data:
+Solid today, and not more than that:
 
 - `Hero → Ability` at 100% for all 127 heroes
-- typed upgrade provenance (base / shard / scepter / talent / innate)
-- 36 typed `AbilityStatType` fields including damage, duration, cast range,
-  dispellability and target team
+- typed upgrade provenance, as **six independent facts** (see §9)
+- 36 typed `AbilityStatType` fields declared, including damage, duration, cast
+  range, dispellability and target team
 
-Any enemy feature built on **ability properties** rather than on control
-mechanics — `isUltimate`, `isInnate`, damage type, target type, dispellability —
-is available now. A control taxonomy still is not.
+**Several typed ability properties are schema-available; their data coverage and
+analytical usefulness must be established by ТЗ №31.** A field existing in the
+schema is not evidence that it is populated, and a populated field is not
+evidence that it is informative.
+
+A field being schema-available is therefore three separate claims, and only the
+first is currently established:
+
+| state | meaning | established for |
+| --- | --- | --- |
+| schema available | the field is declared on the type | most of `AbilityStatType` |
+| data populated | real values are returned | `isInnate`, the four provenance fields |
+| analytically informative | the values separate heroes | **not yet measured** |
+
+Concretely, from the 848 cached abilities:
+
+- `isInnate` — populated (126 true) and clearly informative.
+- `isUltimate` — schema-available and populated, but **0 of 848 are true**:
+  uninformative at this level. Ultimates are evidently identified elsewhere.
+- `isTalent` — 0 of 848 true. It is an `AbilityType` field, not a stat field,
+  and talents live on `HeroTalentType`. Not usable as an ability feature.
+- damage / damage type / cast range / duration / dispellable / target team /
+  target flags — schema-available, population and usefulness **unmeasured**.
+
+So `isUltimate` and `isTalent` are explicitly **excluded** from the candidate
+feature set, and a control taxonomy is still not available.
 
 ## 8. Checks
 
