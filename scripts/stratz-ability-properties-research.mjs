@@ -19,7 +19,7 @@ import { StratzTransport } from './update-data-stratz.mjs';
 import {
   CONFIDENCE, PROPERTY_FIELDS, SEMANTICALLY_OPAQUE,
   normalizeAbilityProperties, valueCoverage, categoricalDistribution,
-  numericDistribution, shareWithDenominator, heroFeatureProfile,
+  numericDistribution, shareWithDenominator, heroFeatureProfile, fieldConfidence,
   profileSignature, featureOverlap,
 } from './stratz-ability-properties-lib.mjs';
 
@@ -41,18 +41,34 @@ function loadToken() {
 }
 const F = "damage unitDamageType duration castRange unitTargetTeam unitTargetFlags dispellable spellImmunity";
 
-/** §22 — confidence is decided from measured data, never assumed. */
-function confidenceFor(field, cov, entries) {
-  if (cov.nonNull === 0) return CONFIDENCE.SCHEMA_ONLY;
+/**
+ * §22 / §31.1 — confidence for one field, computed from measured data.
+ *
+ * The local `confidenceFor()` used to classify from `distinct > 1`, which
+ * labelled `duration` FULLY_POPULATED while the document said UNINFORMATIVE.
+ * It now derives discrimination from the actual hero profiles and delegates the
+ * decision to the pure `fieldConfidence()` in the library.
+ */
+/** Which candidate feature expresses each field, for the discrimination axis. */
+const FIELD_FEATURE = {
+  damage: 'HAS_DAMAGE_ABILITY',
+  castRange: 'HAS_LONG_RANGE_ABILITY',
+  duration: 'HAS_TIMED_ABILITY',
+  dispellable: 'HAS_DISPELLABLE_ABILITY',
+  isInnate: 'HAS_INNATE_ABILITY',
+};
+
+function confidenceFor(field, cov, profiles) {
   const opaque = SEMANTICALLY_OPAQUE.has(field);
-  const halfEmpty = cov.nullPct > 50;
-  if (opaque) {
-    return entries > 1 ? CONFIDENCE.PARTIALLY_POPULATED : CONFIDENCE.UNINFORMATIVE;
+  let discrimination = null;
+  const name = FIELD_FEATURE[field];
+  if (!opaque && name && profiles) {
+    discrimination = {
+      heroesWith: profiles.filter((pr) => (pr.features[name]?.numerator ?? 0) > 0).length,
+      heroesWithout: profiles.filter((pr) => (pr.features[name]?.denominator ?? 0) > 0 && pr.features[name].numerator === 0).length,
+    };
   }
-  if (halfEmpty) return CONFIDENCE.PARTIALLY_POPULATED;
-  if (field === 'isInnate') return CONFIDENCE.FULLY_POPULATED;
-  if (field === 'dispellable') return CONFIDENCE.FULLY_POPULATED;
-  return entries > 1 ? CONFIDENCE.FULLY_POPULATED : CONFIDENCE.UNINFORMATIVE;
+  return fieldConfidence(cov, discrimination, opaque);
 }
 
 function pct(n) {
@@ -110,6 +126,9 @@ function report(d) {
   const p = (s = '') => out.push(s);
   const heroes = d.heroes ?? [];
   const rows = heroes.flatMap((h) => h.abilities.map((a) => normalizeAbilityProperties(a.ability))).filter(Boolean);
+  // Built up front: §1 confidence is computed from hero-level discrimination,
+  // so the profiles have to exist before the population table is printed.
+  const profiles = heroes.map((h) => heroFeatureProfile(h.displayName, h.abilities.map((a) => a.ability), FEATURES));
 
   p('# ТЗ §31 — Ability Property Research');
   p();
@@ -126,7 +145,7 @@ function report(d) {
     covs[f] = cov;
     const sample = rows.find((r) => r[f] !== null)?.[f];
     const shape = cov.isArray ? 'array' : cov.isBoolean ? 'boolean' : cov.isNumeric ? 'integer' : typeof sample;
-    p(`  ${f.padEnd(17)} ${String(cov.nonNull).padStart(6)} ${String(cov.null).padStart(7)} ${(cov.nullPct ?? 0).toFixed(1).padStart(6)}% ${String(cov.distinct).padStart(9)}  ${shape.padEnd(10)}  ${confidenceFor(f, cov, cov.distinct)}`);
+    p(`  ${f.padEnd(17)} ${String(cov.nonNull).padStart(6)} ${String(cov.null).padStart(7)} ${(cov.nullPct ?? 0).toFixed(1).padStart(6)}% ${String(cov.distinct).padStart(9)}  ${shape.padEnd(10)}  ${confidenceFor(f, cov, profiles)}`);
   }
   p();
 
@@ -214,7 +233,7 @@ function report(d) {
   p('  A STRING enum, so it needs no mapping: YES / NO / NONE read directly.');
   p('  Highest-confidence field in the set, and still silent on threat (§10).');
   p();
-  return finish(p, out, d, rows, heroes, covs);
+  return finish(p, out, d, rows, heroes, covs, profiles);
 }
 
 function dumpDist(p, dist) {
@@ -229,10 +248,8 @@ function main() {
     process.exit(1);
   });
 }
-
 /** Sections 9-13: aggregation, diversity, redundancy, benchmarks, verdict. */
-function finish(p, out, d, rows, heroes, covs) {
-  const profiles = heroes.map((h) => heroFeatureProfile(h.displayName, h.abilities.map((a) => a.ability), FEATURES));
+function finish(p, out, d, rows, heroes, covs, profiles) {
   const plain = Object.keys(FEATURES).filter((k) => !FEATURES[k].opaque);
 
   p('## 9. Hero-level aggregation (raw shares, explicit denominators)');

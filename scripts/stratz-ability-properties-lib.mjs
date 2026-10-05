@@ -181,6 +181,30 @@ export function profileSignature(profile) {
     .join('|');
 }
 
+/**
+ * §22 / §31.1 — confidence from three INDEPENDENT axes.
+ *
+ * This used to be decided in the research script from `distinct > 1` alone,
+ * which reported `duration` as FULLY_POPULATED while the document said
+ * UNINFORMATIVE: 34 distinct values, but 127/127 heroes come out the same.
+ * Distinctness is not discrimination. The classification is now pure, lives
+ * here, and is unit-tested.
+ *
+ * @param coverage      from `valueCoverage`
+ * @param discrimination `{ heroesWith, heroesWithout }` counts over the pool
+ * @param opaque        true when meaning needs an unpublished integer mapping
+ */
+export function fieldConfidence(coverage, discrimination, opaque = false) {
+  if (!coverage || coverage.nonNull === 0) return CONFIDENCE.SCHEMA_ONLY;
+  if (opaque) return CONFIDENCE.PARTIALLY_POPULATED;
+  // Populated, but the derived feature does not separate a single hero pair.
+  if (!discrimination || discrimination.heroesWith === 0 || discrimination.heroesWithout === 0) {
+    return CONFIDENCE.UNINFORMATIVE;
+  }
+  if (coverage.nullPct > 50) return CONFIDENCE.PARTIALLY_POPULATED;
+  return CONFIDENCE.FULLY_POPULATED;
+}
+
 /** §16 — hero-set overlap between two features. Defined only for booleans. */
 export function featureOverlap(profiles, a, b) {
   const rows = profiles ?? [];

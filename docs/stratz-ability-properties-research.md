@@ -35,6 +35,37 @@ informative* are three separate claims. On 868 abilities:
 
 `spellImmunity` is fetched for reference and is not a candidate feature.
 
+### 1.1 Confidence is computed, not asserted (§31.1)
+
+The first version of this section stated `duration → UNINFORMATIVE` while the
+executable classified it as `FULLY_POPULATED`, because it decided confidence
+from `distinct > 1` and `duration.distinct` is 34. Distinctness is not
+discrimination, so the two disagreed and a re-run would have produced a
+different table from the one documented here.
+
+Confidence now has three independent axes and is computed by the pure
+`fieldConfidence()`:
+
+| axis | question | axis | question |
+| --- | --- | --- | --- |
+| schema | is the field declared? | discrimination | does the feature separate heroes? |
+| population | is it populated? | semantics | can its meaning be stated? |
+
+```text
+no data at all                       -> SCHEMA_ONLY
+opaque integer, no published mapping -> PARTIALLY_POPULATED
+populated, separates nobody          -> UNINFORMATIVE
+populated, separates, >50% unknown   -> PARTIALLY_POPULATED
+populated, separates, interpretable  -> FULLY_POPULATED
+```
+
+`duration` now reproducibly yields `UNINFORMATIVE` from its measured
+discrimination (127 heroes with it, 0 without), and a regression test pins
+that. A second bug surfaced during the same fix: the field→feature lookup was
+missing, so `dispellable` and `isInnate` briefly collapsed to `UNINFORMATIVE`
+as well — absence of a lookup is not absence of evidence, and that case is now
+covered too.
+
 ---
 
 ## 2. The central finding: the useful fields are the unreadable ones

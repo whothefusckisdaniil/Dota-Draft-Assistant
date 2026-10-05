@@ -3,7 +3,7 @@ import {
   CONFIDENCE, SEMANTICALLY_OPAQUE,
   normalizeAbilityProperties, valueCoverage, categoricalDistribution,
   numericDistribution, shareWithDenominator, heroFeatureProfile,
-  profileSignature, featureOverlap,
+  profileSignature, featureOverlap, fieldConfidence,
 } from './stratz-ability-properties-lib.mjs';
 
 /** The real GraphQL shape: properties live under `stat`, not at the top level. */
@@ -128,6 +128,41 @@ describe('opaque set', () => {
     // spellImmunity is included: it is an integer enum too, and it is fetched
     // for reference only, never as a candidate feature.
     expect([...SEMANTICALLY_OPAQUE].sort()).toEqual(['spellImmunity', 'unitDamageType', 'unitTargetFlags', 'unitTargetTeam']);
+  });
+});
+
+describe('fieldConfidence', () => {
+  const cov = (over = {}) => ({ field: 'f', total: 100, nonNull: 100, null: 0, nullPct: 0, distinct: 34, ...over });
+
+  it('duration known for every hero is UNINFORMATIVE, never FULLY_POPULATED', () => {
+    // The exact §31.1 regression: 34 distinct values, but the derived feature is
+    // true for every hero, so it separates nobody.
+    const c = fieldConfidence(cov(), { heroesWith: 127, heroesWithout: 0 }, false);
+    expect(c).toBe(CONFIDENCE.UNINFORMATIVE);
+    expect(c).not.toBe(CONFIDENCE.FULLY_POPULATED);
+  });
+
+  it('a populated feature that does separate heroes is FULLY_POPULATED', () => {
+    expect(fieldConfidence(cov(), { heroesWith: 120, heroesWithout: 7 }, false)).toBe(CONFIDENCE.FULLY_POPULATED);
+  });
+
+  it('substantial unknowns downgrade to PARTIALLY_POPULATED', () => {
+    const c = fieldConfidence(cov({ nullPct: 96.8, nonNull: 28, null: 72 }), { heroesWith: 15, heroesWithout: 112 }, false);
+    expect(c).toBe(CONFIDENCE.PARTIALLY_POPULATED);
+  });
+
+  it('an opaque field never reaches FULLY_POPULATED even when it separates heroes', () => {
+    const c = fieldConfidence(cov(), { heroesWith: 100, heroesWithout: 27 }, true);
+    expect(c).toBe(CONFIDENCE.PARTIALLY_POPULATED);
+  });
+
+  it('no data at all is SCHEMA_ONLY', () => {
+    expect(fieldConfidence(cov({ nonNull: 0, nullPct: 100 }), null, false)).toBe(CONFIDENCE.SCHEMA_ONLY);
+    expect(fieldConfidence(null, null, false)).toBe(CONFIDENCE.SCHEMA_ONLY);
+  });
+
+  it('absence of evidence is not evidence: missing discrimination -> UNINFORMATIVE', () => {
+    expect(fieldConfidence(cov(), null, false)).toBe(CONFIDENCE.UNINFORMATIVE);
   });
 });
 
