@@ -249,6 +249,70 @@ export function cellOverlap(a, b, keyOf = (c) => c.key) {
   return { a: sa.size, b: sb.size, shared: inter, jaccard: sa.size + sb.size - inter ? inter / (sa.size + sb.size - inter) : null };
 }
 
+/**
+ * §28.2 §5 — `bridge_ok` is not `tuple_eligible`.
+ *
+ * A hydrated match can still be unfit for Level-2 tuples: a non-exact roster
+ * means the two sources disagree about who played, so every relation derived
+ * from it is suspect. The pilot happened to see 310/310 exact rosters, so this
+ * gate has never actually fired; it exists so the next run cannot quietly
+ * admit a broken roster.
+ */
+export function isTupleEligible(match) {
+  return Boolean(match?.ok) && match?.rosterExact === true;
+}
+
+/** §28.2 §5 — a match may only feed RESULT aggregates if both sources agree. */
+export function isResultClean(match) {
+  return isTupleEligible(match) && (match.resultChecked ?? 0) > 0 && (match.resultMismatches ?? 0) === 0;
+}
+
+/** §28.2 §5 — likewise for ITEM aggregates. */
+export function isItemClean(match) {
+  return isTupleEligible(match) && (match.itemCompared ?? 0) > 0 && (match.itemMismatch ?? 0) === 0;
+}
+
+/**
+ * §28.2 §1 — A/B is a split of MATCHES, never of expanded player x enemy rows.
+ *
+ * Splitting `heRows` in half cuts inside the match expansion: 50 rows are
+ * emitted per match, so a row split is not a match split and can even land
+ * mid-match. The halves must be whole matches, in selection order.
+ */
+export function splitMatchesAB(matches) {
+  const list = matches ?? [];
+  const half = Math.floor(list.length / 2);
+  return { a: list.slice(0, half), b: list.slice(half), n: list.length, half };
+}
+
+/**
+ * §28.2 §2/§3 — compare A and B on the MATCH grain, per bucket.
+ *
+ * Cells come from the canonical aggregators; nothing here re-derives a cell or
+ * slices an expanded row array.
+ */
+export function compareAB(matches, playersByMatch, inventoryByMatch) {
+  const { a, b, n, half } = splitMatchesAB(matches);
+  const build = (ms) => {
+    const { rows } = buildHeroEnemyRows(ms, playersByMatch);
+    const itemRows = buildItemRows(rows, inventoryByMatch);
+    return {
+      rows: rows.length,
+      hpCells: aggregateHeroPosition(rows),
+      hpeCells: aggregateSupport(rows, itemRows),
+    };
+  };
+  const A = build(a);
+  const B = build(b);
+  return {
+    n, half,
+    aMatches: a.length, bMatches: b.length,
+    aRows: A.rows, bRows: B.rows,
+    hp: cellOverlap(A.hpCells, B.hpCells),
+    hpe: cellOverlap(A.hpeCells, B.hpeCells),
+  };
+}
+
 /** §14 — a support summary WITHOUT any rate, for the verdict to read. */
 export function supportSummary(cells, floor) {
   const kept = (cells ?? []).filter((c) => c.matches >= floor);

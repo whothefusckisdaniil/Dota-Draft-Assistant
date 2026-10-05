@@ -20,11 +20,16 @@ import {
   buildItemRows,
   bucketSupport,
   cellOverlap,
+  compareAB,
   dedupeItemPresence,
+  isItemClean,
+  isResultClean,
+  isTupleEligible,
   ontologyIntersection,
   positionClass,
   splitByMode,
   splitByRank,
+  splitMatchesAB,
   supportSummary,
 } from './level2-pilot-lib.mjs';
 
@@ -190,6 +195,90 @@ describe('heroes stay separate (§32 regression)', () => {
       expect(c).not.toHaveProperty('score');
       expect(c).not.toHaveProperty('lift');
     }
+  });
+});
+
+describe('A/B is a split of MATCHES (§28.2 §1)', () => {
+  const ids = (n) => Array.from({ length: n }, (_, i) => ({ matchId: `m${i}` }));
+
+  it('100 matches -> 50/50', () => {
+    const { a, b, half } = splitMatchesAB(ids(100));
+    expect([a.length, b.length, half]).toEqual([50, 50, 50]);
+  });
+
+  it('101 matches -> 50/51 (never a forced 50/50)', () => {
+    const { a, b } = splitMatchesAB(ids(101));
+    expect([a.length, b.length]).toEqual([50, 51]);
+  });
+
+  it('never splits a match, and preserves selection order', () => {
+    const { a, b } = splitMatchesAB(ids(7));
+    expect([...a, ...b].map((m) => m.matchId)).toEqual(ids(7).map((m) => m.matchId));
+    expect(new Set([...a, ...b].map((m) => m.matchId)).size).toBe(7);
+  });
+
+  it('handles an empty and a single-match corpus', () => {
+    expect(splitMatchesAB([]).n).toBe(0);
+    expect(splitMatchesAB(ids(1))).toMatchObject({ n: 1, half: 0 });
+  });
+});
+
+describe('compareAB works on the match grain (§28.2 §3)', () => {
+  const players = roster();
+  const perMatch = (id) => [`m${id}`, players.map((p) => ({ ...p }))];
+  const inventory = new Map(players.map((p) => [`m0|${p.heroId}`, { finalInventory: [p.item0Id] }]));
+
+  it('keeps buckets independent — each is halved on its own N', () => {
+    const g1 = Array.from({ length: 10 }, (_, i) => ({ matchId: `g${i}`, bucket: 'herald_guardian', ok: true, rosterExact: true }));
+    const g2 = Array.from({ length: 6 }, (_, i) => ({ matchId: `c${i}`, bucket: 'crusader_archon', ok: true, rosterExact: true }));
+    expect(compareAB(g1, new Map(), new Map())).toMatchObject({ n: 10, aMatches: 5, bMatches: 5 });
+    expect(compareAB(g2, new Map(), new Map())).toMatchObject({ n: 6, aMatches: 3, bMatches: 3 });
+  });
+
+  it('reports overlap per dimension', () => {
+    const matches = Array.from({ length: 4 }, (_, i) => ({ matchId: `m${i}`, bucket: 'x', ok: true, rosterExact: true }));
+    const pm = new Map(matches.flatMap((m, i) => [[`m${i}`, players]]));
+    const r = compareAB(matches, pm, inventory);
+    expect(r.hp).toHaveProperty('jaccard');
+    expect(r.hpe).toHaveProperty('jaccard');
+  });
+});
+
+describe('eligibility gates (§28.2 §5)', () => {
+  const base = { ok: true, rosterExact: true, resultChecked: 10, resultMismatches: 0, itemCompared: 5, itemMismatch: 0 };
+
+  it('a failed bridge is never tuple-eligible', () => {
+    expect(isTupleEligible({ ...base, ok: false })).toBe(false);
+  });
+
+  it('a roster mismatch makes the tuple ineligible (§32)', () => {
+    expect(isTupleEligible({ ...base, rosterExact: false })).toBe(false);
+  });
+
+  it('a result mismatch is excluded from result aggregates only', () => {
+    const bad = { ...base, resultMismatches: 1 };
+    expect(isResultClean(bad)).toBe(false);
+    expect(isItemClean(bad)).toBe(true);       // items unaffected
+    expect(isTupleEligible(bad)).toBe(true);    // still a valid tuple
+  });
+
+  it('an item mismatch is excluded from item aggregates only', () => {
+    const bad = { ...base, itemMismatch: 2 };
+    expect(isItemClean(bad)).toBe(false);
+    expect(isResultClean(bad)).toBe(true);
+  });
+
+  it('an uncompared match feeds neither aggregate', () => {
+    const unchecked = { ...base, resultChecked: 0, itemCompared: 0 };
+    expect(isResultClean(unchecked)).toBe(false);
+    expect(isItemClean(unchecked)).toBe(false);
+    expect(isTupleEligible(unchecked)).toBe(true);
+  });
+
+  it('treats a missing match as ineligible', () => {
+    const gates = [isTupleEligible, isResultClean, isItemClean];
+    for (const f of gates) expect(f(null)).toBe(false);
+    for (const f of gates) expect(f(undefined)).toBe(false);
   });
 });
 

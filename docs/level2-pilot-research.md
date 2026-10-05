@@ -105,16 +105,51 @@ is sparse**. Reaching support 10 on most cells requires filling the space,
 which is orders of magnitude beyond 400 matches. The useful conclusion is not
 "run a bigger pilot" but "reconcile the grain with the ontology first".
 
-## 7. Sample A/B
+## 7. Sample A/B — corrected in §28.2
 
 ```text
-HxP cells   : A=341  B=366  shared=257  jaccard 0.571
-HxPxE cells : A=5002 B=5114 shared=1147 jaccard 0.128
+bucket            n   A / B matches      HxP jaccard   HxPxE jaccard
+Herald/Guardian   78   39 / 39                0.351           0.049
+Crusader/Archon   82   41 / 41                0.371           0.049
+Legend/Ancient    88   44 / 44                0.435           0.059
+Divine/Immortal   62   31 / 31                0.362           0.033
+ALL BUCKETS      310  155 / 155               0.571           0.128
 ```
 
-A jaccard of 0.128 on the enemy dimension means two disjoint halves of the
-discovery produce almost the same HxPxE cells — most of them singletons that
-never recur. This is the same sparsity seen from a different angle.
+**INVALIDATED — an earlier implementation of this section reported
+`HxP 0.571` and `HxPxE 0.128` as the §26 experiment. Those numbers came from
+halving the EXPANDED `player × enemy` row array globally, not from splitting
+matches.** 50 rows are emitted per match, so that split cut inside the match
+expansion and mixed all four buckets into each half. It is not the registered
+experiment, and it must not be cited as one.
+
+The corrected figures are *worse*, and the per-bucket view is worse still: within
+a single bucket, two halves of 31–44 matches share only **3–6%** of
+`Hero × Position × Enemy` cells. The pooled 0.128 flattered the signal — pooling
+across buckets manufactures overlap between relations that share no match.
+
+The only reason the old pooled numbers were not wildly different is that a
+global row split of 11 950 rows happened to land near a match boundary
+(5975 / 50 = 119.5). That was luck, not correctness.
+
+## 7.1 Eligibility gates (§28.2)
+
+```text
+bridged          : 400
+bridge_ok        : 310
+tuple_eligible   : 310   (identity + exact roster)
+excluded: roster : 0
+result_clean     : 310   excluded: 0
+item_clean       : 310   excluded: 0
+```
+
+`bridge_ok` and `tuple_eligible` are now distinct: a match whose roster is not
+exact cannot produce tuples even though it hydrated fine. Result aggregates only
+see result-clean matches and item aggregates only item-clean ones. On this
+corpus nothing was excluded — 310/310 exact rosters, 0 result mismatches, 0
+item mismatches — so the gates have not yet been exercised against real data.
+They exist so that the *next* run cannot quietly admit a broken roster.
+
 
 ## 8. Optional timing
 

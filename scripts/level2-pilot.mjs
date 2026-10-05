@@ -51,7 +51,11 @@ import {
   buildItemRows,
   bucketSupport,
   cellOverlap,
+  compareAB,
   dedupeItemPresence,
+  isItemClean,
+  isResultClean,
+  isTupleEligible,
   ontologyIntersection,
   positionClass,
   splitByMode,
@@ -293,23 +297,59 @@ const pct1 = (x) => (x === null || x === undefined ? 'n/a' : `${(100 * x).toFixe
 
 /** Assemble the raw Layer-2 tuples and their aggregates. */
 function buildPayload(bridged, selection = {}) {
-  const playersByMatch = new Map(bridged.filter((b) => b.ok).map((b) => [b.matchId, b.players]));
+  // §28.2 §5 — bridge_ok is not tuple_eligible. Gates are applied by MATCH, so
+  // a roster or integrity problem removes the whole match rather than silently
+  // dropping one player's rows.
+  const eligible = bridged.filter(isTupleEligible);
+  const resultClean = bridged.filter(isResultClean);
+  const itemClean = bridged.filter(isItemClean);
+  const byId = (list) => new Set(list.map((b) => b.matchId));
+  const playersByMatch = new Map(eligible.map((b) => [b.matchId, b.players]));
   const inventoryByMatch = new Map();
-  for (const b of bridged) {
-    if (!b.ok) continue;
+  for (const b of eligible) {
     for (const p of b.players) inventoryByMatch.set(`${b.matchId}|${p.heroId}`, splitInventory(p));
   }
-  const { rows: heRows, failures: enemyFailures } = buildHeroEnemyRows(bridged, playersByMatch);
+  const { rows: heRows, failures: enemyFailures } = buildHeroEnemyRows(eligible, playersByMatch);
   const itemRows = buildItemRows(heRows, inventoryByMatch);
+
+  // Result aggregates only see result-clean matches; item aggregates only
+  // item-clean ones. On this pilot both sets equal `eligible` (0 mismatches),
+  // but the separation is what makes a future mismatch non-contaminating.
+  const keepResult = byId(resultClean);
+  const keepItem = byId(itemClean);
+  const resultRows = heRows.filter((r) => keepResult.has(r.matchId));
+  const itemRowsClean = itemRows.filter((r) => keepItem.has(r.matchId));
+
+  const gates = {
+    bridged: bridged.length,
+    bridgeOk: bridged.filter((b) => b.ok).length,
+    tupleEligible: eligible.length,
+    resultClean: resultClean.length,
+    itemClean: itemClean.length,
+    excludedRoster: bridged.filter((b) => b.ok && !b.rosterExact).length,
+    excludedResult: eligible.length - resultClean.length,
+    excludedItem: eligible.length - itemClean.length,
+  };
+
+  // §28.2 §2 — A/B is per bucket, on the MATCH grain.
+  const ab = {};
+  for (const bk of BUCKETS) {
+    const mine = eligible.filter((b) => b.bucket === bk.key);
+    ab[bk.key] = compareAB(mine, playersByMatch, inventoryByMatch);
+  }
+  ab.__all__ = compareAB(eligible, playersByMatch, inventoryByMatch);
 
   return {
     bridged,
     heRows,
-    itemRows,
+    itemRows: itemRowsClean,
+    resultRows,
     enemyFailures,
     selection,
-    cells: aggregateSupport(heRows, itemRows),
-    itemCells: aggregateItemCells(itemRows),
+    gates,
+    ab,
+    cells: aggregateSupport(heRows, itemRowsClean),
+    itemCells: aggregateItemCells(itemRowsClean),
     hpCells: aggregateHeroPosition(heRows),
   };
 }
@@ -372,6 +412,15 @@ function printReport(d) {
   p(`id mismatches           : ${bridged.filter((b) => b.reason === BRIDGE_FAILURE.STRATZ_ID_MISMATCH).length}`);
   p(`roster mismatches       : ${ok.filter((b) => !b.rosterExact).length}`);
   p(`enemy reconstruction err: ${(d.enemyFailures ?? []).length}`);
+  // §28.2 §5 — the gates, made visible so an exclusion can never be silent.
+  const g = d.gates ?? {};
+  p('  --- eligibility gates (§28.2) ---');
+  p(`  bridged            : ${g.bridged ?? 'n/a'}`);
+  p(`  bridge_ok          : ${g.bridgeOk ?? 'n/a'}`);
+  p(`  tuple_eligible     : ${g.tupleEligible ?? 'n/a'}   (identity + exact roster)`);
+  p(`  excluded: roster   : ${g.excludedRoster ?? 'n/a'}`);
+  p(`  result_clean       : ${g.resultClean ?? 'n/a'}   excluded: ${g.excludedResult ?? 'n/a'}`);
+  p(`  item_clean         : ${g.itemClean ?? 'n/a'}   excluded: ${g.excludedItem ?? 'n/a'}`);
 
   p(H('Position coverage'));
   const pc = {};
@@ -435,18 +484,18 @@ function printReport(d) {
   p('  counts only — no mode statistics, and modes are never blended silently.');
 
   p(H('Sample A/B'));
-  p('§26: A = first 50 per bucket, B = next 50. A check that the raw layer is');
-  p('not an artefact of one discovery cluster — not a stability requirement.');
-  const allRows = d.heRows ?? [];
-  const half = Math.floor(allRows.length / 2);
-  const rowsA = allRows.slice(0, half);
-  const rowsB = allRows.slice(half);
-  const ovHp = cellOverlap(aggregateHeroPosition(rowsA), aggregateHeroPosition(rowsB));
-  const ovE = cellOverlap(aggregateSupport(rowsA, []), aggregateSupport(rowsB, []));
-  p(`  HxP cells   : A=${ovHp.a} B=${ovHp.b} shared=${ovHp.shared} jaccard=${ovHp.jaccard === null ? 'n/a' : ovHp.jaccard.toFixed(3)}`);
-  p(`  HxPxE cells : A=${ovE.a} B=${ovE.b} shared=${ovE.shared} jaccard=${ovE.jaccard === null ? 'n/a' : ovE.jaccard.toFixed(3)}`);
+  p('§28.2 — the split is on MATCHES, per bucket, in selection order. An earlier');
+  p('version halved the EXPANDED player x enemy rows, which cuts mid-match and');
+  p('is not the registered experiment; those numbers are invalidated.');
+  const ab = d.ab ?? {};
+  const line = (label, c) => `  ${label.padEnd(18)} n=${String(c.n).padStart(3)} A=${String(c.aMatches).padStart(3)}/${String(c.aRows).padStart(5)} rows  B=${String(c.bMatches).padStart(3)}/${String(c.bRows).padStart(5)} rows   HxP j=${c.hp.jaccard === null ? 'n/a' : c.hp.jaccard.toFixed(3)}  HxPxE j=${c.hpe.jaccard === null ? 'n/a' : c.hpe.jaccard.toFixed(3)}`;
+  for (const bk of BUCKETS) p(line(bk.label, ab[bk.key] ?? { n: 0, aMatches: 0, bMatches: 0, aRows: 0, bRows: 0, hp: { jaccard: null }, hpe: { jaccard: null } }));
+  p(line('ALL BUCKETS', ab.__all__ ?? { n: 0, aMatches: 0, bMatches: 0, aRows: 0, bRows: 0, hp: { jaccard: null }, hpe: { jaccard: null } }));
+  p('  shared cells: HxP / HxPxE are in the detail above; low HxPxE overlap means');
+  p('  two discovery halves barely share anything but singletons.');
 
   p(H('Benchmark heroes'));
+  const allRows = d.heRows ?? [];
   for (const [id, name] of Object.entries(BENCH_HEROES)) {
     const h = Number(id);
     const mine = allRows.filter((r) => r.heroId === h);
