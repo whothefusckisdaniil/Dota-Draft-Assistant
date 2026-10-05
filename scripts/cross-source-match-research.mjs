@@ -142,6 +142,7 @@ async function odGet(url) {
  */
 async function discover(startCursor) {
   const picked = [];
+  const rejected = {};
   let cursor = startCursor;
   for (let page = 0; page < MAX_PAGES_PER_BUCKET; page += 1) {
     const res = await odGet(`${OPENDOTA}/publicMatches?less_than_match_id=${cursor}`);
@@ -150,12 +151,24 @@ async function discover(startCursor) {
       if (typeof m?.avg_rank_tier !== 'number') continue;
       const bucket = broadBucketOf(m.avg_rank_tier);
       if (!bucket) continue;
+      // §1 — `leagueid` is already on the discovery row, so a league or pro
+      // match can be rejected at SELECTION. Checking it only after hydration
+      // let a non-public match occupy one of the six bucket slots before being
+      // discarded, quietly shrinking the sample. A missing `leagueid` is
+      // "unknown", which is not eligible.
+      if (m.leagueid !== 0) {
+        rejected.league = (rejected.league ?? 0) + 1;
+        if (m.leagueid === null || m.leagueid === undefined) rejected.leagueUnknown = (rejected.leagueUnknown ?? 0) + 1;
+        continue;
+      }
       if (picked.filter((p) => p.bucket === bucket.key).length >= PER_BUCKET) continue;
+      rejected.full = (rejected.full ?? 0) + 1;
       picked.push({
         matchId: m.match_id,
         avgRankTier: m.avg_rank_tier,
         bucket: bucket.key,
         bracket: bracketLabel(m.avg_rank_tier),
+        leagueid: m.leagueid,
         startTime: m.start_time ?? null,
       });
     }
@@ -164,7 +177,7 @@ async function discover(startCursor) {
     if (!ids.length) break;
     cursor = Math.min(...ids);
   }
-  return picked;
+  return { picked, rejected };
 }
 
 /** §4 — OpenDota baseline for the same match ids. Not an authoritative rank source. */
@@ -196,6 +209,12 @@ async function hydrateStratz(transport, matchId) {
     const res = await transport.query(STRATZ_MATCH_QUERY, { id: matchId });
     const m = res?.data?.match;
     if (!m) return { ok: false, reason: BRIDGE_FAILURE.STRATZ_NOT_FOUND, match: null };
+    // §3 — the bridge joins id to id. A response for a different match is not
+    // a success with odd data, it is a failed join: accepting it would let one
+    // match's players be attributed to another match's row.
+    if (Number(m.id) !== Number(matchId)) {
+      return { ok: false, reason: BRIDGE_FAILURE.STRATZ_ID_MISMATCH, match: null };
+    }
     return { ok: true, reason: null, match: m };
   } catch (e) {
     const msg = String(e?.message ?? '');
@@ -331,25 +350,34 @@ function playerRows(bridged, stMatchById) {
       const position = parseStratzPosition(sp?.position);
       const enemies = extractEnemies(players, sp);
       const inv = splitInventory(sp);
-      const cells = new Set();
-      for (const e of enemies ?? []) cells.add(`${sp.heroId}|${position ?? 'null'}|${e}`);
-      const itemCells = new Set();
-      for (const e of enemies ?? []) {
-        for (const it of inv.finalInventory) itemCells.add(`${sp.heroId}|${position ?? 'null'}|${e}|${it}`);
+
+      // §2 — a row with no position is kept, but it contributes NO cells.
+      // Emitting `Hero|"null"|Enemy` would have counted an unknown position as
+      // a distinct relational key and handed the next study a support figure
+      // for a position that was never observed.
+      const positional = position !== null && enemies !== null;
+      const cells = [];
+      const itemCells = [];
+      if (positional) {
+        for (const e of enemies) cells.push(`${sp.heroId}|${position}|${e}`);
+        for (const e of enemies) {
+          for (const it of inv.finalInventory) itemCells.push(`${sp.heroId}|${position}|${e}|${it}`);
+        }
       }
       rows.push({
         matchId: b.matchId,
         heroId: sp?.heroId ?? null,
         position,
         positionRaw: sp?.position ?? null,
+        positional,
         isRadiant: Boolean(sp?.isRadiant),
         isVictory: typeof sp?.isVictory === 'boolean' ? sp.isVictory : null,
         enemyHeroIds: enemies,
         finalInventory: inv.finalInventory,
         backpack: inv.backpack,
         neutral: inv.neutral,
-        cells: [...cells],
-        itemCells: [...itemCells],
+        cells,
+        itemCells,
       });
     }
   }
@@ -373,6 +401,8 @@ function printReport(state) {
   p(`requested       : ${total}`);
   p(`stratz_match_ok : ${ok.length}`);
   p(`hit rate        : ${total ? pct1(ok.length / total) : 'n/a'}`);
+  const rej = state.rejected ?? {};
+  p(`selection       : leagueid !== 0 rejected at discovery = ${rej.league ?? 0}${rej.leagueUnknown ? ` (of which leagueid missing/unknown: ${rej.leagueUnknown})` : ''}`);
 
   p(H('Failure taxonomy (§21)'));
   const reasons = {};
@@ -432,10 +462,20 @@ function printReport(state) {
   p('  mismatches are measured, not attributed to either source.');
 
   p(H('Cross-source cells (§17)'));
-  p(`  player rows                          : ${rows.length}`);
-  p(`  unique Hero x Position x Enemy       : ${new Set(rows.flatMap((r) => r.cells)).size}`);
-  p(`  unique Hero x Position x Enemy x Item: ${new Set(rows.flatMap((r) => r.itemCells)).size}`);
-  p('  counts only. NO winrate, lift or score (§25).');
+  const positionalRows = rows.filter((r) => r.position !== null && r.position !== undefined);
+  const nonPositional = rows.filter((r) => r.position === null || r.position === undefined);
+  p(`  player rows (total)                  : ${rows.length}`);
+  p(`  rows WITH a valid position (1..5)    : ${positionalRows.length}`);
+  p(`  rows WITHOUT a valid position        : ${nonPositional.length}`);
+  p(`  unique Hero x Position x Enemy       : ${new Set(positionalRows.flatMap((r) => r.cells)).size}`);
+  p(`  unique Hero x Position x Enemy x Item: ${new Set(positionalRows.flatMap((r) => r.itemCells)).size}`);
+  p('  §2/27.1: only rows with a real position contribute cells. A row without a');
+  p('  position is retained above but contributes none — "null" is not a position.');
+  if (rows.length && rows.some((r) => r.positional === undefined)) {
+    p('  NOTE: this report came from a cache written before the 27.1 flag existed,');
+    p('  so its `cells` may still contain null-position rows. Cell counts recomputed');
+    p('  here are position-filtered; re-run `all` to regenerate rows under 27.1.');
+  }
 p(H('Rank-bucket coverage (§19)'));
   p('  bucket           discovered  stratz  validRoster  fullPosition');
   for (const bk of BUCKETS) {
@@ -561,7 +601,7 @@ if (cmd === 'plan') {
     }
     log('[bridge] STRATZ_API_TOKEN -> REDACTED');
 
-    const picked = await discover(DISCOVERY_CURSOR);
+    const { picked, rejected } = await discover(DISCOVERY_CURSOR);
     log(`[bridge] discovery: ${picked.length} matches across ${new Set(picked.map((p) => p.bucket)).size} buckets`);
     if (picked.length === 0) {
       log('[bridge] no eligible discovery rows — stopping before any STRATZ request');
@@ -587,7 +627,7 @@ if (cmd === 'plan') {
     log(`[bridge] STRATZ: ${bridged.filter((b) => b.ok).length}/${bridged.length}`);
 
     const rows = playerRows(bridged, stMatchById);
-    const state = { bridged, rows };
+    const state = { bridged, rows, rejected };
     writeFileSync(BRIDGE_FILE, JSON.stringify(state));
     log(`[bridge] wrote ${BRIDGE_FILE}`);
     printReport(state);

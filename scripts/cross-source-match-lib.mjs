@@ -20,6 +20,7 @@ export const BRIDGE_FAILURE = {
   DISCOVERY_FAILED: 'DISCOVERY_FAILED',
   OPENDOTA_DETAIL_FAILED: 'OPENDOTA_DETAIL_FAILED',
   STRATZ_NOT_FOUND: 'STRATZ_NOT_FOUND',
+  STRATZ_ID_MISMATCH: 'STRATZ_ID_MISMATCH',
   STRATZ_HTTP_ERROR: 'STRATZ_HTTP_ERROR',
   STRATZ_GRAPHQL_ERROR: 'STRATZ_GRAPHQL_ERROR',
   INVALID_ROSTER: 'INVALID_ROSTER',
@@ -69,19 +70,34 @@ export function assertReadOnlyQuery(query) {
   return true;
 }
 
+/** STRATZ's position enum, and nothing else. */
+const STRATZ_POSITION_RE = /^POSITION_([1-5])$/;
+
 /**
- * §9 — STRATZ reports `position` as `POSITION_1..POSITION_5`.
+ * §5 — STRATZ reports `position` as `POSITION_1..POSITION_5`.
  *
- * Returns null for anything outside 1..5, including `POSITION_UNKNOWN` and
- * null. Coverage is measured rather than imputed, so an unusable value must
- * stay null instead of defaulting to 0 or 1.
+ * The pattern is anchored on both ends. A looser `/(\d+)/` accepted
+ * `"garbage_3"` and `"POSITION_03"` as position 3, so any future value with a
+ * stray digit would have entered the positional analysis as a real position.
+ * Returns null for anything else, including `POSITION_UNKNOWN` and null.
  */
 export function parseStratzPosition(raw) {
-  if (raw === null || raw === undefined) return null;
-  const m = String(raw).match(/(\d+)/);
-  if (!m) return null;
-  const n = Number(m[1]);
-  return Number.isInteger(n) && n >= 1 && n <= 5 ? n : null;
+  if (typeof raw !== 'string') return null;
+  const m = STRATZ_POSITION_RE.exec(raw);
+  return m ? Number(m[1]) : null;
+}
+
+/**
+ * §6 — a side is a real boolean or it is nothing.
+ *
+ * `player.isRadiant ? 'R' : 'D'` mapped `undefined`, `null`, `0` and `"abc"`
+ * onto a concrete side, inventing cross-source identity from a missing field.
+ */
+export function sideOf(player) {
+  const v = player?.isRadiant;
+  if (v === true) return 'R';
+  if (v === false) return 'D';
+  return null;
 }
 
 /**
@@ -92,7 +108,8 @@ export function parseStratzPosition(raw) {
 export function extractRosterKey(player) {
   const heroId = player?.heroId ?? null;
   if (heroId === null) return null;
-  const side = player?.isRadiant ? 'R' : 'D';
+  const side = sideOf(player);
+  if (side === null) return null;
   return `${heroId}:${side}`;
 }
 

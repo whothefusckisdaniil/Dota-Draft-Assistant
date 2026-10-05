@@ -14,6 +14,7 @@ import {
   parseStratzPosition,
   resultFromOpenDota,
   sameRoster,
+  sideOf,
   splitInventory,
   validatePositions,
 } from './cross-source-match-lib.mjs';
@@ -60,6 +61,166 @@ describe('the STRATZ query is read-only (§26)', () => {
     const code = raw.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
     const documents = code.match(/query\s+\w+\s*[({]|{ *match\s*\(/gi) ?? [];
     expect(documents).toHaveLength(0);
+  });
+});
+
+describe('§2 a row without a position contributes no cells (§7)', () => {
+  // The §7 fixture: hero 1, position null, one enemy, one item.
+  const raw = { heroId: 1, position: null, isRadiant: true };
+  const roster = [...fullRoster()].map((p) => ({ ...p, position: null }));
+
+  it('parseStratzPosition returns null for a missing position', () => {
+    expect(parseStratzPosition(raw.position)).toBeNull();
+  });
+
+  it('the raw player is still usable and keeps its identity', () => {
+    const inv = splitInventory({ item0Id: 3, item1Id: 5 });
+    expect(raw.heroId).toBe(1);
+    expect(inv.finalInventory).toEqual([3, 5]);
+  });
+
+  it('every null-position player yields no positional key', () => {
+    // The invariant: a null position must never appear inside a cell key.
+    for (const p of roster) {
+      const position = parseStratzPosition(p.position);
+      expect(position).toBeNull();
+      expect(String(position)).not.toMatch(/POSITION/);
+    }
+    expect(roster).toHaveLength(10);
+  });
+
+  it('the research script only builds cells when position !== null', async () => {
+    const code = (await readFile(new URL('./cross-source-match-research.mjs', import.meta.url), 'utf8'))
+      .replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
+    expect(code).toContain('const positional = position !== null');
+    expect(code).toContain('if (positional) {');
+  });
+});
+
+describe('§1 non-public discovery rows never take a bucket slot (§8)', () => {
+  // The §8 fixture. Only the first row may occupy a slot.
+  const discovery = [
+    { match_id: 1, avg_rank_tier: 34, leagueid: 0 },
+    { match_id: 2, avg_rank_tier: 35, leagueid: 123 },
+    { match_id: 3, avg_rank_tier: 36, leagueid: null },
+  ];
+  const eligible = (r) => r.leagueid === 0;
+
+  it('accepts only leagueid === 0', () => {
+    expect(discovery.map(eligible)).toEqual([true, false, false]);
+  });
+
+  it('a missing leagueid is unknown, not eligible', () => {
+    expect(eligible({ leagueid: null })).toBe(false);
+    expect(eligible({ leagueid: undefined })).toBe(false);
+  });
+
+  it('rejects a league match even when its tier is in range', () => {
+    const row = { match_id: 2, avg_rank_tier: 35, leagueid: 123 };
+    expect(row.avg_rank_tier).toBe(35);
+    expect(eligible(row)).toBe(false);
+  });
+
+  it('only one row survives, so the bucket keeps exactly one slot', () => {
+    const taken = discovery.filter(eligible).filter((r) => r.avg_rank_tier >= 30 && r.avg_rank_tier <= 45);
+    expect(taken.map((r) => r.match_id)).toEqual([1]);
+  });
+});
+
+describe('§3 match identity is the bridge invariant (§9)', () => {
+  const accept = (requestedId, match) => (match == null ? null : Number(match.id) === Number(requestedId));
+
+  it('accepts a response for the requested match', () => {
+    expect(accept(100, { id: 100 })).toBe(true);
+  });
+
+  it('rejects a response for a different match', () => {
+    expect(accept(100, { id: 101 })).toBe(false);
+  });
+
+  it('treats a null match as not-found rather than a mismatch', () => {
+    expect(accept(100, null)).toBeNull();
+  });
+
+  it('compares numerically, not as strings', () => {
+    expect(accept(100, { id: '100' })).toBe(true);
+  });
+});
+
+describe('§5 strict position parser', () => {
+  it('accepts only the exact STRATZ enum', () => {
+    for (const n of [1, 2, 3, 4, 5]) expect(parseStratzPosition(`POSITION_${n}`)).toBe(n);
+  });
+
+  it('rejects a stray digit instead of scraping it (§5)', () => {
+    // A loose /(\d+)/ accepted all of these as position 3.
+    for (const bad of ['garbage_3', 'POSITION_03', 'POSITION_3x', 'xPOSITION_3', 'POSITION_33']) {
+      expect(parseStratzPosition(bad), bad).toBeNull();
+    }
+  });
+
+  it('rejects out-of-range and unknown values', () => {
+    for (const bad of ['POSITION_0', 'POSITION_6', 'POSITION_9', 'POSITION_UNKNOWN', '', null, undefined, 3]) {
+      expect(parseStratzPosition(bad), String(bad)).toBeNull();
+    }
+  });
+});
+
+describe('§6 a side is a real boolean or nothing', () => {
+  it('maps true to R and false to D', () => {
+    expect(sideOf({ isRadiant: true })).toBe('R');
+    expect(sideOf({ isRadiant: false })).toBe('D');
+  });
+
+  it('refuses every non-boolean (§6)', () => {
+    for (const bad of [undefined, null, 0, 1, 'true', 'abc', {}, []]) {
+      expect(sideOf({ isRadiant: bad }), String(bad)).toBeNull();
+    }
+    expect(sideOf({})).toBeNull();
+    expect(sideOf(null)).toBeNull();
+  });
+
+  it('never invents a roster key for an unknown side', () => {
+    for (const bad of [undefined, null, 0, 1, 'true', 'abc']) {
+      expect(extractRosterKey({ heroId: 1, isRadiant: bad }), String(bad)).toBeNull();
+    }
+  });
+
+  it('still keys real booleans', () => {
+    expect(extractRosterKey({ heroId: 1, isRadiant: true })).toBe('1:R');
+    expect(extractRosterKey({ heroId: 1, isRadiant: false })).toBe('1:D');
+  });
+
+  it('refuses a missing heroId even with a valid side', () => {
+    expect(extractRosterKey({ isRadiant: true })).toBeNull();
+    expect(extractRosterKey({ heroId: null, isRadiant: true })).toBeNull();
+  });
+});
+
+describe('§4 the failure taxonomy stays distinct', () => {
+  it('separates id mismatch from not-found', () => {
+    expect(BRIDGE_FAILURE.STRATZ_ID_MISMATCH).toBe('STRATZ_ID_MISMATCH');
+    expect(BRIDGE_FAILURE.STRATZ_ID_MISMATCH).not.toBe(BRIDGE_FAILURE.STRATZ_NOT_FOUND);
+    expect(Object.values(BRIDGE_FAILURE).filter((v) => v === 'STRATZ_ID_MISMATCH')).toHaveLength(1);
+  });
+});
+
+describe('the research script is free of pseudo-cells (§2, §3, §1)', () => {
+  const src = async () => readFile(new URL('./cross-source-match-research.mjs', import.meta.url), 'utf8');
+
+  it('never writes a literal null position into a cell key (§2)', async () => {
+    expect(await src()).not.toMatch(/`\$\{[^\n]*\}\|null\|/);
+    expect(await src()).not.toMatch(/position \?\? 'null'/);
+  });
+
+  it('guards the bridge on match identity (§3)', async () => {
+    expect(await src()).toContain('STRATZ_ID_MISMATCH');
+    expect(await src()).toMatch(/Number\(m\.id\)\s*!==\s*Number\(matchId\)/);
+  });
+
+  it('rejects non-public discovery rows before they take a slot (§1)', async () => {
+    const code = await src();
+    expect(code).toContain('m.leagueid !== 0');
   });
 });
 

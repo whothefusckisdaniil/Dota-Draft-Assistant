@@ -164,6 +164,34 @@ duplicate rate (§28). `BRIDGE_VIABLE` is deliberately unreachable from a
 No `winrate`, `lift`, `core`, `mustBuy` or `recommended` appears anywhere in
 this study.
 
+### 8.1 Historical figures vs the 27.1 semantics
+
+The ТЗ №27 numbers above are the historical observation and are **not**
+restated:
+
+```text
+24/24 STRATZ hydration     24/24 roster      16/24 full position
+240/240 result             240/240 inventory
+1170 Hero x Position x Enemy
+6705 Hero x Position x Enemy x Item
+```
+
+ТЗ §27.1 fixes positional-cell semantics for future runs. **The historical
+1170 / 6705 figures may include null-position rows.** Re-deriving those same 24
+matches under the corrected rule gives:
+
+```text
+160 rows with a valid position (1..5)
+ 80 rows without
+ 790 Hero x Position x Enemy       (was 1170)
+4487 Hero x Position x Enemy x Item (was 6705)
+```
+
+So roughly a third of the originally reported cells were built on the literal
+key `"null"`, i.e. on players whose position was never observed. That is
+exactly the support inflation §2 set out to prevent. The old numbers are left
+standing as what was measured; the corrected ones apply from the next run.
+
 ## 9. Known defects found while building this
 
 Recorded because each one silently produced a plausible-looking wrong number:
@@ -194,5 +222,19 @@ Cache lives in `/tmp/opendota-cross-source-research` and is never committed.
 `plan` uses `process.exitCode` rather than `process.exit()`, because Node does
 not flush a pending stdout write to a pipe before an explicit exit and `plan`
 printed nothing when redirected.
+
+## 11. ТЗ §27.1 — bridge integrity cleanup
+
+Applied after the pilot, without re-running it. Each item closed a path by which
+the harness could quietly produce a wrong number on the next run.
+
+| § | Fix |
+| --- | --- |
+| 1 | `leagueid === 0` is now a **discovery-time** filter. `leagueid` is on the discovery row, so a league match is rejected before it can occupy one of the six bucket slots. A missing `leagueid` is `unknown`, not eligible. Rejected counts are printed. |
+| 2 | A player with `position === null` is kept as a raw row but contributes **no cells**. Cell counts are position-filtered, and rows are split into positional / non-positional. |
+| 3 | `hydrateStratz()` requires `Number(m.id) === Number(matchId)`. A response for another match is `STRATZ_ID_MISMATCH` and never reaches `playerRows()`. |
+| 4 | `STRATZ_ID_MISMATCH` added, distinct from `STRATZ_NOT_FOUND`. |
+| 5 | Position parsing is anchored `^POSITION_([1-5])$`. `garbage_3` and `POSITION_03` were previously read as position 3. |
+| 6 | `sideOf()` returns `R`/`D` only for real booleans and `null` otherwise. `undefined`, `null`, `0`, `1` and `"abc"` previously became a concrete side, inventing cross-source identity from a missing field. |
 Sampling by availability would have produced a flattering, meaningless number;
 declaring the cursor keeps the hit rate honest about what it covers.
