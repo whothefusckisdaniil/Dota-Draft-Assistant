@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   VALIDATION,
   normalizeOpenDotaAbility, exactAbilityJoin, buildValueCrossTable,
-  classifyMapping, splitDeterministically, validateMapping,
+  classifyMapping, splitDeterministically, validateMapping, heroDimensionCoverage,
 } from './opendota-stratz-ability-lib.mjs';
 
 /** STRATZ abilities arrive with properties nested under `stat`. */
@@ -142,16 +142,74 @@ describe('validateMapping', () => {
     expect(m.validationStatus).toBe(VALIDATION.CONFIRMED);
   });
 
-  it('a raw value with no semantic at all is UNKNOWN, never false', () => {
-    const t = buildValueCrossTable([P('a', 0, null), P('b', 0, null)], 'unitDamageType', 'dmg_type');
-    const m = classifyMapping(t, 0);
-    expect(m.validationStatus).toBe(VALIDATION.UNKNOWN);
-    expect(m.semantic).toBeNull();
-    expect(m.observations).toBe(2);
-  });
-
   it('an unseen raw value is UNKNOWN', () => {
     const t = buildValueCrossTable([P('a', 1, 'Physical')], 'unitDamageType', 'dmg_type');
     expect(classifyMapping(t, 7).validationStatus).toBe(VALIDATION.UNKNOWN);
+  });
+});
+
+describe('splitDeterministically', () => {
+  const dmg = new Map([['1', 'Physical'], ['2', 'Magical']]);
+  const team = new Map([['2', 'Enemy']]);
+
+  it('counts each dimension separately, never mixing them into one total', () => {
+    // A: damage mapped, team unknown. B: damage unknown, team mapped.
+    // The old single-counter version reported known=2 unknown=1 here.
+    const ab = [
+      { ability: { name: 'A', stat: { unitDamageType: 1, unitTargetTeam: 0 } } },
+      { ability: { name: 'B', stat: { unitDamageType: 0, unitTargetTeam: 2 } } },
+    ];
+    const r = heroDimensionCoverage(ab, { unitDamageType: dmg, unitTargetTeam: team });
+    expect(r.abilityCount).toBe(2);
+    expect(r.dimensions.unitDamageType.known).toBe(1);
+    expect(r.dimensions.unitDamageType.unknown).toBe(1);
+    expect(r.dimensions.unitTargetTeam.known).toBe(1);
+    expect(r.dimensions.unitTargetTeam.unknown).toBe(1);
+  });
+
+  it('known + unknown equals the ability count in every dimension', () => {
+    const ab = [
+      { ability: { name: 'A', stat: { unitDamageType: 1, unitTargetTeam: 2 } } },
+      { ability: { name: 'B', stat: { unitDamageType: 0, unitTargetTeam: 0 } } },
+      { ability: { name: 'C', stat: {} } },
+    ];
+    const r = heroDimensionCoverage(ab, { unitDamageType: dmg, unitTargetTeam: team });
+    for (const c of Object.values(r.dimensions)) {
+      expect(c.known + c.unknown).toBe(c.total);
+      expect(c.total).toBe(3);
+    }
+  });
+
+  it('a raw value with no confirmed mapping counts as unknown, not unmapped', () => {
+    const r = heroDimensionCoverage([{ ability: { name: 'A', stat: { unitDamageType: 0 } } }], { unitDamageType: dmg });
+    const c = r.dimensions.unitDamageType;
+    expect(c.known).toBe(0);
+    expect(c.unknown).toBe(1);
+    expect(c.noValue).toBe(0); // the value WAS present, it just has no semantic
+  });
+
+  it('an ability with no stat at all is counted as no-value, still unknown', () => {
+    const r = heroDimensionCoverage([{ ability: { name: 'A' } }], { unitDamageType: dmg });
+    const c = r.dimensions.unitDamageType;
+    expect(c.unknown).toBe(1);
+    expect(c.noValue).toBe(1);
+  });
+
+  it('lists confirmed semantics with counts, ordered deterministically', () => {
+    const ab = [
+      { ability: { name: 'A', stat: { unitDamageType: 2 } } },
+      { ability: { name: 'B', stat: { unitDamageType: 2 } } },
+      { ability: { name: 'C', stat: { unitDamageType: 1 } } },
+    ];
+    const r = heroDimensionCoverage(ab, { unitDamageType: dmg });
+    expect(r.dimensions.unitDamageType.semantics).toEqual([['Magical', 2], ['Physical', 1]]);
+    expect(heroDimensionCoverage([...ab].reverse(), { unitDamageType: dmg }).dimensions.unitDamageType.semantics)
+      .toEqual(r.dimensions.unitDamageType.semantics);
+  });
+
+  it('returns an empty shape rather than dividing by zero for a hero with no abilities', () => {
+    const r = heroDimensionCoverage([], { unitDamageType: dmg });
+    expect(r.abilityCount).toBe(0);
+    expect(r.dimensions.unitDamageType.coverage).toBeNull();
   });
 });

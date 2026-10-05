@@ -89,17 +89,60 @@ describe team and unit classes, not a bit→flag table, so they cannot establish
 ## 4. Hero-level reconstruction, confirmed values only (§10)
 
 ```text
-Abaddon            known 5  unmapped 3   damage:Magical=3  team:Both=1  team:Friendly=1
-Alchemist          known 5  unmapped 5   damage:Physical=2 team:Friendly=2 team:Enemy=1
-Ancient Apparition known 7  unmapped 2   damage:Magical=5  team:Enemy=2
-Anti-Mage          known 3  unmapped 4   damage:Physical=1 damage:Magical=1 team:Enemy=1
-Arc Warden         known 3  unmapped 4   damage:Magical=2  team:Enemy=1
-Axe                known 5  unmapped 4   damage:Pure=3      team:Enemy=2
+Abaddon  (6 abilities)
+  unitDamageType   3/6 known,  3 unknown, 0 with no value
+                  confirmed: Magical=3
+  unitTargetTeam   2/6 known,  4 unknown, 0 with no value
+                  confirmed: Both=1 Friendly=1
+
+Anti-Mage  (6 abilities)
+  unitDamageType   2/6 known,  4 unknown, 0 with no value
+                  confirmed: Magical=1 Physical=1
+  unitTargetTeam   1/6 known,  5 unknown, 0 with no value
+                  confirmed: Enemy=1
+
+pool coverage over 127 heroes
+  unitDamageType  411/868 known  (47.4%)   heroes fully known 3
+  unitTargetTeam  284/868 known  (32.7%)   heroes fully known 0
 ```
 
-Only confirmed mappings contribute. `unmapped` is reported per hero rather than
-folded into the numbers — for Anti-Mage, 3 mapped values against 4 unmapped is a
-very thin basis for any profile.
+### 4.1 The previous hero diagnostic was counting mixed dimensions (§32.1)
+
+The first version of this section printed one `known` counter per hero:
+
+```text
+Abaddon  known  5  unmapped 3
+Anti-Mage known 3  unmapped 4
+```
+
+Those numbers were **presentation-only and are not coverage metrics.** `known`
+was incremented once for a mapped damage type *and* once for a mapped target
+team, while `unknown` was incremented only when the damage type was unmapped. A
+hero whose damage was mapped but whose team was not contributed `known += 1`
+with no matching `unknown`, and the reverse contributed both. A reader would
+reasonably take `3 / 4` as ability coverage; it was actually a mixture of two
+different property dimensions.
+
+Each dimension is now counted on its own ability rows, so `known + unknown`
+equals the ability count within that dimension, and `unknown` replaced
+`unmapped` — for raw `0` there is no mapping to begin with, rather than a
+mapping that exists and was left unresolved.
+
+### 4.2 The coverage numbers matter more than the mappings
+
+```text
+unitDamageType  47.4% of ability rows resolved;  3 of 127 heroes fully resolved
+unitTargetTeam  32.7% of ability rows resolved;  0 of 127 heroes fully resolved
+```
+
+**No hero has complete target-team coverage, and only three have complete
+damage-type coverage.** This is the single most consequential number in the
+whole ТЗ, and it constrains everything downstream: a `FALSE` answer for a
+capability requires full knowledge of the relevant abilities, so with 0/127
+heroes fully covered on `unitTargetTeam`, almost nothing can be stated
+negatively about targeting. `TRUE` remains available, because one confirmed
+mapping is enough. That asymmetry is what the tri-state approach in the next
+ТЗ is built around.
 
 ---
 

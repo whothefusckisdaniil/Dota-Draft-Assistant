@@ -215,3 +215,47 @@ export function validateMapping(pairsA, pairsB, stratzField, opendotaField) {
     tableB,
   };
 }
+/**
+ * §32.1 — per-DIMENSION hero coverage.
+ *
+ * The first version of the hero diagnostic kept a single `known` counter that
+ * was incremented for a mapped damage type AND a mapped target team, while
+ * `unknown` was incremented only when damage was unmapped. A hero line like
+ * `known 3 unmapped 4` therefore mixed two property dimensions and read like
+ * an ability coverage ratio when it was not one.
+ *
+ * Here each dimension is counted on its own ability rows, so `known + unknown`
+ * equals the ability count per dimension, and the denominator is the ability
+ * count rather than a count of property observations.
+ */
+export function heroDimensionCoverage(abilities, dimensionMaps) {
+  const rows = (abilities ?? []).map((a) => a?.ability ?? a).filter(Boolean);
+  const total = rows.length;
+  const dimensions = {};
+  for (const [name, map] of Object.entries(dimensionMaps ?? {})) {
+    let known = 0;
+    let noValue = 0;
+    const semantics = new Map();
+    for (const r of rows) {
+      const raw = r?.stat?.[name] ?? r?.[name] ?? null;
+      const sem = raw === null ? null : map.get(String(raw)) ?? null;
+      if (sem) {
+        known += 1;
+        semantics.set(sem, (semantics.get(sem) ?? 0) + 1);
+      } else if (raw === null) {
+        noValue += 1;
+      }
+    }
+    dimensions[name] = {
+      total,
+      known,
+      // "unknown", not "unmapped": for raw 0 there is no mapping to begin with,
+      // rather than a mapping that exists and was left unresolved.
+      unknown: total - known,
+      noValue,
+      coverage: total ? known / total : null,
+      semantics: [...semantics.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])),
+    };
+  }
+  return { abilityCount: total, dimensions };
+}

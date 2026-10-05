@@ -16,7 +16,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import {
   VALIDATION, FIELD_PAIRS,
-  exactAbilityJoin, buildValueCrossTable,
+  exactAbilityJoin, buildValueCrossTable, heroDimensionCoverage,
   splitDeterministically, validateMapping,
 } from './opendota-stratz-ability-lib.mjs';
 
@@ -167,32 +167,36 @@ function fieldSections(p, pairs, a, b) {
 function heroSection(p, heroes, od, summaries) {
   p('## 5. Hero-level reconstruction (CONFIRMED mappings only, §10)');
   p();
-  const dmgMap = new Map((summaries.unitDamageType?.confirmed ?? []).map((m) => [m.rawValue, m.semantic]));
-  const teamMap = new Map((summaries.unitTargetTeam?.confirmed ?? []).map((m) => [m.rawValue, m.semantic]));
-  if (!dmgMap.size && !teamMap.size) {
+  const maps = {
+    unitDamageType: new Map((summaries.unitDamageType?.confirmed ?? []).map((m) => [m.rawValue, m.semantic])),
+    unitTargetTeam: new Map((summaries.unitTargetTeam?.confirmed ?? []).map((m) => [m.rawValue, m.semantic])),
+  };
+  if (!maps.unitDamageType.size && !maps.unitTargetTeam.size) {
     p('  No mapping reached CONFIRMED, so no hero semantic profile is produced.');
     p('  Producing one anyway is exactly what §10 forbids.');
     p();
     return;
   }
-  const shown = [];
-  for (const h of heroes) {
-    const counts = new Map();
-    let known = 0;
-    let unknown = 0;
-    for (const a of h.abilities) {
-      const ab = a.ability;
-      if (!ab) continue;
-      const st = ab.stat ?? {};
-      const d = dmgMap.get(String(st.unitDamageType));
-      const t = teamMap.get(String(st.unitTargetTeam));
-      if (d) { known += 1; counts.set(`damage:${d}`, (counts.get(`damage:${d}`) ?? 0) + 1); } else unknown += 1;
-      if (t) { known += 1; counts.set(`team:${t}`, (counts.get(`team:${t}`) ?? 0) + 1); }
+  const shown = heroes
+    .map((h) => ({ name: h.displayName, ...heroDimensionCoverage(h.abilities, maps) }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+  const n = Math.min(6, shown.length);
+  for (const v of shown.slice(0, n)) {
+    p(`  ${v.name}  (${v.abilityCount} abilities)`);
+    for (const [dim, c] of Object.entries(v.dimensions)) {
+      p(`    ${dim.padEnd(15)} ${String(c.known).padStart(2)}/${c.total} known, ${String(c.unknown).padStart(2)} unknown, ${c.noValue} with no value`);
+      const sems = c.semantics.map(([k, n2]) => `${k}=${n2}`).join(' ') || '(none confirmed)';
+      p(`    ${' '.repeat(15)} confirmed: ${sems}`);
     }
-    shown.push({ name: h.displayName, known, unknown, counts });
   }
-  for (const v of shown.sort((x, y) => x.name.localeCompare(y.name)).slice(0, 6)) {
-    p(`  ${v.name.padEnd(16)} known ${String(v.known).padStart(3)}  unmapped ${String(v.unknown).padStart(3)}  ${[...v.counts].map(([k, c]) => `${k}=${c}`).join(' ')}`);
+  p();
+  // Aggregate view: coverage per dimension across the pool, denominators kept.
+  const dims = Object.keys(maps);
+  p(`  pool coverage over ${heroes.length} heroes`);
+  for (const dim of dims) {
+    const covs = shown.map((v) => v.dimensions[dim].known);
+    const tot = shown.reduce((a, v) => a + v.dimensions[dim].total, 0);
+    p(`    ${dim.padEnd(15)} ${covs.reduce((a, b) => a + b, 0)}/${tot} known  (${(100 * covs.reduce((a, b) => a + b, 0) / tot).toFixed(1)}%)   heroes fully known ${covs.filter((c, i) => c === shown[i].dimensions[dim].total).length}`);
   }
   void od;
   p();
