@@ -31,6 +31,27 @@ UNKNOWN   some relevant ability is unresolved, and no TRUE was found
 `FALSE` requires completeness and `TRUE` requires only one observation. That
 asymmetry is what makes an incomplete source usable at all.
 
+### Nested-field contract (§33.1)
+
+```text
+Capability resolution reads semantic fields only from
+Ability.stat.<dimension>. Top-level duplicates are ignored.
+```
+
+The first version of the library fell back to `r[dimension]` when `stat` lacked
+the field, so a bare top-level `unitDamageType: 2` next to an empty `stat` block
+would count as evidence of magical damage — the same wrong-field failure mode
+caught in §30.1 and in §33's own first run. The fallback is removed and four
+tests pin the contract: an empty `stat` with a top-level duplicate resolves
+UNKNOWN (not TRUE) for both dimensions; when `stat` and top-level disagree only
+`stat` counts; and a `stat` value with unknown semantics stays UNKNOWN no matter
+what the top-level key says.
+
+Verified stable on the live cache — all figures below are unchanged after the
+fix, because the cache contains zero top-level duplicates (0 of 868 ability rows
+carry these keys outside `stat`). The contract now guarantees that, it is no
+longer an accident of the data.
+
 ---
 
 ## 2. States across the pool
@@ -120,10 +141,26 @@ agreement MAGICAL vs ENEMY     100.0%         74.8%
 distinct signatures             10/127        34/127
 ```
 
-A unit test now pins that a capability reads only its own field. This is the
-fourth appearance of the same failure mode — a plausible result produced by
-reading the wrong field — and it is the strongest argument in this whole chain
-for testing the *shape* of an input rather than assuming it.
+A unit test now pins that a capability reads only its own field, and §33.1 went
+further: the `stat`-only read is enforced and a second regression test covers the
+top-level duplicate case. This is the fourth appearance of the same failure mode
+— a plausible result produced by reading the wrong field — and it is the
+strongest argument in this whole chain for testing the *shape* of an input
+rather than assuming it.
+
+The canonical resolution path, now the only path:
+
+```text
+Ability
+  ↓
+Ability.stat
+  ↓
+dimension
+  ↓
+confirmed mapping
+  ↓
+TRUE / FALSE / UNKNOWN
+```
 
 ---
 
@@ -162,7 +199,7 @@ and nothing shipped to `src/`.
 
 ```text
 scripts/stratz-hero-capability-lib.mjs        pure: resolve, profile, distribution, redundancy
-scripts/stratz-hero-capability-lib.test.ts   15 tests
+scripts/stratz-hero-capability-lib.test.ts   19 tests
 scripts/stratz-hero-capability-research.mjs   the report
 docs/hero-capability-research.md              this file
 ```

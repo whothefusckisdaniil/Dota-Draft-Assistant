@@ -39,6 +39,38 @@ describe('resolveCapability', () => {
     expect(resolveCapability([], dmg, 'Pure', 'unitDamageType').state).toBe(TRI.UNKNOWN);
   });
 
+  it('ignores a top-level duplicate: empty stat means UNKNOWN, not TRUE (§33.1)', () => {
+    // stat is the authority. A bare top-level `unitDamageType: 2` next to an
+    // empty stat block must not count as evidence of magical damage.
+    const r = resolveCapability([{ name: 'a', stat: {}, unitDamageType: 2 }], dmg, 'Magical', 'unitDamageType');
+    expect(r.state).toBe(TRI.UNKNOWN);
+    expect(r.known).toBe(0);
+    expect(r.evidence).toBe(0);
+  });
+
+  it('ignores a top-level unitTargetTeam the same way (§33.1)', () => {
+    const team = new Map([['2', 'Enemy']]);
+    const r = resolveCapability([{ name: 'a', stat: {}, unitTargetTeam: 2 }], team, 'Enemy', 'unitTargetTeam');
+    expect(r.state).toBe(TRI.UNKNOWN);
+    expect(r.known).toBe(0);
+  });
+
+  it('when stat and top-level disagree, only stat counts (§33.1)', () => {
+    // stat says Physical, top-level says Magical. Physical wins entirely;
+    // the top-level 2 must not manufacture a Magical observation.
+    const rows = [{ name: 'a', stat: { unitDamageType: 1 }, unitDamageType: 2 }];
+    expect(resolveCapability(rows, dmg, 'Physical', 'unitDamageType').state).toBe(TRI.TRUE);
+    expect(resolveCapability(rows, dmg, 'Magical', 'unitDamageType').state).toBe(TRI.FALSE);
+  });
+
+  it('stat value with unknown semantics stays UNKNOWN regardless of top-level (§33.1)', () => {
+    // stat=0 has no confirmed mapping; top-level 2 must not promote it.
+    const rows = [{ name: 'a', stat: { unitDamageType: 0 }, unitDamageType: 2 }];
+    const r = resolveCapability(rows, dmg, 'Magical', 'unitDamageType');
+    expect(r.state).toBe(TRI.UNKNOWN);
+    expect(r.known).toBe(0);
+  });
+
   it('is order-independent', () => {
     const rows = [ab('a', { unitDamageType: 2 }), ab('b', { unitDamageType: 0 }), ab('c', { unitDamageType: 4 })];
     const f = (r) => resolveCapability(r, dmg, 'Pure', 'unitDamageType').state;

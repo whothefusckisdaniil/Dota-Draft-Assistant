@@ -51,6 +51,12 @@ export const CAPABILITIES = [
  * first — which made target-team capabilities silently query the damage field
  * and produced a fabricated 100% agreement between HAS_MAGICAL_DAMAGE and
  * HAS_ENEMY_TARGETED. A capability must only ever read its own field.
+ *
+ * Nested-field contract (§33.1): semantic fields are read ONLY from
+ * `Ability.stat.<dimension>`. Top-level duplicates of the same key on the
+ * ability object are ignored — they are not evidence, because the authority for
+ * these fields is the `stat` block. A row whose `stat` lacks the field stays
+ * unresolved even if a same-named top-level key exists.
  */
 export function resolveCapability(abilities, map, semantic, dimension) {
   const rows = (abilities ?? []).map((a) => a?.ability ?? a).filter(Boolean);
@@ -58,7 +64,7 @@ export function resolveCapability(abilities, map, semantic, dimension) {
   let known = 0;
   let hits = 0;
   for (const r of rows) {
-    const raw = r?.stat?.[dimension] ?? r?.[dimension] ?? null;
+    const raw = r?.stat?.[dimension] ?? null;
     if (raw === null || raw === undefined) continue;
     const sem = map.get(String(raw)) ?? null;
     if (sem === null) continue; // value present, semantics unknown
