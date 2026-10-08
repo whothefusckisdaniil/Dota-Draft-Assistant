@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { APP_CONFIG } from '../config';
 import type { ItemCatalogue } from '../types';
 import type { BuildEngine, BuildPosition } from '../scoring/buildEngine';
 import { DISPLAY_PHASES } from '../scoring/buildAssembly.mjs';
+import { BuildItemRow } from './BuildItemRow';
 
 const POSITIONS: BuildPosition[] = ['1', '2', '3', '4', '5'];
 const POSITION_LABELS: Record<BuildPosition, string> = {
@@ -75,9 +75,9 @@ export function RecommendedBuildPanel({
                   {phaseItems.length === 0 ? (
                     <p className="px-1 py-1 text-xs text-dim">No recommendations in this phase.</p>
                   ) : (
-                    <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                    <ul className="grid grid-cols-1 gap-2">
                       {phaseItems.map((item) => (
-                        <BuildItem key={item.itemId} itemId={item.itemId} rank={item.rank} catalogue={items} />
+                        <BuildItemRow key={item.itemId} item={item} metadata={items[item.itemId]} />
                       ))}
                     </ul>
                   )}
@@ -94,9 +94,9 @@ export function RecommendedBuildPanel({
                   <span className="text-dim">({generalItems.length})</span>
                 </span>
               </summary>
-              <ul className="grid grid-cols-1 gap-2 px-3.5 pb-3.5 sm:grid-cols-2">
+              <ul className="grid grid-cols-1 gap-2 px-3.5 pb-3.5">
                 {generalItems.map((item) => (
-                  <BuildItem key={item.itemId} itemId={item.itemId} rank={item.rank} catalogue={items} />
+                  <BuildItemRow key={item.itemId} item={item} metadata={items[item.itemId]} />
                 ))}
               </ul>
               <p className="px-3.5 pb-3.5 text-[10px] leading-relaxed text-dim">
@@ -113,42 +113,5 @@ export function RecommendedBuildPanel({
         <p>Build confidence is not calibrated.</p>
       </div>
     </section>
-  );
-}
-
-function BuildItem({
-  itemId,
-  rank,
-  catalogue,
-}: {
-  itemId: number;
-  rank: number;
-  catalogue: ItemCatalogue;
-}) {
-  const item = catalogue[itemId];
-  const image = item?.image
-    ? `${APP_CONFIG.cdnBase}/apps/dota2/images/dota_react/items/${item.image}`
-    : null;
-
-  return (
-    <li className="panel-2 flex min-w-0 items-center gap-3 px-3 py-2.5">
-      {image && (
-        <img
-          src={image}
-          alt=""
-          loading="lazy"
-          className="h-9 w-12 shrink-0 rounded object-contain"
-          onError={(event) => {
-            event.currentTarget.style.display = 'none';
-          }}
-        />
-      )}
-      <span className="min-w-0 flex-1 truncate text-sm font-semibold text-ink" title={item?.name ?? `Item ${itemId}`}>
-        {item?.name ?? `Item ${itemId}`}
-      </span>
-      <span className="shrink-0 text-[10px] text-dim" title="ItemPrior presentation rank">
-        Prior #{rank}
-      </span>
-    </li>
   );
 }
