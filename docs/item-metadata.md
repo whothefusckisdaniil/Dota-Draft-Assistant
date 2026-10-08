@@ -18,6 +18,12 @@ reason is now much narrower and precisely documented:
 - **`consumedBy` / `departsFrom` / `held` are not in the schema** — they were
   never a matter of the generator forgetting to persist them.
 
+The follow-up audit in [ТЗ №40](./item-consumable-taxonomy-research.md) also
+finds that `ItemQuality` and `ItemPermanent` do not form an exhaustive,
+cross-source-consistent consumable/permanent taxonomy. Do not interpret
+`quality: "consumable"` as proof of consumed-on-use behavior or treat an absent
+`isPermanent` field as a negative value.
+
 ## 1–2. What exists, what is persisted, what is lost
 
 Real types (introspected, not assumed): `ItemType` (10 fields) and
@@ -123,6 +129,11 @@ interface ItemMetadataV2 extends ItemMetadataV1 {   // V1 fields unchanged
 'consumable'` is real evidence about what an item *is*; it is not a slot rule, so
 it never upgrades the semantics field. `SLOT_SEMANTICS.CONSUMED` exists as a
 name but is emitted by nothing.
+
+The №40 audit narrows that statement: `quality: "consumable"` is a source
+category, not a validated item-state rule. The pinned Valve category and the
+captured STRATZ category also disagree for at least one shipped item. No
+production consumable/permanent classification is inferred from `quality`.
 
 ### Backward compatibility
 
