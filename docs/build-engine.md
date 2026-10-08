@@ -92,7 +92,19 @@ present calibrated confidence, exact timing, or “optimal build” claims.
 ## Validation
 
 ```sh
-npx vitest run src/scoring/buildEngine.test.ts scripts/build-assembly-lib.test.ts
+npx vitest run src/scoring/buildEngine.test.ts src/scoring/buildEngine.production.test.ts scripts/build-assembly-lib.test.ts
 npm run typecheck
 npm run build
 ```
+
+The committed-data gate covers 127 heroes and 290 eligible Hero × Position
+cells: 288 have build data, 2 fail closed with `no-build-data`, and the other
+345 of 635 roster-position combinations are ineligible. It validates candidate
+containment, unique IDs, phase validity, research assembler parity, and
+determinism under reversed dataset object order. Current research parity is
+290/290 byte-identical assemblies.
+
+`research/valve-itembuilds.json` is imported by the engine and intentionally
+bundled as static phase evidence; the research scripts/reports are not copied
+as standalone production assets. Build recommendations use the loaded local
+dataset only, with no runtime recommendation API call.
