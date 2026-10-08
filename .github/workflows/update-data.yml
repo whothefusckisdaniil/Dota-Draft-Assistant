@@ -2,29 +2,68 @@ name: Update Dota dataset
 
 on:
   schedule:
-    # STRATZ matchup data is bucketed by full weeks (buckets open Thursday 00:00 UTC),
-    # so the dataset can only change once per week. Run Friday 03:00 UTC — safely past
-    # the Thursday boundary and after STRATZ finishes ingesting the closed week.
-    - cron: '0 3 * * 5'
+    - cron: '17 3 * * *'
   workflow_dispatch:
+    inputs:
+      force_refresh:
+        description: Refresh even if the complete STRATZ window has not changed
+        required: false
+        default: false
+        type: boolean
 
 permissions:
-  contents: write
+  contents: read
 
-# Never let a scheduled run and a manual dispatch fight over the same dataset.
 concurrency:
   group: dota-dataset-update
   cancel-in-progress: false
 
 jobs:
-  update-data:
+  preflight:
     runs-on: ubuntu-latest
+    outputs:
+      refresh_required: ${{ steps.check.outputs.refresh_required }}
+      reason: ${{ steps.check.outputs.reason }}
+      detected_patch: ${{ steps.check.outputs.detected_patch }}
+      window_changed: ${{ steps.check.outputs.window_changed }}
     steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 20
+
+      - name: Check whether a safe refresh is due
+        id: check
+        env:
+          FORCE_REFRESH: ${{ github.event_name == 'workflow_dispatch' && inputs.force_refresh || false }}
+        run: node scripts/check-data-refresh.mjs
+
+  refresh:
+    needs: preflight
+    if: needs.preflight.outputs.refresh_required == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: main
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 20
+
+      - name: Refuse recovery or leftover staging directories
+        run: |
+          for directory in public/data.__next public/data.__prev; do
+            if [ -e "$directory" ]; then
+              echo "::error::Unexpected dataset publisher directory exists: $directory"
+              exit 1
+            fi
+          done
+
+      - name: Fingerprint the currently published dataset
+        id: before
+        run: echo "fingerprint=$(node scripts/dataset-fingerprint.mjs public/data)" >> "$GITHUB_OUTPUT"
 
       - name: Install dependencies
         run: npm ci
@@ -32,48 +71,71 @@ jobs:
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium chromium-headless-shell
 
-      - name: Refresh dataset (OpenDota metadata + STRATZ matchups)
-        # Single step on purpose: the generator enforces the ordering
-        # OpenDota -> STRATZ -> validate -> publish internally, and any failure
-        # in any of those stages exits non-zero before public/data is touched.
+      - name: Refresh dataset (OpenDota metadata + STRATZ snapshot)
         env:
           STRATZ_API_TOKEN: ${{ secrets.STRATZ_API_TOKEN }}
-        run: node scripts/update-data-stratz.mjs
+        run: npm run update:data
 
-      - name: Verify the committed snapshot is self-consistent
-        # A second, independent gate in CI: the published files must agree with
-        # each other on disk, not merely in the generator's memory.
+      - name: Verify the published snapshot and STRATZ production contract
         run: node scripts/verify-dataset.mjs
 
-      - name: Check for leftover staging directories
-        # publishDatasetAtomically cleans up after itself; this asserts it, so a
-        # crashed run can never leave a half-written dataset next to the live one.
+      - name: Check for leftover publisher directories
         run: |
-          leftovers=$(ls -d public/data.__next public/data.__prev 2>/dev/null || true)
-          if [ -n "$leftovers" ]; then
-            echo "::error::staging directories left behind: $leftovers"
-            exit 1
+          for directory in public/data.__next public/data.__prev; do
+            if [ -e "$directory" ]; then
+              echo "::error::Dataset publisher left an unexpected directory: $directory"
+              exit 1
+            fi
+          done
+
+      - name: Test application against the refreshed dataset
+        run: npm test
+
+      - name: Typecheck application
+        run: npm run typecheck
+
+      - name: Build production application
+        run: npm run build
+
+      - name: Avoid generatedAt-only commits
+        id: fingerprint
+        run: |
+          after_fingerprint=$(node scripts/dataset-fingerprint.mjs public/data)
+          echo "after_fingerprint=$after_fingerprint" >> "$GITHUB_OUTPUT"
+          if [ "$after_fingerprint" = "${{ steps.before.outputs.fingerprint }}" ]; then
+            echo "semantically_changed=false" >> "$GITHUB_OUTPUT"
+            echo "Dataset semantically unchanged — restoring the committed snapshot."
+            git restore --source=HEAD -- public/data
+          else
+            echo "semantically_changed=true" >> "$GITHUB_OUTPUT"
+            echo "Dataset semantic fingerprint changed."
           fi
 
-      - name: Review dataset changes
+      - name: Re-verify final dataset and publisher state
         run: |
-          git --no-pager diff --stat public/data || true
-          echo "--- meta.json ---"
-          git --no-pager diff public/data/meta.json | head -20 || true
-          # Heroes that entered or left the canonical roster this week.
-          git --no-pager diff --unified=0 public/data/heroes.json \
-            | grep -E '^[+-]\{"id"' | head -10 || echo "(no roster change)"
+          node scripts/verify-dataset.mjs
+          for directory in public/data.__next public/data.__prev; do
+            if [ -e "$directory" ]; then
+              echo "::error::Dataset publisher left an unexpected directory: $directory"
+              exit 1
+            fi
+          done
+          git diff --check
 
-      - name: Commit dataset if changed
+      - name: Commit and push a semantic dataset change
+        if: steps.fingerprint.outputs.semantically_changed == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add public/data
+          git diff --cached --check
           if git diff --cached --quiet; then
-            echo "Dataset unchanged — nothing to commit."
-          else
-            git commit -m "chore(data): refresh OpenDota metadata + STRATZ snapshot ($(date -u +%F))"
-            git push
+            echo "::error::Fingerprint changed but no public/data changes were staged."
+            exit 1
           fi
-        # If any earlier step failed (non-zero exit), nothing was written and
-        # nothing is committed — the previous dataset stays intact.
+          git commit -m "chore(data): refresh Dota dataset ($(date -u +%F))"
+          git push origin HEAD:main
+
+      - name: Report semantic no-op
+        if: steps.fingerprint.outputs.semantically_changed == 'false'
+        run: echo "Dataset semantically unchanged — no commit created."

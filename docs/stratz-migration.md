@@ -1,8 +1,9 @@
 # Production data pipeline (ТЗ №6 migration + ТЗ №7 defect fixes)
 
 **Hero metadata comes from OpenDota. Matchup statistics come from STRATZ.** Every
-`public/data` file is refreshed from scratch on the weekly run, and all three are
-published as one atomic directory swap. This document records **what** runs now, **why**
+`public/data` file is refreshed from scratch when the daily preflight detects a new complete
+weekly window (or a manual force is requested), and all files are published as one atomic
+directory swap. This document records **what** runs now, **why**
 the numbers changed, and **how** to roll back.
 
 ## 1. What runs now
@@ -11,13 +12,13 @@ the numbers changed, and **how** to roll back.
 | --- | --- | --- |
 | Hero names, roles, portraits, pub/pro stats | OpenDota `/heroes` + `/heroStats` | **Every run** |
 | Latest patch | OpenDota `/constants/patch` (highest patch id) | **Every run** |
-| Matchup win rates | STRATZ GraphQL `heroStats.matchUp` | Every run (weekly) |
-| Position pick rates | STRATZ GraphQL `heroStats.stats(groupByPosition: true)` | Every run (weekly), same window and brackets as the matchups |
+| Matchup win rates | STRATZ GraphQL `heroStats.matchUp` | On a new complete-week window or manual force |
+| Position pick rates | STRATZ GraphQL `heroStats.stats(groupByPosition: true)` | Same refresh, window and brackets as the matchups |
 | Population | — | Calibrated rank brackets `HERALD_GUARDIAN`, `CRUSADER_ARCHON`, `LEGEND_ANCIENT`, `DIVINE_IMMORTAL` |
 | Time window | — | Sum of the 4 last **fully completed** weekly buckets; current partial bucket always excluded |
 | Transport | — | headless Chromium (Playwright) — `api.stratz.com` sits behind a Cloudflare interstitial |
 | Generator | — | `scripts/update-data-stratz.mjs` (`npm run update:data`) |
-| Schedule | — | weekly, Friday 03:00 UTC (data can only change when a bucket closes) |
+| Schedule | — | Daily preflight at 03:17 UTC; STRATZ refresh only on a new complete-week window, unless manually forced |
 | Publication | — | `scripts/dataset-publish.mjs`, directory swap |
 
 `src/data/dataset.ts` still loads the same three static files; no runtime API calls were added.
