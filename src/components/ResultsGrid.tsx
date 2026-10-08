@@ -1,5 +1,8 @@
 import type { CandidateScore, Hero } from '../types';
+import type { PositionFilter } from '../config';
 import { BestPickCard, CandidateCard, RankingRow } from './CandidateCard';
+
+type Lane = Exclude<PositionFilter, 'all'>;
 
 const TITLES: Record<string, string> = {
   1: 'CARRY',
@@ -14,9 +17,9 @@ const TITLES: Record<string, string> = {
  *  summary (ALL mode) renders only the top pick per role as a compact card —
  *  detailed ranking belongs to a selected position (FINAL UX PASS, P1). */
 export function ResultsGrid({ results, heroById, onViewDetails, summary = false }: {
-  results: Map<string, CandidateScore[]> | null;
+  results: Map<Lane, CandidateScore[]> | null;
   heroById: Map<number, Hero>;
-  onViewDetails: (c: CandidateScore) => void;
+  onViewDetails: (c: CandidateScore, lane: Lane) => void;
   summary?: boolean;
 }) {
   if (!results) return null;
@@ -34,7 +37,12 @@ export function ResultsGrid({ results, heroById, onViewDetails, summary = false 
               </p>
             </div>
           ) : (
-            <BestPickCard key={lane} c={list[0]} title={TITLES[lane] ?? lane} onViewDetails={onViewDetails} />
+            <BestPickCard
+              key={lane}
+              c={list[0]}
+              title={TITLES[lane] ?? lane}
+              onViewDetails={(candidate) => onViewDetails(candidate, lane)}
+            />
           ),
         )}
       </div>
@@ -62,10 +70,10 @@ export function ResultsGrid({ results, heroById, onViewDetails, summary = false 
               No hero has usable matchup data vs every selected enemy for this role.
             </div>
           ) : list.length === 1 ? (
-            <CandidateCard c={list[0]} rank={1} heroById={heroById} onViewDetails={onViewDetails} />
+            <CandidateCard c={list[0]} rank={1} heroById={heroById} onViewDetails={(candidate) => onViewDetails(candidate, lane)} />
           ) : (
             <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
-              <CandidateCard c={list[0]} rank={1} heroById={heroById} onViewDetails={onViewDetails} />
+              <CandidateCard c={list[0]} rank={1} heroById={heroById} onViewDetails={(candidate) => onViewDetails(candidate, lane)} />
               <div className="fade-up">
                 <div className="mb-2.5 flex items-center gap-3">
                   <h4 className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-dim">
@@ -75,7 +83,7 @@ export function ResultsGrid({ results, heroById, onViewDetails, summary = false 
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   {list.slice(1).map((c, i) => (
-                    <RankingRow key={c.hero.id} c={c} rank={i + 2} onViewDetails={onViewDetails} />
+                    <RankingRow key={c.hero.id} c={c} rank={i + 2} onViewDetails={(candidate) => onViewDetails(candidate, lane)} />
                   ))}
                 </div>
               </div>

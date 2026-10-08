@@ -72,8 +72,22 @@ claim an exact purchase order.
 - The engine does not classify consumables/permanent items. Taxonomy remains
   unresolved, so General and phase groups make no cleanliness guarantee.
 
-The engine is production code but is **not yet connected to the UI**. №42 is
-the separate presentation/integration step.
+## UI integration (ТЗ №42)
+
+The selected recommendation opens a build panel for that hero and position;
+in the all-positions view, the panel starts at the lane of the selected
+recommendation. The position control can switch lanes without falling back
+when a hero is not eligible at that position.
+
+The six Valve phase groups are displayed separately, including explicit empty
+phases. `General` is a separate disclosure, collapsed by default, because it
+may contain a long overflow list. Item labels use the local item catalogue;
+the UI does not infer consumable/permanent status or component order.
+
+The panel states that recommendations use historical Hero + Position purchase
+patterns, that phases are categorical labels, and that order within each phase
+is a presentation ranking rather than exact purchase order. It does not
+present calibrated confidence, exact timing, or “optimal build” claims.
 
 ## Validation
 

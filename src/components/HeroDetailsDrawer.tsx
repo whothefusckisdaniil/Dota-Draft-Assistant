@@ -3,17 +3,31 @@ import type { CandidateScore, Hero } from '../types';
 import { fmtDelta, laneLabel } from '../scoring/engine';
 import { HeroPortrait } from './HeroPortrait';
 import type { Lane } from '../scoring/positionsExtra';
+import type { ItemCatalogue } from '../types';
+import type { BuildEngine, BuildPosition } from '../scoring/buildEngine';
+import { RecommendedBuildPanel } from './RecommendedBuildPanel';
 
 interface Props {
   candidate: CandidateScore;
   enemyIds: number[];
   heroById: Map<number, Hero>;
+  items: ItemCatalogue;
+  buildEngine: BuildEngine;
+  initialBuildPosition: BuildPosition;
   onClose: () => void;
 }
 
 /** Matchup breakdown drawer (§15): per-enemy stats + the numbers the score was
  *  built from. Plain statistics, no AI, no guarantees. */
-export function HeroDetailsDrawer({ candidate: c, enemyIds, heroById, onClose }: Props) {
+export function HeroDetailsDrawer({
+  candidate: c,
+  enemyIds,
+  heroById,
+  items,
+  buildEngine,
+  initialBuildPosition,
+  onClose,
+}: Props) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -48,6 +62,14 @@ export function HeroDetailsDrawer({ candidate: c, enemyIds, heroById, onClose }:
           </div>
           <p className="mt-1 text-xs text-muted">Against your draft</p>
         </div>
+
+        <RecommendedBuildPanel
+          key={`${c.hero.id}:${initialBuildPosition}`}
+          heroId={c.hero.id}
+          initialPosition={initialBuildPosition}
+          buildEngine={buildEngine}
+          items={items}
+        />
 
         <div className="mb-2 mt-7 flex items-center gap-3">
           <h3 className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted">Matchups</h3>

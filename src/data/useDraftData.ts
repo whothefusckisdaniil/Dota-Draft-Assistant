@@ -3,6 +3,7 @@ import { APP_CONFIG, type PositionFilter } from '../config';
 import type { CandidateScore, Hero, MatchupRow } from '../types';
 import { loadDataset, type Dataset } from './dataset';
 import { scoreCandidates } from '../scoring/engine';
+import { createBuildEngine } from '../scoring/buildEngine';
 
 export type LoadState =
   | { kind: 'loading'; message: string }
@@ -42,6 +43,10 @@ export function useDraftData() {
   const heroById = dataset?.heroById ?? new Map<number, Hero>();
   const matchups = dataset?.matchups ?? new Map<number, MatchupRow[]>();
   const positions = dataset?.positions ?? {};
+  const buildEngine = useMemo(
+    () => (dataset ? createBuildEngine(dataset) : null),
+    [dataset],
+  );
 
   // Strict coverage holds only when every selected enemy has a matchup table.
   const missingTables = useMemo(
@@ -73,6 +78,8 @@ export function useDraftData() {
   return {
     heroes,
     heroById,
+    items: dataset?.items ?? {},
+    buildEngine,
     loadState,
     meta: dataset?.meta ?? null,
     enemies,
