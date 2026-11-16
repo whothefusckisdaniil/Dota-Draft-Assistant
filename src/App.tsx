@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Analytics } from '@vercel/analytics/react';
 import { useDraftData } from './data/useDraftData';
 import { freshness } from './data/dataset';
 import { freshnessText, useI18n } from './i18n';
@@ -365,6 +366,7 @@ export default function App() {
           onClose={() => setDetails(null)}
         />
       )}
+      <Analytics />
     </div>
   );
 }
