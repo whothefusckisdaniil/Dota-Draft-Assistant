@@ -1,0 +1,633 @@
+{
+  "schemaVersion": 1,
+  "kind": "OPENDOTA_COVERAGE_VALIDATION",
+  "datasetSource": "EXTERNAL_MATCH_SOURCE",
+  "provider": "OpenDota explorer, table public_matches",
+  "window": {
+    "buckets": [
+      2963,
+      2964,
+      2965,
+      2966
+    ],
+    "startSecInclusive": 1792022400,
+    "endSecExclusive": 1794441600,
+    "bucketSeconds": 604800
+  },
+  "inputs": {
+    "fix15Raw": {
+      "path": "research/data-quality/stratz-external-match-level-raw-responses.json",
+      "sha256": "aae3c1b1f00d090f30c299b517a0f14fe56047296213945c365e8cdae5a71344",
+      "retrievedAt": "2026-11-13T07:54:21.532Z"
+    },
+    "fix15Evidence": {
+      "path": "research/data-quality/stratz-external-match-level-evidence.json",
+      "sha256": "af54bca9575e839f60a2ca2a91ff89b9a369b301a65a4fc132749313abf16a4e"
+    },
+    "fix16Raw": {
+      "path": "research/data-quality/stratz-opendota-coverage-validation-raw-responses.json",
+      "sha256": "3898599572177131decbb6b2cf8e184d7313eb7ac02fa08987e5d6e79b02b22f",
+      "retrievedAt": "2026-11-13T09:59:00.910Z",
+      "finishedAt": "2026-11-13T10:10:23.200Z",
+      "requestCount": 156,
+      "failedRanges": []
+    }
+  },
+  "medianCorrection": {
+    "values": 64,
+    "fix15Recorded": 0.4536741214057508,
+    "fix15Method": "sorted[floor(n / 2)] (upper central element for even n)",
+    "corrected": 0.4533880208210438,
+    "correctedMethod": "mean of the two central elements for even n",
+    "centralValues": [
+      0.4531019202363368,
+      0.4536741214057508
+    ],
+    "min": 0.3318632855567806,
+    "max": 0.5530104712041884,
+    "fix15ArtifactUnchanged": true
+  },
+  "rangeContinuity": {
+    "fix15Enumeration": {
+      "status": "CONTIGUOUS",
+      "rangeCount": 152,
+      "inputOrdered": true,
+      "firstFromId": 9042484385,
+      "lastToId": 9087866301,
+      "expected": {
+        "fromId": 9042484385,
+        "toId": 9087866301
+      },
+      "idSpan": 45381916,
+      "summedRangeIds": 45381916,
+      "gaps": [],
+      "overlaps": [],
+      "invalidRanges": [],
+      "outsideExpected": []
+    },
+    "fix16Remeasurement": {
+      "status": "CONTIGUOUS",
+      "rangeCount": 152,
+      "inputOrdered": true,
+      "firstFromId": 9042484385,
+      "lastToId": 9087866301,
+      "expected": {
+        "fromId": 9042484385,
+        "toId": 9087866301
+      },
+      "idSpan": 45381916,
+      "summedRangeIds": 45381916,
+      "gaps": [],
+      "overlaps": [],
+      "invalidRanges": [],
+      "outsideExpected": []
+    }
+  },
+  "rangeStatus": {
+    "fix16Ranges": 155,
+    "byRole": {
+      "fix15-range": 152,
+      "extension": 3
+    },
+    "ok": 155,
+    "failed": 0,
+    "fix15RangesFullyRemeasured": 152,
+    "fix15RangesIncomplete": [],
+    "timeoutSplits": 0,
+    "fix15ChunkStatus": {
+      "ok": 152,
+      "failed": 0
+    }
+  },
+  "totalsConsistency": {
+    "status": "CONSISTENT_WITH_DRIFT",
+    "ranges": 152,
+    "remeasuredRanges": 152,
+    "fix15RangeRowsTotal": 29696328,
+    "fix16RangeRowsTotal": 29697222,
+    "rangesWithRowDrift": [
+      {
+        "fromId": 9087784385,
+        "toId": 9087866301,
+        "fix15": 48943,
+        "fix16": 49837
+      }
+    ],
+    "rangesWithBucketDrift": [],
+    "pairRecordsTotal": 166208,
+    "pairRecordsOutsideTheirRange": 0,
+    "internalChecks": "PASS"
+  },
+  "timestampMonotonicity": {
+    "hypothesis": "start_time is non-decreasing in match_id",
+    "result": "REFUTED_STRICT_MONOTONICITY",
+    "boundedNonMonotonicity": "LARGE_DEVIATIONS_OBSERVED",
+    "maxDropByGroupSec": {
+      "within:extension-below": 365,
+      "within:main": 5855,
+      "within:extension-above": 1088,
+      "border:extension-below-internal-border": 32,
+      "border:extension-below->main": 30,
+      "border:main-fix15-chunk-border": 1085,
+      "border:main->extension-above": 40,
+      "pairRecords": 683
+    },
+    "groups": {
+      "method": "exact maximum drop below running max over all measured rows in match_id order (in-range SQL window statistic + running max across ranges)",
+      "measuredRanges": 155,
+      "failedOrUnmeasuredRanges": [],
+      "contiguousChain": true,
+      "withinRanges": {
+        "extension-below": {
+          "ranges": 2,
+          "rows": 401039,
+          "backwardSteps": 37556,
+          "equalSteps": 204601,
+          "forwardSteps": 158880,
+          "largeJumps": 0,
+          "maxBackwardStepSec": 356,
+          "maxDropBelowRunningMaxSec": 365,
+          "worstRange": [
+            9042184385,
+            9042484385
+          ]
+        },
+        "main": {
+          "ranges": 152,
+          "rows": 29697222,
+          "backwardSteps": 3233930,
+          "equalSteps": 15029443,
+          "forwardSteps": 11433697,
+          "largeJumps": 4,
+          "maxBackwardStepSec": 5855,
+          "maxDropBelowRunningMaxSec": 5855,
+          "worstRange": [
+            9042784385,
+            9043084385
+          ]
+        },
+        "extension-above": {
+          "ranges": 1,
+          "rows": 39280,
+          "backwardSteps": 6765,
+          "equalSteps": 15153,
+          "forwardSteps": 17361,
+          "largeJumps": 0,
+          "maxBackwardStepSec": 1087,
+          "maxDropBelowRunningMaxSec": 1088,
+          "worstRange": [
+            9087866301,
+            9087955454
+          ]
+        }
+      },
+      "acrossBorders": {
+        "extension-below-internal-border": {
+          "borders": 1,
+          "adjacentOverlaps": 1,
+          "maxAdjacentOverlapSec": 32,
+          "maxDropBelowRunningMaxSec": 32,
+          "worstBorderAtId": 9042184385
+        },
+        "extension-below->main": {
+          "borders": 1,
+          "adjacentOverlaps": 1,
+          "maxAdjacentOverlapSec": 30,
+          "maxDropBelowRunningMaxSec": 30,
+          "worstBorderAtId": 9042484385
+        },
+        "main-fix15-chunk-border": {
+          "borders": 151,
+          "adjacentOverlaps": 151,
+          "maxAdjacentOverlapSec": 1085,
+          "maxDropBelowRunningMaxSec": 1085,
+          "worstBorderAtId": 9043084385
+        },
+        "main->extension-above": {
+          "borders": 1,
+          "adjacentOverlaps": 1,
+          "maxAdjacentOverlapSec": 40,
+          "maxDropBelowRunningMaxSec": 40,
+          "worstBorderAtId": 9087866301
+        }
+      },
+      "globalMaxDropBelowRunningMaxSec": 5855,
+      "borderLagStepsObservable": false
+    },
+    "allRowsWithinMainRanges": {
+      "backwardSteps": 3233930,
+      "equalSteps": 15029443,
+      "forwardSteps": 11433697,
+      "maxBackwardStepSec": 5855,
+      "maxForwardStepSec": 5824,
+      "largeJumps": 4,
+      "belowRunningMax": 25030739,
+      "maxDropBelowRunningMaxSec": 5855,
+      "note": "Merged from 152 sub-ranges; steps across sub-range borders are covered by the cross-range analysis.",
+      "steps": 29697070,
+      "backwardShare": 0.108897,
+      "equalShare": 0.506092
+    },
+    "fix15RangeAggregates": {
+      "ranges": 152,
+      "adjacentOverlaps": 151,
+      "maxAdjacentOverlapSec": 1085,
+      "minStartDecreases": 0,
+      "maxCrossRangeDropSec": 1085
+    },
+    "pairRecords": {
+      "status": "NOT_MONOTONIC",
+      "records": 166208,
+      "steps": 166207,
+      "backwardSteps": 19786,
+      "equalSteps": 10123,
+      "forwardSteps": 136298,
+      "duplicateMatchIds": 0,
+      "maxBackwardStepSec": 683,
+      "maxForwardStepSec": 1386,
+      "recordsBelowRunningMax": 21268,
+      "maxDropBelowRunningMaxSec": 683,
+      "largeJumpThresholdSec": 3600,
+      "largeJumpCount": 0,
+      "largeJumps": []
+    },
+    "maxObservedDropSec": 5855,
+    "interpretation": "match_id is not strictly time-ordered: later IDs can carry earlier start_time. The exact maximum drop over all measured rows (main ranges, sub-range borders, extensions) is compared with the boundary margins; it bounds the observed rows only, not unobserved IDs."
+  },
+  "boundaries": {
+    "window": {
+      "startSecInclusive": 1792022400,
+      "endSecExclusive": 1794441600
+    },
+    "enumerated": {
+      "fromId": 9042484385,
+      "toId": 9087866301,
+      "firstStart": 1791850587,
+      "lastStart": 1794552087,
+      "configuredMarginSec": {
+        "lower": 172800,
+        "upper": 110163
+      },
+      "firstInWindowMatchId": 9045487870,
+      "lastInWindowMatchId": 9086341877
+    },
+    "lowerMarginSec": 171813,
+    "upperMarginSec": 110487,
+    "lowerMarginDays": 1.9886,
+    "upperMarginDays": 1.2788,
+    "firstInWindowMatchIdDistanceFromRangeStart": 3003485,
+    "lastInWindowMatchIdDistanceFromRangeEnd": 1524423,
+    "maxObservedDropSec": 5855,
+    "marginToMaxObservedDrop": 18.9,
+    "extensionBelow": {
+      "ranges": [
+        [
+          9041884385,
+          9042184385
+        ],
+        [
+          9042184385,
+          9042484385
+        ]
+      ],
+      "measured": 2,
+      "failed": 0,
+      "rows": 401039,
+      "inWindowRows": 0,
+      "minStart": 1791820473,
+      "maxStart": 1791850617
+    },
+    "extensionAbove": {
+      "ranges": [
+        [
+          9087866301,
+          9087955454
+        ]
+      ],
+      "measured": 1,
+      "failed": 0,
+      "rows": 39280,
+      "inWindowRows": 0,
+      "minStart": 1794552047,
+      "maxStart": 1794560268
+    },
+    "inWindowRowsFoundOutsideEnumeratedRange": 0,
+    "status": "BOUNDARIES_EMPIRICALLY_SUPPORTED",
+    "proof": "NOT_A_PROOF",
+    "note": "Observed ordering noise and empty extension probes support, but do not prove, that no in-window match has a match_id outside the enumerated range: the extensions cover a finite ID span and the table can still receive late rows.",
+    "records": {
+      "pairRecordsBeforeWindow": 9769,
+      "pairRecordsAfterWindow": 5210,
+      "pairRecordsWithinObservedDropOfWindowEdges": 669,
+      "rowsBeforeWindow": 1887261,
+      "rowsAfterWindow": 949506
+    }
+  },
+  "heroArrays": {
+    "definitions": {
+      "NULL_ARRAY": "radiant_team or dire_team is NULL (absent); never counted as zeroed",
+      "INCOMPLETE_ARRAY": "both arrays present but at least one does not have exactly 5 elements",
+      "NULL_ELEMENT": "arrays have 5 elements but contain a NULL hero",
+      "ZEROED_HERO": "arrays complete but contain hero id 0",
+      "COMPLETE": "two arrays of 5 non-zero hero ids",
+      "precedence": "NULL_ARRAY > INCOMPLETE_ARRAY > NULL_ELEMENT > ZEROED_HERO > COMPLETE"
+    },
+    "allRows": {
+      "rows": 29697222,
+      "byClass": {
+        "NULL_ARRAY": 0,
+        "INCOMPLETE_ARRAY": 2437,
+        "NULL_ELEMENT": 0,
+        "ZEROED_HERO": 143377,
+        "COMPLETE": 29551408
+      },
+      "unclassifiable": 145814
+    },
+    "inWindow": {
+      "byClass": {
+        "NULL_ARRAY": 0,
+        "INCOMPLETE_ARRAY": 2208,
+        "NULL_ELEMENT": 0,
+        "ZEROED_HERO": 128904,
+        "COMPLETE": 26729343
+      },
+      "unclassifiable": 131112,
+      "zeroFlagNonExclusive": 129106,
+      "rows": 26860455
+    },
+    "inWindowByBucket": [
+      {
+        "bucket": 2963,
+        "matches": 6931588,
+        "unclassifiable": 32586,
+        "zeroHeroFlag": 32064
+      },
+      {
+        "bucket": 2964,
+        "matches": 6887857,
+        "unclassifiable": 33338,
+        "zeroHeroFlag": 32812
+      },
+      {
+        "bucket": 2965,
+        "matches": 6787397,
+        "unclassifiable": 32988,
+        "zeroHeroFlag": 32462
+      },
+      {
+        "bucket": 2966,
+        "matches": 6253613,
+        "unclassifiable": 32200,
+        "zeroHeroFlag": 31768
+      }
+    ],
+    "pairRecords": {
+      "records": 166208,
+      "byClass": {
+        "NULL_ARRAY": 0,
+        "INCOMPLETE_ARRAY": 3,
+        "NULL_ELEMENT": 0,
+        "ZEROED_HERO": 22,
+        "COMPLETE": 166183
+      },
+      "flags": {
+        "nullArray": 0,
+        "incomplete": 3,
+        "nullElement": 0,
+        "zeroed": 22
+      },
+      "unclassifiable": 25
+    },
+    "matchesNotClassifiableByTwoHeroes": 131112,
+    "note": "Unclassifiable rows cannot be attributed to any pair; some of them may involve the studied heroes, so pair counts are lower bounds within the observed rows."
+  },
+  "externalCoverageLimitations": {
+    "totalSqlRowCounts": {
+      "enumeratedRangeRows": 29697222,
+      "fix15EnumeratedRangeRows": 29696328,
+      "inWindowRows": 26860455,
+      "byBucket": [
+        {
+          "bucket": 2963,
+          "matches": 6931588
+        },
+        {
+          "bucket": 2964,
+          "matches": 6887857
+        },
+        {
+          "bucket": 2965,
+          "matches": 6787397
+        },
+        {
+          "bucket": 2966,
+          "matches": 6253613
+        }
+      ]
+    },
+    "rankedMatchCounts": {
+      "inWindow": 14102954,
+      "byBucket": [
+        {
+          "bucket": 2963,
+          "ranked": 3647607
+        },
+        {
+          "bucket": 2964,
+          "ranked": 3602998
+        },
+        {
+          "bucket": 2965,
+          "ranked": 3558887
+        },
+        {
+          "bucket": 2966,
+          "ranked": 3293462
+        }
+      ]
+    },
+    "zeroedHeroArrays": {
+      "inWindowExclusive": 128904,
+      "inWindowNonExclusiveFlag": 129106,
+      "fix15ReportedZeroHero": 129106
+    },
+    "nullOrIncompleteHeroArrays": {
+      "nullArray": 0,
+      "incompleteArray": 2208,
+      "nullElement": 0
+    },
+    "selectedPairMatchRecords": {
+      "records": 166208,
+      "uniqueMatchIds": 166208,
+      "inWindow": 151229
+    },
+    "outOfWindowRecords": {
+      "pairRecords": 14979,
+      "rowsBeforeWindow": 1887261,
+      "rowsAfterWindow": 949506
+    },
+    "boundaryMargins": {
+      "lowerDays": 1.9886,
+      "upperDays": 1.2788,
+      "maxObservedDropSec": 5855,
+      "status": "BOUNDARIES_EMPIRICALLY_SUPPORTED"
+    },
+    "potentiallyMissedMatchIds": {
+      "gapIds": 0,
+      "overlapIds": 0,
+      "failedRangeIds": 0,
+      "inWindowRowsFoundInExtensions": 0,
+      "beyondExtensions": "UNQUANTIFIED",
+      "inWindowRowsWithUnclassifiableHeroArrays": 131112,
+      "rowCountDriftSinceFix15": 894,
+      "notInPublicMatches": "UNQUANTIFIED — completeness of public_matches relative to all matchmaking games is not documented by OpenDota"
+    }
+  },
+  "sourceCoverage": {
+    "status": "PARTIAL",
+    "classification": "PARTIAL_MATCH_COVERAGE",
+    "enumerationIntegrity": "PASS",
+    "reasons": [
+      "SOURCE_COMPLETENESS_UNDOCUMENTED",
+      "COVERAGE_RELATIVE_TO_STRATZ_UNVERIFIED",
+      "SOURCE_ROWS_CHANGED_SINCE_FIX15",
+      "BOUNDARY_COMPLETENESS_NOT_PROVEN",
+      "UNCLASSIFIABLE_HERO_ARRAYS"
+    ],
+    "completeRequires": "Documented completeness of the source plus filters equivalent to STRATZ; not set automatically."
+  },
+  "productionThresholdApplied": false,
+  "productionThresholdNote": "External coverage is partial; the production asymmetry threshold is not applied to external counts.",
+  "escalation": {
+    "path": "research/data-quality/stratz-support-escalation-v2.json",
+    "status": "DRAFTED"
+  },
+  "protectedHashes": {
+    "fix9Input": {
+      "path": "scripts/stratz-diagnostic-input.json",
+      "physicalSha256": "291350d18a0195dfa9b2292b08a832267234dac6b8b16b8f045c71cd5afba002"
+    },
+    "fix10Repeatability": {
+      "path": "research/data-quality/stratz-reverse-pair-repeatability-evidence.json",
+      "physicalSha256": "278c740c10747da0c91642cd02efb5ebaca741c8b935a6d6b8b771420d89978e"
+    },
+    "fix10Report": {
+      "path": "research/data-quality/stratz-reverse-pair-asymmetry-report.json",
+      "physicalSha256": "ef5e27a1ca55cb1876d210027ff58c2f4a11f7f35ca3c24f9754ad71f584cf95"
+    },
+    "fix11Evidence": {
+      "path": "research/data-quality/stratz-reverse-pair-root-cause-evidence.json",
+      "physicalSha256": "7ed6d5daac42dbcc19995caf5518518ccac3ef6de42a4fd62c7468af7363494b"
+    },
+    "fix11Raw": {
+      "path": "research/data-quality/stratz-reverse-pair-root-cause-raw-responses.json",
+      "physicalSha256": "0e426ac478489e23e1d35cd1336fe2487ab101364ff8b041f433714c1ccf6e7b"
+    },
+    "fix12Evidence": {
+      "path": "research/data-quality/stratz-reverse-pair-bracket-semantics-evidence.json",
+      "physicalSha256": "0a1953f079b6a94fbade6cbad77a16d6423fe829af1a003440b5b8f9ecc9a0be"
+    },
+    "fix12Raw": {
+      "path": "research/data-quality/stratz-reverse-pair-bracket-raw-responses.json",
+      "physicalSha256": "5db0fed846569d45b7c55f4cd5a8cbcc6de2c3e2963b2c098de723b3e5542a74"
+    },
+    "fix13Evidence": {
+      "path": "research/data-quality/stratz-reverse-pair-partition-semantics-evidence.json",
+      "physicalSha256": "7166a0d95b4429076c7b387198928a0e885ca413c85d886d3134dee4a660f9fe"
+    },
+    "fix14Evidence": {
+      "path": "research/data-quality/stratz-reverse-pair-match-level-evidence.json",
+      "physicalSha256": "91143b20f42f4227081d69bcbbae937ce1da8da4b480065047ae0a4d0a6ce862"
+    },
+    "fix14Raw": {
+      "path": "research/data-quality/stratz-reverse-pair-match-level-raw-responses.json",
+      "physicalSha256": "69f4b06b1e05a7703b6a6e403b007c978fc3214f1ea2f90cac0027b35c297ba5"
+    },
+    "productionHeroes": {
+      "path": "public/data/heroes.json",
+      "physicalSha256": "59ecc2bc9b55a62232bf7d40b85c1d4c306602e89addda6d3faa9ed38a2c061d"
+    },
+    "productionMatchups": {
+      "path": "public/data/matchups.json",
+      "physicalSha256": "0a9e54aaa925494f7ad876c992e782cfd45d297b3952c8afefb8decc3ad02e8b"
+    },
+    "productionMeta": {
+      "path": "public/data/meta.json",
+      "physicalSha256": "9db099dedf5c5f0d052590d98d194807e2580a16694fc562ae9ffbf1d144857e"
+    },
+    "productionModule": {
+      "path": "scripts/update-data-stratz.mjs",
+      "physicalSha256": "b142bf249e4510bce4f12ef004fbea96cd7b0c9f33a563a30d6ccc3c3ea65431"
+    },
+    "fix15:stratz-support-escalation.md": {
+      "path": "research/data-quality/stratz-support-escalation.md",
+      "physicalSha256": "02f0a98c1c616845c6a528322fdaa6203454ee00cb2d9eb60d1305740d640d58"
+    },
+    "fix15:stratz-support-escalation.json": {
+      "path": "research/data-quality/stratz-support-escalation.json",
+      "physicalSha256": "cbe70befeaece68dfd7aa00ca8a2a7de4a51ec2b901d3c8a2d2f6332fb216ca3"
+    },
+    "fix15:stratz-external-source-feasibility.json": {
+      "path": "research/data-quality/stratz-external-source-feasibility.json",
+      "physicalSha256": "ebcb245cb9154aa4ccb7853aac606009e764895fe7a121b4df33be5ed0e93587"
+    },
+    "fix15:stratz-external-match-level-evidence.json": {
+      "path": "research/data-quality/stratz-external-match-level-evidence.json",
+      "physicalSha256": "af54bca9575e839f60a2ca2a91ff89b9a369b301a65a4fc132749313abf16a4e"
+    },
+    "fix15:stratz-external-match-level-raw-responses.json": {
+      "path": "research/data-quality/stratz-external-match-level-raw-responses.json",
+      "physicalSha256": "aae3c1b1f00d090f30c299b517a0f14fe56047296213945c365e8cdae5a71344"
+    },
+    "productionItemStats": {
+      "path": "public/data/item-stats.json",
+      "physicalSha256": "295d22a67bbc40ac010f58636870607514f925e455927005385ab549b8c9c27f"
+    },
+    "productionItems": {
+      "path": "public/data/items.json",
+      "physicalSha256": "5584b16925fdac49ad7950edeb670594045c415860a3c57281191c38ba1e3ca7"
+    },
+    "productionPositions": {
+      "path": "public/data/positions.json",
+      "physicalSha256": "4a0e6ba79e8b5ebe12fb3a56ba107742a5dd920a178a7d61afe11af2387853da"
+    }
+  },
+  "evidenceSha256": "f98eb9d68ec0ffbeac8448eb93f0becdf601f2b3ac05a906f2d077a4afb93220",
+  "rootCause": {
+    "status": "UNRESOLVED",
+    "productionPublishAllowed": false,
+    "categories": [
+      {
+        "category": "STRATZ_MATCHUP_DIRECTIONAL_SEMANTICS_CONFIRMED",
+        "applies": false,
+        "reason": "No official STRATZ answer."
+      },
+      {
+        "category": "STRATZ_VENDOR_CONFIRMED_ISSUE",
+        "applies": false,
+        "reason": "No official STRATZ answer."
+      },
+      {
+        "category": "EXTERNAL_SOURCE_RECONCILIATION_CONFIRMED",
+        "applies": false,
+        "reason": "External coverage is not complete and filters are not equivalent."
+      },
+      {
+        "category": "PUBLIC_SOURCE_COVERAGE_INSUFFICIENT",
+        "applies": true,
+        "reason": "SOURCE_COMPLETENESS_UNDOCUMENTED, COVERAGE_RELATIVE_TO_STRATZ_UNVERIFIED, SOURCE_ROWS_CHANGED_SINCE_FIX15, BOUNDARY_COMPLETENESS_NOT_PROVEN, UNCLASSIFIABLE_HERO_ARRAYS"
+      },
+      {
+        "category": "MATCH_LEVEL_EVIDENCE_UNAVAILABLE",
+        "applies": true,
+        "reason": "STRATZ exposes no match IDs for matchUp rows (FIX14); external match IDs cannot be mapped onto STRATZ directional rows."
+      },
+      {
+        "category": "UNRESOLVED",
+        "applies": true,
+        "reason": "Neither an official answer nor a complete, equivalent independent reconciliation exists."
+      }
+    ],
+    "note": "Stable aggregate counts alone do not prove a STRATZ defect."
+  }
+}

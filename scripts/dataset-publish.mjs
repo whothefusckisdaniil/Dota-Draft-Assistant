@@ -2,7 +2,7 @@
 /**
  * Atomic whole-dataset publication.
  *
- * Why this exists: writing `heroes.json`, `matchups.json` and `meta.json` one
+ * Why this exists: writing `heroes.json`, `matchups.json`, `positions.json` and `meta.json` one
  * rename at a time can leave a mixed snapshot on disk — e.g. new `heroes.json`
  * (128 heroes, hero `X` added) next to old `matchups.json` (127 tables). Every
  * cross-file invariant in the app then silently breaks, and the state is only
@@ -28,13 +28,14 @@ import path from 'node:path';
 export const NEXT_SUFFIX = 'data.__next';
 export const PREV_SUFFIX = 'data.__prev';
 
-/** Every file a complete dataset must contain. */
+/**
+ * Every file a complete dataset must contain — and the only files it may
+ * contain. The Counterpick dataset has no item layers (ТЗ №77).
+ */
 export const DATASET_FILES = [
   'heroes.json',
   'matchups.json',
   'positions.json',
-  'items.json',
-  'item-stats.json',
   'meta.json',
 ];
 
@@ -47,6 +48,8 @@ export async function verifyStagedDataset(stagedDir, { heroCount, requireComplet
   const present = new Set(await readdir(stagedDir));
   const missing = DATASET_FILES.filter((f) => !present.has(f));
   if (missing.length > 0) throw new Error(`staged dataset missing files: ${missing.join(', ')}`);
+  const unexpected = [...present].filter((f) => !DATASET_FILES.includes(f)).sort();
+  if (unexpected.length > 0) throw new Error(`staged dataset contains unexpected files: ${unexpected.join(', ')}`);
 
   // Read by NAME, not by position in DATASET_FILES. The positional form broke
   // the moment a fourth file was added: `metaRaw` silently became
@@ -58,14 +61,12 @@ export async function verifyStagedDataset(stagedDir, { heroCount, requireComplet
       DATASET_FILES.map(async (f) => [f, await readFile(path.join(stagedDir, f), 'utf8')]),
     ),
   );
-  let heroes, matchups, positions, items, itemStats, meta;
+  let heroes, matchups, positions, meta;
   try {
-    ({ heroes, matchups, positions, items, itemStats, meta } = {
+    ({ heroes, matchups, positions, meta } = {
       heroes: JSON.parse(raw['heroes.json']),
       matchups: JSON.parse(raw['matchups.json']),
       positions: JSON.parse(raw['positions.json']),
-      items: JSON.parse(raw['items.json']),
-      itemStats: JSON.parse(raw['item-stats.json']),
       meta: JSON.parse(raw['meta.json']),
     });
   } catch (e) {
@@ -78,12 +79,6 @@ export async function verifyStagedDataset(stagedDir, { heroCount, requireComplet
   }
   if (!positions || typeof positions !== 'object' || Array.isArray(positions)) {
     throw new Error('staged positions.json is not an object');
-  }
-  if (!items || typeof items !== 'object' || Array.isArray(items)) {
-    throw new Error('staged items.json is not an object');
-  }
-  if (!itemStats || typeof itemStats !== 'object' || Array.isArray(itemStats)) {
-    throw new Error('staged item-stats.json is not an object');
   }
   if (!meta || typeof meta !== 'object') throw new Error('staged meta.json is not an object');
 
@@ -129,18 +124,6 @@ export async function verifyStagedDataset(stagedDir, { heroCount, requireComplet
   for (const id of positionIds) {
     if (!ids.has(id)) throw new Error(`staged positions.json has an entry for unknown hero ${id}`);
   }
-  // Same invariant for the item layers: the catalogue covers the roster, and the
-  // statistics may only reference catalogue ids (§16).
-  const itemIds = new Set(Object.keys(items));
-  if (itemIds.size === 0) throw new Error('staged items.json is empty');
-  for (const [hid, byPos] of Object.entries(itemStats)) {
-    if (!ids.has(Number(hid))) throw new Error(`staged item-stats.json has an entry for unknown hero ${hid}`);
-    for (const byItem of Object.values(byPos)) {
-      for (const iid of Object.keys(byItem)) {
-        if (!itemIds.has(iid)) throw new Error(`staged item-stats.json references item ${iid} that is not in items.json`);
-      }
-    }
-  }
   // Optional external expectation (the caller's in-memory count), when given.
   if (heroCount !== undefined && meta.heroCount !== heroCount) {
     throw new Error(`staged meta.heroCount=${meta.heroCount} does not match the expected ${heroCount}`);
@@ -166,6 +149,10 @@ export async function publishDatasetAtomically(dataDir, files, { requireComplete
   for (const name of DATASET_FILES) {
     if (!(name in files)) throw new Error(`publishDatasetAtomically: missing payload for ${name}`);
   }
+  // Only the Counterpick dataset files may be published — a stray layer (e.g. a
+  // retired item file) is a caller bug, not something to ship.
+  const extra = Object.keys(files).filter((name) => !DATASET_FILES.includes(name)).sort();
+  if (extra.length > 0) throw new Error(`publishDatasetAtomically: unexpected payload ${extra.join(', ')}`);
 
   // Start from a clean slate. `data.__next` is only ever a half-written staging
   // area, so discarding it is always safe.

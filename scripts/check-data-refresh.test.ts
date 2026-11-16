@@ -20,11 +20,6 @@ const publishedMeta = {
     weeklyBuckets: publishedBuckets,
     completeWeeksOnly: true,
   },
-  itemData: {
-    weeks: 4,
-    weeklyBuckets: publishedBuckets,
-    completeWeeksOnly: true,
-  },
 };
 
 const sameWindow = { buckets: publishedBuckets, latestCompleteWeek: 2960 };

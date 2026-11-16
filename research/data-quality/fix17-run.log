@@ -1,0 +1,78 @@
+# FIX17 run log 2026-11-13T10:49:43Z
+## validate
+{
+  "content": "PASS",
+  "checkedClaims": 52,
+  "hashes": "PASS",
+  "security": "CLEAN",
+  "status": "DRAFTED",
+  "statusRecord": "VALID",
+  "response": "NOT_RECEIVED",
+  "readyForSubmissionEligible": true
+}
+exit 0
+## check
+{
+  "ok": true,
+  "failures": [],
+  "evidenceSha256": "e9926cfebfb354f1e8c31a88bccb3156db6a7d06d51d1bb941da435b53679423",
+  "manifestSha256": "973b448a2115c0f7ca5ee3477c55557c98c1fd47b8f4c863d45bb7ec10d0f4c8",
+  "escalationStatus": "DRAFTED",
+  "contentValidation": {
+    "status": "PASS",
+    "checkedClaims": 52
+  },
+  "securityValidation": "CLEAN",
+  "hashValidation": "PASS",
+  "vendorResponse": "NOT_RECEIVED",
+  "rootCause": "UNRESOLVED"
+}
+exit 0
+## FIX16 check
+{
+  "research/data-quality/stratz-opendota-coverage-validation-evidence.json": "REPRODUCED",
+  "research/data-quality/stratz-support-escalation-v2.md": "REPRODUCED",
+  "research/data-quality/stratz-support-escalation-v2.json": "REPRODUCED"
+}
+exit 0
+## FIX15 frozen check
+5
+## vitest FIX17
+ Test Files  1 passed (1)
+      Tests  23 passed (23)
+## vitest FIX12–FIX16
+ Test Files  5 passed (5)
+      Tests  121 passed (121)
+## historical + production SHA-256 (current)
+291350d18a0195dfa9b2292b08a832267234dac6b8b16b8f045c71cd5afba002  scripts/stratz-diagnostic-input.json
+ef5e27a1ca55cb1876d210027ff58c2f4a11f7f35ca3c24f9754ad71f584cf95  research/data-quality/stratz-reverse-pair-asymmetry-report.json
+5db0fed846569d45b7c55f4cd5a8cbcc6de2c3e2963b2c098de723b3e5542a74  research/data-quality/stratz-reverse-pair-bracket-raw-responses.json
+0a1953f079b6a94fbade6cbad77a16d6423fe829af1a003440b5b8f9ecc9a0be  research/data-quality/stratz-reverse-pair-bracket-semantics-evidence.json
+91143b20f42f4227081d69bcbbae937ce1da8da4b480065047ae0a4d0a6ce862  research/data-quality/stratz-reverse-pair-match-level-evidence.json
+69f4b06b1e05a7703b6a6e403b007c978fc3214f1ea2f90cac0027b35c297ba5  research/data-quality/stratz-reverse-pair-match-level-raw-responses.json
+7166a0d95b4429076c7b387198928a0e885ca413c85d886d3134dee4a660f9fe  research/data-quality/stratz-reverse-pair-partition-semantics-evidence.json
+278c740c10747da0c91642cd02efb5ebaca741c8b935a6d6b8b771420d89978e  research/data-quality/stratz-reverse-pair-repeatability-evidence.json
+7ed6d5daac42dbcc19995caf5518518ccac3ef6de42a4fd62c7468af7363494b  research/data-quality/stratz-reverse-pair-root-cause-evidence.json
+0e426ac478489e23e1d35cd1336fe2487ab101364ff8b041f433714c1ccf6e7b  research/data-quality/stratz-reverse-pair-root-cause-raw-responses.json
+af54bca9575e839f60a2ca2a91ff89b9a369b301a65a4fc132749313abf16a4e  research/data-quality/stratz-external-match-level-evidence.json
+aae3c1b1f00d090f30c299b517a0f14fe56047296213945c365e8cdae5a71344  research/data-quality/stratz-external-match-level-raw-responses.json
+ebcb245cb9154aa4ccb7853aac606009e764895fe7a121b4df33be5ed0e93587  research/data-quality/stratz-external-source-feasibility.json
+02f0a98c1c616845c6a528322fdaa6203454ee00cb2d9eb60d1305740d640d58  research/data-quality/stratz-support-escalation.md
+cbe70befeaece68dfd7aa00ca8a2a7de4a51ec2b901d3c8a2d2f6332fb216ca3  research/data-quality/stratz-support-escalation.json
+cc6f029f55d956b2ef505961619750d5520e0bc1bd68f233dd1b8b5b4ba71c39  research/data-quality/stratz-support-escalation-v2.json
+009f3b58cc23df5eecdf3f47ca7963e83c3f1b58e708c7c906e21f799936bd76  research/data-quality/stratz-support-escalation-v2.md
+808dd41362d0509e87037f65fd94ec5a0206e6f79d681a37d13c22ef19a19e98  research/data-quality/stratz-opendota-coverage-validation-evidence.json
+3898599572177131decbb6b2cf8e184d7313eb7ac02fa08987e5d6e79b02b22f  research/data-quality/stratz-opendota-coverage-validation-raw-responses.json
+59ecc2bc9b55a62232bf7d40b85c1d4c306602e89addda6d3faa9ed38a2c061d  public/data/heroes.json
+295d22a67bbc40ac010f58636870607514f925e455927005385ab549b8c9c27f  public/data/item-stats.json
+5584b16925fdac49ad7950edeb670594045c415860a3c57281191c38ba1e3ca7  public/data/items.json
+0a9e54aaa925494f7ad876c992e782cfd45d297b3952c8afefb8decc3ad02e8b  public/data/matchups.json
+9db099dedf5c5f0d052590d98d194807e2580a16694fc562ae9ffbf1d144857e  public/data/meta.json
+4a0e6ba79e8b5ebe12fb3a56ba107742a5dd920a178a7d61afe11af2387853da  public/data/positions.json
+b142bf249e4510bce4f12ef004fbea96cd7b0c9f33a563a30d6ccc3c3ea65431  scripts/update-data-stratz.mjs
+## FIX17 outputs
+a14086aac955e88534b42e446b26a638f4ce7edd7bab98af987dc1d23589dfae  research/data-quality/stratz-support-escalation-final.md
+7fcd0c707ed6fda1312619d4048ab413b494df509cd461b3559adaeae7f77821  research/data-quality/stratz-support-escalation-manifest.json
+9eb03557383b2ac3db3e96cdf87bc79f666076efc6863da06ed5b7c7f71dafdc  research/data-quality/stratz-vendor-escalation-evidence.json
+1b35aa72bf8b50ae93903c2d2fd51b37944c059f998dfe33d06427efa5f7b05d  research/data-quality/stratz-vendor-response.json
+f9392ebd19e6f98cda6259519fde0867a629fa2ff8c4ad5c4b04b6e4c39678d7  research/data-quality/stratz-support-escalation-status.json

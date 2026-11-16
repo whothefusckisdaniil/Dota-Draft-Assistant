@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "dataStatus": "SYNTHETIC_FIXTURE",
+  "datasetSource": "SYNTHETIC",
+  "description": "Small synthetic fixture for tests only; not STRATZ evidence.",
+  "heroIds": [1, 2, 3],
+  "windowInfo": {
+    "buckets": [2957, 2958, 2959, 2960]
+  },
+  "savedResults": {
+    "1": {
+      "2957": [
+        {
+          "bucket": "2957",
+          "enemyId": 2,
+          "heroId1": 1,
+          "heroId2": 2,
+          "matchCount": 100,
+          "winCount": 50
+        }
+      ]
+    },
+    "2": {
+      "2957": [
+        {
+          "bucket": "2957",
+          "enemyId": 1,
+          "heroId1": 2,
+          "heroId2": 1,
+          "matchCount": 80,
+          "winCount": 30
+        }
+      ]
+    },
+    "3": {
+      "2957": [
+        {
+          "bucket": "2957",
+          "enemyId": 1,
+          "heroId1": 3,
+          "heroId2": 1,
+          "matchCount": 120,
+          "winCount": 60
+        }
+      ]
+    }
+  }
+}

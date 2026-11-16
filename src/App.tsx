@@ -3,7 +3,6 @@ import { useDraftData } from './data/useDraftData';
 import { freshnessLabel } from './data/dataset';
 import { APP_CONFIG, POSITIONS } from './config';
 import type { CandidateScore } from './types';
-import type { Lane } from './scoring/positionsExtra';
 import { HeroSearch } from './components/HeroSearch';
 import { EnemySlots, PositionTabs } from './components/Selectors';
 import { ResultsGrid } from './components/ResultsGrid';
@@ -21,7 +20,7 @@ export default function App() {
   const d = useDraftData();
   const [view, setView] = useState<'draft' | 'lab' | 'validate'>('draft');
   const [page, setPage] = useState<Page>('main');
-  const [details, setDetails] = useState<{ candidate: CandidateScore; position: Lane } | null>(null);
+  const [details, setDetails] = useState<CandidateScore | null>(null);
 
   // Close the details drawer whenever the draft changes or the user navigates —
   // otherwise it keeps showing a stale CandidateScore for the previous lineup.
@@ -140,7 +139,7 @@ export default function App() {
                 <ResultsGrid
                   results={d.results}
                   heroById={d.heroById}
-                  onViewDetails={(candidate, position) => setDetails({ candidate, position })}
+                  onViewDetails={(candidate) => setDetails(candidate)}
                   summary={d.position === 'all'}
                 />
                 <p className="mt-7 max-w-3xl text-[11px] leading-relaxed text-dim">
@@ -195,16 +194,8 @@ export default function App() {
           </div>
         </footer>
       </div>
-      {details && d.buildEngine && (
-        <HeroDetailsDrawer
-          candidate={details.candidate}
-          enemyIds={d.enemies}
-          heroById={d.heroById}
-          items={d.items}
-          buildEngine={d.buildEngine}
-          initialBuildPosition={details.position}
-          onClose={() => setDetails(null)}
-        />
+      {details && (
+        <HeroDetailsDrawer candidate={details} enemyIds={d.enemies} heroById={d.heroById} onClose={() => setDetails(null)} />
       )}
     </div>
   );

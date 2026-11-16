@@ -4,16 +4,14 @@
  * Two levels:
  *  1. synthetic  — the display-name slug must never be used as identity;
  *  2. committed  — the shipped heroes.json really carries the authoritative
- *     OpenDota keys, and they are what the itembuild join uses.
+ *     OpenDota keys (the loader rejects a snapshot without them).
  */
 import { describe, expect, it } from 'vitest';
 import heroesRaw from '../public/data/heroes.json';
-import valveRaw from '../research/valve-itembuilds.json';
 import type { Hero } from '../src/types';
 import { normalizeHero } from './opendota/metadata.mjs';
 
 const heroes = heroesRaw as unknown as Hero[];
-const valve = valveRaw as unknown as { heroes: Record<string, unknown>; heroCount: number };
 const keyOf = (name: string) => heroes.find((h) => h.name === name)?.key;
 
 describe('normalizeHero — the key is copied, never derived (§1)', () => {
@@ -65,39 +63,5 @@ describe('the committed heroes.json carries authoritative keys (§6, §10)', () 
 
   it('every key is a well-formed npc_dota_hero_* name', () => {
     for (const h of heroes) expect(h.key, h.name).toMatch(/^npc_dota_hero_[a-z0-9_]+$/);
-  });
-});
-
-describe('itembuild join uses the stored key (§5, §7)', () => {
-  it('joins 126/127, and both gaps are explained rather than aliased', () => {
-    const projectKeys = new Set(heroes.map((h) => h.key));
-    const valveKeys = Object.keys(valve.heroes);
-    const matched = valveKeys.filter((k) => projectKeys.has(k));
-
-    expect(matched.length).toBe(126);
-
-    // Gap 1: Valve's itembuild file predates Skywrath Mage's rename and still
-    // uses npc_dota_hero_bird_samurai. OpenDota's current authoritative name is
-    // npc_dota_hero_skywrath_mage. Bridging this needs an alias, which §9
-    // forbids — so the gap is recorded instead.
-    expect(valveKeys.filter((k) => !projectKeys.has(k))).toEqual(['npc_dota_hero_bird_samurai']);
-
-    // Gap 2: Kez has no itembuild file in the pinned Valve snapshot at all.
-    const projectOnly = [...projectKeys].filter((k) => !valve.heroes[k]);
-    expect(projectOnly).toEqual(['npc_dota_hero_kez']);
-  });
-
-  it('representative previously broken heroes now have Valve builds', () => {
-    // These are heroes whose authoritative key differs from the old display-name
-    // slug, so they were unmatched before this fix. Verified against the
-    // committed snapshot and the pinned Valve source.
-    for (const key of [
-      'npc_dota_hero_antimage', 'npc_dota_hero_skeleton_king', 'npc_dota_hero_life_stealer',
-      'npc_dota_hero_zuus', 'npc_dota_hero_queenofpain', 'npc_dota_hero_vengefulspirit',
-      'npc_dota_hero_doom_bringer', 'npc_dota_hero_shredder', 'npc_dota_hero_magnataur',
-      'npc_dota_hero_obsidian_destroyer', 'npc_dota_hero_abyssal_underlord',
-    ]) {
-      expect(valve.heroes[key], key).toBeDefined();
-    }
   });
 });

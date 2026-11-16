@@ -1,0 +1,264 @@
+{
+  "schemaVersion": 1,
+  "kind": "EXTERNAL_SOURCE_FEASIBILITY",
+  "retrievedAt": "2026-11-13T07:54:21.532Z",
+  "source": "OpenDota OpenAPI spec + live probes; Steam Web API keyless probes",
+  "rawArtifact": "research/data-quality/stratz-external-match-level-raw-responses.json",
+  "requirements": {
+    "required": [
+      "matchIds",
+      "timestamp",
+      "heroIdsBothTeams",
+      "playerSide",
+      "pagination",
+      "historicalCoverage"
+    ],
+    "desirable": [
+      "winner",
+      "rank"
+    ]
+  },
+  "providers": [
+    {
+      "id": "opendota-publicMatches",
+      "endpoint": "GET https://api.opendota.com/api/publicMatches",
+      "documentation": "GET /publicMatches",
+      "observed": {
+        "httpStatus": 200,
+        "rowsPerPage": 100,
+        "rowsWithZeroedHeroIds": 12,
+        "rateLimitHeaders": {
+          "x-rate-limit-remaining-minute": "59",
+          "x-rate-limit-remaining-day": "2973"
+        }
+      },
+      "capabilities": {
+        "matchIds": true,
+        "timestamp": true,
+        "heroIdsBothTeams": true,
+        "playerSide": true,
+        "winner": true,
+        "rank": "MATCH_AVERAGE",
+        "historicalCoverage": true,
+        "accessible": true,
+        "pagination": "IMPRACTICAL"
+      },
+      "notes": [
+        "Documented as \"randomly sampled public matches\"; only less_than_match_id/min_rank/max_rank parameters, no hero or time filter.",
+        "100 rows per page against a free quota of 2973 requests/day cannot page through ~6M matches/week."
+      ],
+      "assessment": {
+        "verdict": "INSUFFICIENT",
+        "reasons": [
+          "NO_PRACTICAL_PAGINATION"
+        ],
+        "limitations": [
+          "RANK_IS_MATCH_AVERAGE_NOT_PER_PLAYER"
+        ],
+        "bucketReconciliation": true,
+        "pairReconciliation": true
+      }
+    },
+    {
+      "id": "opendota-explorer-public_matches",
+      "endpoint": "GET https://api.opendota.com/api/explorer?sql=… (table public_matches)",
+      "documentation": "GET /explorer",
+      "observed": {
+        "chunkRequests": 152,
+        "chunkIdSpan": 300000,
+        "failedChunks": 0
+      },
+      "capabilities": {
+        "matchIds": true,
+        "timestamp": true,
+        "heroIdsBothTeams": true,
+        "playerSide": true,
+        "winner": true,
+        "rank": "MATCH_AVERAGE",
+        "historicalCoverage": true,
+        "accessible": true,
+        "pagination": "MATCH_ID_RANGE"
+      },
+      "notes": [
+        "SQL over the public_matches table; enumerated with contiguous match_id ranges (indexed). Full-window scans by start_time time out (~16 s limit).",
+        "avg_rank_tier/num_rank_tier are per-match aggregates; per-player brackets are not available, so STRATZ bracketBasicIds filtering cannot be reproduced.",
+        "Completeness of public_matches relative to all public matchmaking games is not documented; recent rows can have zeroed hero arrays."
+      ],
+      "assessment": {
+        "verdict": "SUITABLE_WITH_LIMITATIONS",
+        "reasons": [],
+        "limitations": [
+          "RANK_IS_MATCH_AVERAGE_NOT_PER_PLAYER"
+        ],
+        "bucketReconciliation": true,
+        "pairReconciliation": true
+      }
+    },
+    {
+      "id": "opendota-findMatches",
+      "endpoint": "GET https://api.opendota.com/api/findMatches",
+      "documentation": "GET /",
+      "capabilities": {
+        "matchIds": true,
+        "timestamp": true,
+        "heroIdsBothTeams": true,
+        "playerSide": true,
+        "winner": true,
+        "rank": false,
+        "historicalCoverage": false,
+        "accessible": true,
+        "pagination": false
+      },
+      "notes": [
+        "Documented as \"recent matches\"; parameters only teamA/teamB; no time window or pagination."
+      ],
+      "assessment": {
+        "verdict": "INSUFFICIENT",
+        "reasons": [
+          "NO_PRACTICAL_PAGINATION",
+          "NO_HISTORICAL_COVERAGE"
+        ],
+        "limitations": [
+          "NO_RANK_OR_BRACKET"
+        ],
+        "bucketReconciliation": true,
+        "pairReconciliation": true
+      }
+    },
+    {
+      "id": "steam-GetMatchHistory",
+      "endpoint": "GET https://api.steampowered.com/IDOTA2Match_570/GetMatchHistory/v1/",
+      "observed": {
+        "keylessHttpStatus": 403
+      },
+      "capabilities": {
+        "matchIds": true,
+        "timestamp": true,
+        "heroIdsBothTeams": true,
+        "playerSide": true,
+        "winner": false,
+        "rank": false,
+        "historicalCoverage": false,
+        "accessible": false,
+        "pagination": true
+      },
+      "notes": [
+        "Requires a Steam Web API key (keyless request returned HTTP 403 \"verify your key= parameter\"); no key is configured for this project.",
+        "Documented parameters include hero_id and skill as request filters but no date range; skill is not returned per match; radiant_win needs GetMatchDetails per match."
+      ],
+      "assessment": {
+        "verdict": "INSUFFICIENT",
+        "reasons": [
+          "ACCESS_REQUIRES_CREDENTIALS_NOT_AVAILABLE",
+          "NO_HISTORICAL_COVERAGE"
+        ],
+        "limitations": [
+          "NO_RANK_OR_BRACKET",
+          "NO_WINNER"
+        ],
+        "bucketReconciliation": true,
+        "pairReconciliation": true
+      }
+    },
+    {
+      "id": "steam-GetMatchHistoryBySequenceNum",
+      "endpoint": "GET https://api.steampowered.com/IDOTA2Match_570/GetMatchHistoryBySequenceNum/v1/",
+      "observed": {
+        "keylessHttpStatus": 403
+      },
+      "capabilities": {
+        "matchIds": true,
+        "timestamp": true,
+        "heroIdsBothTeams": true,
+        "playerSide": true,
+        "winner": true,
+        "rank": false,
+        "historicalCoverage": true,
+        "accessible": false,
+        "pagination": true
+      },
+      "notes": [
+        "Requires a Steam Web API key (keyless request returned HTTP 403).",
+        "Complete sequential stream without hero filters: a 4-week window means scanning tens of millions of matches; no rank information."
+      ],
+      "assessment": {
+        "verdict": "INSUFFICIENT",
+        "reasons": [
+          "ACCESS_REQUIRES_CREDENTIALS_NOT_AVAILABLE"
+        ],
+        "limitations": [
+          "NO_RANK_OR_BRACKET"
+        ],
+        "bucketReconciliation": true,
+        "pairReconciliation": true
+      }
+    }
+  ],
+  "otherDatasets": "No other public, currently-updated match-level dataset with an API was verified during this research; none is assumed.",
+  "selection": {
+    "providerId": "opendota-explorer-public_matches",
+    "verdict": "SUITABLE_WITH_LIMITATIONS",
+    "rationale": "Only source verified to expose match IDs, timestamps, both teams' hero IDs, sides and winner for the full window through practical enumeration.",
+    "limitations": [
+      "RANK_IS_MATCH_AVERAGE_NOT_PER_PLAYER",
+      "COVERAGE_RELATIVE_TO_STRATZ_UNVERIFIED",
+      "NOT_EQUIVALENT_TO_STRATZ_BRACKET_FILTER"
+    ]
+  },
+  "rawArtifactSha256": "aae3c1b1f00d090f30c299b517a0f14fe56047296213945c365e8cdae5a71344",
+  "sourceHashes": {
+    "fix9Input": {
+      "path": "scripts/stratz-diagnostic-input.json",
+      "physicalSha256": "291350d18a0195dfa9b2292b08a832267234dac6b8b16b8f045c71cd5afba002"
+    },
+    "fix10Repeatability": {
+      "path": "research/data-quality/stratz-reverse-pair-repeatability-evidence.json",
+      "physicalSha256": "278c740c10747da0c91642cd02efb5ebaca741c8b935a6d6b8b771420d89978e"
+    },
+    "fix10Report": {
+      "path": "research/data-quality/stratz-reverse-pair-asymmetry-report.json",
+      "physicalSha256": "ef5e27a1ca55cb1876d210027ff58c2f4a11f7f35ca3c24f9754ad71f584cf95"
+    },
+    "fix11Evidence": {
+      "path": "research/data-quality/stratz-reverse-pair-root-cause-evidence.json",
+      "physicalSha256": "7ed6d5daac42dbcc19995caf5518518ccac3ef6de42a4fd62c7468af7363494b"
+    },
+    "fix11Raw": {
+      "path": "research/data-quality/stratz-reverse-pair-root-cause-raw-responses.json",
+      "physicalSha256": "0e426ac478489e23e1d35cd1336fe2487ab101364ff8b041f433714c1ccf6e7b"
+    },
+    "fix12Evidence": {
+      "path": "research/data-quality/stratz-reverse-pair-bracket-semantics-evidence.json",
+      "physicalSha256": "0a1953f079b6a94fbade6cbad77a16d6423fe829af1a003440b5b8f9ecc9a0be"
+    },
+    "fix12Raw": {
+      "path": "research/data-quality/stratz-reverse-pair-bracket-raw-responses.json",
+      "physicalSha256": "5db0fed846569d45b7c55f4cd5a8cbcc6de2c3e2963b2c098de723b3e5542a74"
+    },
+    "fix13Evidence": {
+      "path": "research/data-quality/stratz-reverse-pair-partition-semantics-evidence.json",
+      "physicalSha256": "7166a0d95b4429076c7b387198928a0e885ca413c85d886d3134dee4a660f9fe"
+    },
+    "fix14Evidence": {
+      "path": "research/data-quality/stratz-reverse-pair-match-level-evidence.json",
+      "physicalSha256": "91143b20f42f4227081d69bcbbae937ce1da8da4b480065047ae0a4d0a6ce862"
+    },
+    "fix14Raw": {
+      "path": "research/data-quality/stratz-reverse-pair-match-level-raw-responses.json",
+      "physicalSha256": "69f4b06b1e05a7703b6a6e403b007c978fc3214f1ea2f90cac0027b35c297ba5"
+    },
+    "productionHeroes": {
+      "path": "public/data/heroes.json",
+      "physicalSha256": "59ecc2bc9b55a62232bf7d40b85c1d4c306602e89addda6d3faa9ed38a2c061d"
+    },
+    "productionMatchups": {
+      "path": "public/data/matchups.json",
+      "physicalSha256": "0a9e54aaa925494f7ad876c992e782cfd45d297b3952c8afefb8decc3ad02e8b"
+    },
+    "productionMeta": {
+      "path": "public/data/meta.json",
+      "physicalSha256": "9db099dedf5c5f0d052590d98d194807e2580a16694fc562ae9ffbf1d144857e"
+    }
+  },
+  "evidenceSha256": "f03dd224188166dba33168b9457957d6eb8bc0d663ef60ad8a9d0e29b4695ac1"
+}

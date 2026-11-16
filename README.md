@@ -1,6 +1,15 @@
-# Dota Draft Assistant — MVP
+# Dota Counterpick Assistant
 
-Find statistically favorable counter picks against the enemy draft. Matchup statistics aggregated from STRATZ rank-bracket data (calibrated ranks: Herald through Immortal, 4 complete weeks); hero metadata from OpenDota. Deploys to Vercel as a static Vite app.
+A counterpick tool for Dota 2: pick the enemy heroes and get the heroes that statistically perform best against that draft. Matchup statistics are aggregated from STRATZ rank-bracket data (calibrated ranks: Herald through Immortal, 4 complete weeks); hero metadata comes from OpenDota. Deploys to Vercel as a static Vite app.
+
+## What it does
+
+1. Choose 1–5 enemy heroes (search in English, RU aliases for common heroes; no duplicates, remove one or clear the draft).
+2. Choose **All Positions** or a position 1–5.
+3. Get the Top-15 counterpicks per position (in All Positions mode: the best pick per role).
+4. Open **View analysis** for a recommended hero: its Counterpick Score against your draft, per-enemy matchup statistics (win rate, games played), Team Score, Median Matchup, Coverage and the explanation of the recommendation.
+
+The app recommends heroes only. It does not recommend items, item builds or purchase orders (removed in ТЗ №77).
 
 ## Run
 
@@ -8,7 +17,7 @@ Find statistically favorable counter picks against the enemy draft. Matchup stat
 npm install
 npm run dev      # http://127.0.0.1:5173
 npm run build    # dist/
-npm test         # vitest: scoring engine cases
+npm test         # vitest: scoring engine, dataset and pipeline tests
 ```
 
 ## Deploy (Vercel)
@@ -26,12 +35,21 @@ npm test         # vitest: scoring engine cases
 - **Draft validation** (dev only) — run the real engine on a real enemy draft, with every score component, coverage and best/worst matchup per candidate.
 - **Live suite** — `LIVE=1 npx vitest run src/scoring/live.validate.test.ts` runs the regression set (4 hand-picked drafts with expected-vs-actual) **and** the evaluation set (10 fresh drafts, A/M/W rank-agreement metrics incl. Spearman ρ) through the real engine against live data. Skipped in normal `npm test`.
 
+## Dataset
+
+The frontend loads exactly four static files from `public/data/` — no runtime API calls:
+
+| File | Content |
+|---|---|
+| `heroes.json` | OpenDota hero metadata (id, `npc_dota_hero_*` key, name, portrait, roles) |
+| `matchups.json` | STRATZ hero-vs-hero games and wins, 4 complete weekly buckets |
+| `positions.json` | STRATZ per-position pick share and games — the hard position eligibility gate |
+| `meta.json` | Provenance, matchup window, rank brackets, data-quality summary, freshness |
+
 ## Data refresh
 
-Matchup dataset is a static snapshot — no runtime API calls:
-
-- `scripts/update-data-stratz.mjs` fetches matchup tables from STRATZ GraphQL across 4 complete weekly buckets (calibrated rank brackets, atomic write, 13-point data contract validation); on critical errors the previous dataset is kept.
-- `scripts/update-data.mjs` is preserved as an OpenDota rollback fallback.
+- `scripts/update-data-stratz.mjs` fetches fresh OpenDota hero metadata, then STRATZ matchup tables and position statistics across 4 complete weekly buckets (calibrated rank brackets), validates the 13-point matchup data contract and the position layer, and publishes the four files as one atomic directory swap; on any error the previous dataset is kept byte-for-byte.
+- `scripts/update-data.mjs` is preserved as an OpenDota rollback fallback (it carries the committed `positions.json` forward).
 - `.github/workflows/update-data.yml` runs dataset refresh via GitHub Actions (`cron` and `workflow_dispatch`), validates the result, and commits only when the dataset changed. If the run fails, the old dataset stays committed.
 - Local manual run: `node scripts/update-data-stratz.mjs` (Node 20+, requires `STRATZ_API_TOKEN`).
 
@@ -44,11 +62,10 @@ Details and measured impact of the OpenDota → STRATZ switch: [`docs/stratz-mig
 For each candidate vs each selected enemy (1–5):
 
 - `matchups.json` stores **enemy wins** vs candidate → candidate winrate = `1 - wins/games`, delta = `winrate − 50`.
-- **Hard position gate**: a hero is only ranked on a lane where it is actually picked — `positions.json` (STRATZ, same 4-week window and rank brackets as the matchups) must show `share ≥ 8%` and `≥ 500` games. OpenDota `roles` are *not* used for eligibility. See `docs/position-model.md`.
 - **Shrinkage**: `delta × games/(games + 60)` so rare matchups cannot dominate.
 - **Team score**: weighted average of deltas, weight `√games` — stable-against-whole-lineup beats one spiky matchup.
 - **Confidence**: `min(1, √(avgGames/400))`, final score blended toward 0 when data is thin.
-- **Position — hard gate**: a hero is ranked on a lane only where it is actually picked. `positions.json` (STRATZ, same 4-week window and rank brackets as the matchups) must show `share ≥ 8%` and `≥ 500` games. OpenDota `roles` are *not* used for eligibility.
+- **Position — hard gate**: a hero is ranked on a lane only where it is actually picked. `positions.json` (STRATZ, same 4-week window and rank brackets as the matchups) must show `share ≥ 8%` and `≥ 500` games. OpenDota `roles` are *not* used for eligibility. See `docs/position-model.md`.
 - **Position — secondary**: heuristic role fit 0–10 (role tags + curated lane nudges, NOT measured per-position winrates) → bonus ±4 pts, weighted `0.8 counter / 0.2 role`. It can nudge the order by at most 0.8 points, but can no longer remove a candidate.
 - **Strict full coverage (V2)**: candidate must have usable data vs EVERY selected enemy; a failed matchup table blocks ranking instead of silently ranking partial heroes.
 - Filters: pair needs ≥20 games, candidate avg ≥40 games, enemies can't be recommended against themselves.
@@ -67,3 +84,8 @@ Explanations are plain-JS template sentences ("Statistically favorable…"), nev
 9. Responsive per-role view: dominant Best Pick (#1) + compact 2-col Top-15 ranked-alternatives rows (`ResultsGrid` / `RankingRow`); ALL mode keeps one card per role
 10–11. Third-party data only at build time, static build + `vercel.json`
 12. Matchup breakdown + reasons per card (`CandidateCard`)
+
+## Research
+
+- STRATZ matchup data quality (reverse-pair asymmetry, FIX9–FIX17): `research/data-quality/`, scripts `scripts/stratz-*.mjs`, commands `npm run stratz:diagnostic:*`.
+- The retired item/build features and their research (recommended builds, item priors, threat/response item taxonomy) were removed in ТЗ №77; they remain available in the git history before that commit.

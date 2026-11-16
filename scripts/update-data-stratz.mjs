@@ -5,11 +5,14 @@
  *   OpenDota metadata  ──▶ canonical heroes[] + latestPatch
  *          │
  *          ├─▶ heroIds ──▶ STRATZ GraphQL (4 last complete weeks) ──▶ matchups
- *          │
+ *          │                                                     └──▶ positions
  *          └─▶ heroes.json
  *
  *                     ▼  validate  ▼  publish atomically
- *              public/data/{heroes,matchups,meta}.json
+ *              public/data/{heroes,matchups,positions,meta}.json
+ *
+ * The dataset serves the Counterpick engine only (ТЗ №77): no item catalogue,
+ * no item purchase statistics and no item-build layer are fetched or published.
  *
  * Rules:
  *  - Hero metadata is fetched fresh from OpenDota on EVERY run. The committed
@@ -19,8 +22,8 @@
  *  - Calibrated rank brackets: HERALD_GUARDIAN, CRUSADER_ARCHON, LEGEND_ANCIENT, DIVINE_IMMORTAL.
  *  - STRATZ is queried for exactly the hero ids OpenDota just returned.
  *  - Strict data contract validation before anything is published.
- *  - All three files are swapped in as one directory, so heroes/matchups/meta
- *    can never describe different snapshots.
+ *  - All four files are swapped in as one directory, so heroes/matchups/
+ *    positions/meta can never describe different snapshots.
  *  - On ANY failure: non-zero exit, previous dataset left byte-for-byte intact.
  *
  * There are deliberately no fallbacks to previously committed values (an old
@@ -32,7 +35,6 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { getCompleteWeeklyBuckets, BUCKET_SEC } from './stratz/buckets.mjs';
 import { fetchPositionsFromStratz, validatePositionData } from './stratz/positions.mjs';
-import { fetchItemStats, fetchItemsMetadata, pruneItemCatalogue, validateItemData } from './stratz/items.mjs';
 import { POSITION_ELIGIBILITY } from './stratz/eligibility.mjs';
 import { fetchOpenDotaMetadata, validateHeroMetadata } from './opendota/metadata.mjs';
 import { publishDatasetAtomically } from './dataset-publish.mjs';
@@ -309,6 +311,120 @@ function validateProductionContract(heroes, dataset) {
  * Query STRATZ for every `heroId` and return `enemyId -> MatchupRow[]`.
  * Pure with respect to `heroIds`: whatever list it is handed is the list queried.
  */
+export function aggregateStratzMatchupChunks(chunks, windowInfo, validHeroIdsSet) {
+  // validHeroIdsSet: Set of ALL valid hero IDs (global, for opponent validation)
+  // Each chunk has its own chunkHeroIds array (per-chunk, for dryad validation)
+  const totals = new Map(); // enemyId -> opponentId -> { games, wins }
+  const bucketSeenHeroes = new Map(); // bucket -> Set of heroId
+  const bucketSeenPairs = new Map(); // bucket -> Set of `${enemyId}:${opponent}`
+
+  for (const { chunkIndex, chunkHeroIds, response } of chunks) {
+    // Per-chunk Set for dryad.heroId validation
+    const chunkHeroIdsSet = new Set(chunkHeroIds);
+    if (chunkHeroIdsSet.size !== chunkHeroIds.length) {
+      throw new Error(`Chunk ${chunkIndex} contains duplicate Hero IDs`);
+    }
+
+    for (const b of windowInfo.buckets) {
+      if (!bucketSeenHeroes.has(b)) bucketSeenHeroes.set(b, new Set());
+      if (!bucketSeenPairs.has(b)) bucketSeenPairs.set(b, new Set());
+
+      const dryads = response.data?.heroStats?.[`w${b}`] ?? [];
+      for (const dryad of dryads) {
+        const heroId = Number(dryad.heroId);
+
+        // heroId must be a valid integer
+        if (!Number.isInteger(heroId) || heroId <= 0) {
+          throw new Error(`Invalid heroId in dryad: ${heroId}`);
+        }
+
+        // dryad.heroId must belong to this chunk's requested hero IDs (per-chunk validation)
+        if (!chunkHeroIdsSet.has(heroId)) {
+          throw new Error(`dryad.heroId ${heroId} not in current requested heroIds chunk ${chunkIndex}`);
+        }
+
+        // no duplicate dryad.heroId in one bucket (checked across all chunks via bucketSeenHeroes)
+        const heroSeenInBucket = bucketSeenHeroes.get(b);
+        if (heroSeenInBucket.has(heroId)) {
+          throw new Error(`Duplicate heroId ${heroId} in bucket ${b}`);
+        }
+        heroSeenInBucket.add(heroId);
+
+        const enemyId = heroId;
+        for (const r of dryad.vs ?? []) {
+          const heroId1 = r.heroId1;
+          const heroId2 = r.heroId2;
+          const matchCount = r.matchCount;
+          const winCount = r.winCount;
+
+          // heroId1 and heroId2 must be valid Hero IDs
+          if (!Number.isInteger(heroId1) || heroId1 <= 0) {
+            throw new Error(`Invalid heroId1: ${heroId1}`);
+          }
+          if (!Number.isInteger(heroId2) || heroId2 <= 0) {
+            throw new Error(`Invalid heroId2: ${heroId2}`);
+          }
+
+          // heroId1 !== heroId2
+          if (heroId1 === heroId2) {
+            throw new Error(`Self-matchup row: heroId1 === heroId2 (${heroId1})`);
+          }
+
+          // enemyId must match heroId1 or heroId2
+          if (heroId1 !== enemyId && heroId2 !== enemyId) {
+            throw new Error(`Orientation error: enemyId ${enemyId} not in heroId1/heroId2 for dryad ${heroId}`);
+          }
+
+          const opponent = heroId1 === enemyId ? heroId2 : heroId1;
+          // opponent must not equal enemyId
+          if (opponent === enemyId) {
+            throw new Error(`Opponent equals current hero ${enemyId}`);
+          }
+
+          // opponent must belong to the global valid hero ID set
+          if (!validHeroIdsSet.has(opponent)) {
+            throw new Error(`Opponent ${opponent} not in global valid hero ID set`);
+          }
+
+          // matchCount must be valid integer
+          if (!Number.isInteger(matchCount) || matchCount < 0) {
+            throw new Error(`Invalid matchCount ${matchCount} for row ${enemyId}->${opponent}`);
+          }
+
+          // winCount must be in range [0, matchCount]
+          if (!Number.isInteger(winCount) || winCount < 0 || winCount > matchCount) {
+            throw new Error(`Invalid winCount ${winCount} for matchCount ${matchCount}, row ${enemyId}->${opponent}`);
+          }
+
+          // no duplicate matchup rows in one bucket
+          const pairKey = `${enemyId}:${opponent}`;
+          const pairSeen = bucketSeenPairs.get(b);
+          if (pairSeen.has(pairKey)) {
+            throw new Error(`Duplicate matchup row ${pairKey} in bucket ${b}`);
+          }
+          pairSeen.add(pairKey);
+
+          // Process the row
+          if (!totals.has(enemyId)) totals.set(enemyId, new Map());
+          const rowMap = totals.get(enemyId);
+          const wins = heroId1 === enemyId ? winCount : matchCount - winCount;
+          const cur = rowMap.get(opponent) ?? { games: 0, wins: 0 };
+          cur.games += matchCount;
+          cur.wins += wins;
+          rowMap.set(opponent, cur);
+        }
+      }
+    }
+  }
+  const matchups = {};
+  for (const [enemyId, rowMap] of totals) {
+    matchups[String(enemyId)] = [...rowMap.entries()]
+      .map(([opponent, v]) => ({ hero_id: opponent, games_played: v.games, wins: v.wins }))
+      .sort((a, b) => b.games_played - a.games_played);
+  }
+  return matchups;
+}
+
 export async function fetchMatchupsFromStratz(heroIds, windowInfo, { token, log = console.log } = {}) {
   log(`    Querying STRATZ GraphQL in ${Math.ceil(heroIds.length / CHUNK_SIZE)} chunk requests…`);
   const transport = new StratzTransport(token);
@@ -319,8 +435,11 @@ export async function fetchMatchupsFromStratz(heroIds, windowInfo, { token, log 
     chunks.push(heroIds.slice(i, i + CHUNK_SIZE));
   }
 
-  // totals: enemyId -> opponentId -> { games, wins }
-  const totals = new Map();
+  // Validate heroIds are valid
+  const validHeroIds = new Set(heroIds.filter(id => Number.isInteger(id) && id > 0));
+
+  // Collect responses first, then aggregate
+  const chunkResponses = [];
   try {
     for (let ci = 0; ci < chunks.length; ci += 1) {
       const chunk = chunks[ci];
@@ -329,39 +448,34 @@ export async function fetchMatchupsFromStratz(heroIds, windowInfo, { token, log 
       const res = await transport.query(q);
       log(`    Chunk ${ci + 1}/${chunks.length} (${chunk.length} heroes) fetched in ${Date.now() - t0}ms`);
 
-      for (const b of windowInfo.buckets) {
-        const dryads = res.data?.heroStats?.[`w${b}`] ?? [];
-        for (const dryad of dryads) {
-          const enemyId = Number(dryad.heroId);
-          if (!totals.has(enemyId)) totals.set(enemyId, new Map());
-          const rowMap = totals.get(enemyId);
-          for (const r of dryad.vs ?? []) {
-            const opponent = r.heroId1 === enemyId ? r.heroId2 : r.heroId1;
-            const wins = r.heroId1 === enemyId ? r.winCount : r.matchCount - r.winCount;
-            const cur = rowMap.get(opponent) ?? { games: 0, wins: 0 };
-            cur.games += r.matchCount;
-            cur.wins += wins;
-            rowMap.set(opponent, cur);
-          }
-        }
-      }
+      chunkResponses.push({
+        chunkIndex: ci,
+        chunkHeroIds: chunk,
+        response: res,
+      });
     }
   } finally {
     await transport.close();
   }
 
-  const matchups = {};
-  for (const [enemyId, rowMap] of totals) {
-    matchups[String(enemyId)] = [...rowMap.entries()]
-      .map(([opponent, v]) => ({ hero_id: opponent, games_played: v.games, wins: v.wins }))
-      .sort((a, b) => b.games_played - a.games_played);
-  }
-  return matchups;
+  // Use the same aggregation logic for both production and tests
+  return aggregateStratzMatchupChunks(
+    chunkResponses.map(cr => ({
+      chunkIndex: cr.chunkIndex,
+      chunkHeroIds: cr.chunkHeroIds,
+      response: cr.response,
+    })),
+    windowInfo,
+    validHeroIds
+  );
 }
+
+/** The only files a refresh publishes (ТЗ №77: Counterpick data only). */
+export const PUBLISHED_FILES = Object.freeze(['heroes.json', 'matchups.json', 'positions.json', 'meta.json']);
 
 /**
  * The whole refresh as a function: OpenDota metadata -> STRATZ matchups ->
- * validation -> meta payloads. Writes nothing.
+ * STRATZ positions -> validation -> meta payloads. Writes nothing.
  *
  * Dependency injection is not ceremony: the ТЗ №7 ordering guarantees (STRATZ
  * must not run when OpenDota failed; STRATZ must be asked for exactly the fresh
@@ -372,8 +486,6 @@ export async function buildDataset({
   fetchMetadata = fetchOpenDotaMetadata,
   fetchMatchups = fetchMatchupsFromStratz,
   fetchPositions = fetchPositionsFromStratz,
-  fetchItems = fetchItemsMetadata,
-  fetchItemsStats = fetchItemStats,
   now = new Date(),
   log = console.log,
 } = {}) {
@@ -396,25 +508,12 @@ export async function buildDataset({
 
   // 3+4. STRATZ, queried for exactly the fresh hero ids. Matchups and position
   // stats are two independent queries over the SAME buckets, so the two layers
-  // can never describe different weeks (§6).
+  // can never describe different weeks (§6). A failure in either aborts the
+  // whole run; nothing is published partially.
+  log('3/6 Fetching STRATZ matchups...');
   const matchups = await fetchMatchups(heroIds, windowInfo, { log });
+  log('4/6 Fetching STRATZ positions...');
   const positions = await fetchPositions(heroIds, windowInfo, { log });
-  // §11 order: matchups -> positions -> item metadata -> item stats. A failure
-  // in ANY of these aborts the whole run; nothing is published partially.
-  //
-  // §10: the hero-game denominator for each (hero, position) comes from the
-  // position layer we JUST fetched, not from the item endpoint (which cannot
-  // supply it) and not from summing purchases (which would be nonsense). It has
-  // to be assembled here, before the item fetch, not after it.
-  const heroGamesByPosition = new Map();
-  for (const h of heroes) {
-    const entry = positions[String(h.id)];
-    for (const lane of ['1', '2', '3', '4', '5']) {
-      heroGamesByPosition.set(`${h.id}:${lane}`, entry?.positions?.[lane]?.games ?? 0);
-    }
-  }
-  const rawItems = await fetchItems({ log });
-  const itemStats = await fetchItemsStats(heroIds, windowInfo, { log, heroGamesByPosition });
 
   // 5. Strict 13-point data contract validation, against the FRESH roster.
   log('5/6 Validating dataset integrity contract...');
@@ -424,17 +523,6 @@ export async function buildDataset({
   log(`    Wins sum skew median: ${validationResult.winsSumSkew.medianPct}% (p99: ${validationResult.winsSumSkew.p99Pct}%, max: ${validationResult.winsSumSkew.maxPct}%)`);
   const positionInfo = validatePositionData(positions, { heroes, windowInfo });
   log(`    Position data passed! ${positionInfo.heroCount} heroes across buckets [${positionInfo.buckets.join(', ')}]`);
-
-  // §6/§10: item statistics are keyed by the position we REQUESTED. The catalogue
-  // is narrowed only after the statistics are in, so that neutral items (not
-  // shop items, but genuinely bought) survive while internal-only entities do not.
-  const pruned = pruneItemCatalogue(rawItems, itemStats);
-  const items = pruned.items;
-  log(`    Catalogue pruned to ${pruned.keptCount} items (${pruned.shopOnly} shop, ` +
-      `${pruned.nonShopButBought} non-shop but purchased, e.g. neutral items)`);
-  const itemInfo = validateItemData(items, itemStats, { heroes, windowInfo });
-  log(`    Item data passed! ${itemInfo.itemCount} items, ${itemInfo.heroesWithData} heroes, ` +
-      `${itemInfo.positions} hero-position cells, ${itemInfo.cells} item cells`);
 
   const totalPairGames = Object.values(matchups).reduce(
     (s, rows) => s + rows.reduce((x, r) => x + r.games_played, 0),
@@ -481,27 +569,6 @@ export async function buildDataset({
         rule: 'hard gate — a hero must clear both thresholds for a position to be ranked there',
       },
     },
-    itemData: {
-      source: 'STRATZ',
-      weeks: windowInfo.buckets.length,
-      weeklyBuckets: windowInfo.buckets,
-      completeWeeksOnly: true,
-      population: {
-        type: 'rank-bracket',
-        description: 'Rank-bracket data (calibrated ranks: Herald through Immortal)',
-        brackets: BRACKETS,
-      },
-      statistics: {
-        type: 'item-purchases',
-        matchCountSemantics: 'purchase-events',
-        note:
-          'purchases counts purchase EVENTS, not distinct games — it may exceed ' +
-          'heroGames. wins is a subset of purchases. No rate is precomputed here, ' +
-          'and nothing in this layer is conditioned on the enemy draft.',
-      },
-      // itemFullPurchase is not patch-filtered; it is bucketed by week only.
-      patchFiltered: false,
-    },
     schema: {
       matchupsFile: '{ "<enemyHeroId>": [{ "hero_id": <opponentHeroId>, "games_played": n, "wins": n }] }',
       winsPerspective:
@@ -518,7 +585,21 @@ export async function buildDataset({
     },
   };
 
-  return { heroes, matchups, positions, items, itemStats, meta, validationResult, positionInfo, itemInfo };
+  return { heroes, matchups, positions, meta, validationResult, positionInfo };
+}
+
+/** The atomic publish payload: exactly PUBLISHED_FILES, nothing else. */
+export function buildPublishPayload({ heroes, matchups, positions, meta }) {
+  const payload = {
+    'heroes.json': heroes,
+    'matchups.json': matchups,
+    'positions.json': positions,
+    'meta.json': meta,
+  };
+  for (const [name, value] of Object.entries(payload)) {
+    if (value === undefined || value === null) throw new Error(`Refusing to publish: ${name} is missing`);
+  }
+  return payload;
 }
 
 async function main() {
@@ -527,29 +608,20 @@ async function main() {
 
   // 1-5: fetch fresh metadata, query STRATZ, validate. Any throw aborts the run
   // before a single byte of the live dataset is touched.
-  const { heroes, matchups, positions, items, itemStats, meta } = await buildDataset({
+  const result = await buildDataset({
     fetchMatchups: (heroIds, windowInfo, opts) =>
       fetchMatchupsFromStratz(heroIds, windowInfo, { ...opts, token }),
     fetchPositions: (heroIds, windowInfo, opts) =>
       fetchPositionsFromStratz(heroIds, windowInfo, { ...opts, token }),
-    fetchItems: (opts) => fetchItemsMetadata({ ...opts, token }),
-    fetchItemsStats: (heroIds, windowInfo, opts) =>
-      fetchItemStats(heroIds, windowInfo, { ...opts, token }),
   });
+  const { heroes, meta } = result;
 
-  // 6. Publish every layer as ONE directory swap — items cannot lag behind the
-  // heroes they are keyed by.
-  console.log('6/6 Publishing dataset atomically (heroes, matchups, positions, items, item-stats, meta)...');
+  // 6. Publish every layer as ONE directory swap — positions cannot lag behind
+  // the heroes they are keyed by.
+  console.log(`6/6 Publishing dataset atomically (${PUBLISHED_FILES.join(', ')})...`);
   const sizes = await publishDatasetAtomically(
     DATA_DIR,
-    {
-      'heroes.json': heroes,
-      'matchups.json': matchups,
-      'positions.json': positions,
-      'items.json': items,
-      'item-stats.json': itemStats,
-      'meta.json': meta,
-    },
+    buildPublishPayload(result),
     // STRATZ always returns a full matrix; enforce it at the last gate too.
     { requireCompleteTables: true },
   );

@@ -1,0 +1,2104 @@
+{
+  "schemaVersion": 1,
+  "datasetSource": "EXTERNAL_MATCH_SOURCE",
+  "provider": "OpenDota explorer, table public_matches",
+  "retrievedAt": "2026-11-13T07:54:21.532Z",
+  "window": {
+    "buckets": [
+      2963,
+      2964,
+      2965,
+      2966
+    ],
+    "startSecInclusive": 1792022400,
+    "endSecExclusive": 1794441600,
+    "bucketSeconds": 604800
+  },
+  "sourceCoverage": {
+    "status": "PARTIAL",
+    "classification": "PARTIAL_MATCH_COVERAGE",
+    "reasons": [
+      "COVERAGE_RELATIVE_TO_STRATZ_UNVERIFIED",
+      "ZEROED_HERO_ROWS"
+    ],
+    "limitations": [
+      "public_matches completeness relative to all matchmaking games is not documented by OpenDota.",
+      "Rank is a per-match average (avg_rank_tier over num_rank_tier players); STRATZ bracketBasicIds semantics (per player vs per match) are unknown, so filters are not equivalent.",
+      "Lobby/game-mode scope of STRATZ matchCount is unknown; several external subsets are reported instead of one.",
+      "129106 of 26860455 in-window public_matches rows have zeroed hero arrays and cannot be attributed to any pair.",
+      "Window boundaries are reached through match_id ranges with a start_time margin of 2.00 days before and 1.28 days after the window; matches whose start_time is in the window but whose match_id lies outside these ranges are not observed."
+    ],
+    "failedChunkRanges": []
+  },
+  "rawArtifact": {
+    "path": "research/data-quality/stratz-external-match-level-raw-responses.json",
+    "sha256": "aae3c1b1f00d090f30c299b517a0f14fe56047296213945c365e8cdae5a71344"
+  },
+  "matchesStorage": "Match records (match_id, start_time, radiant_win, lobby_type, game_mode, avg_rank_tier, num_rank_tier, radiant_team, dire_team) are stored in the raw artifact; this summary keeps per-pair-week aggregates only.",
+  "dataset": {
+    "recordsReturned": 166208,
+    "uniqueMatchIds": 166208,
+    "duplicateMatchIds": [],
+    "inWindowPairCandidateMatches": 151229,
+    "outOfWindowRecords": 14979
+  },
+  "bucketTotals": [
+    {
+      "bucket": 2963,
+      "window": {
+        "bucket": 2963,
+        "startSecInclusive": 1792022400,
+        "endSecExclusive": 1792627200,
+        "startUtc": "2026-10-15T00:00:00.000Z",
+        "endUtcExclusive": "2026-10-22T00:00:00.000Z"
+      },
+      "matches": 6931588,
+      "rankedMatches": 3647607,
+      "zeroHeroMatches": 32064,
+      "pairCandidateMatches": 37446
+    },
+    {
+      "bucket": 2964,
+      "window": {
+        "bucket": 2964,
+        "startSecInclusive": 1792627200,
+        "endSecExclusive": 1793232000,
+        "startUtc": "2026-10-22T00:00:00.000Z",
+        "endUtcExclusive": "2026-10-29T00:00:00.000Z"
+      },
+      "matches": 6887857,
+      "rankedMatches": 3602998,
+      "zeroHeroMatches": 32812,
+      "pairCandidateMatches": 39166
+    },
+    {
+      "bucket": 2965,
+      "window": {
+        "bucket": 2965,
+        "startSecInclusive": 1793232000,
+        "endSecExclusive": 1793836800,
+        "startUtc": "2026-10-29T00:00:00.000Z",
+        "endUtcExclusive": "2026-11-05T00:00:00.000Z"
+      },
+      "matches": 6787397,
+      "rankedMatches": 3558887,
+      "zeroHeroMatches": 32462,
+      "pairCandidateMatches": 38691
+    },
+    {
+      "bucket": 2966,
+      "window": {
+        "bucket": 2966,
+        "startSecInclusive": 1793836800,
+        "endSecExclusive": 1794441600,
+        "startUtc": "2026-11-05T00:00:00.000Z",
+        "endUtcExclusive": "2026-11-12T00:00:00.000Z"
+      },
+      "matches": 6253613,
+      "rankedMatches": 3293462,
+      "zeroHeroMatches": 31768,
+      "pairCandidateMatches": 35926
+    }
+  ],
+  "reconciliation": [
+    {
+      "canonicalPairId": "3:95",
+      "bucket": 2963,
+      "stratz": {
+        "gamesAtoB": 426,
+        "gamesBtoA": 433,
+        "winsAtoB": 202,
+        "winsBtoA": 226
+      },
+      "external": {
+        "directional": false,
+        "note": "One external match with A and B on opposing teams counts once for the pair; the source defines no A→B/B→A direction.",
+        "subsets": {
+          "ALL_PUBLIC": {
+            "matches": 3514,
+            "heroAWins": 1623,
+            "heroBWins": 1891,
+            "winnerUnknown": 0
+          },
+          "RANKED_MATCHMAKING": {
+            "matches": 999,
+            "heroAWins": 476,
+            "heroBWins": 523,
+            "winnerUnknown": 0
+          },
+          "RANKED_AVG_RANK_IN_PRODUCTION_RANGE": {
+            "matches": 939,
+            "heroAWins": 445,
+            "heroBWins": 494,
+            "winnerUnknown": 0
+          }
+        },
+        "rankedByAverageRankGroup": {
+          "HERALD_GUARDIAN": 186,
+          "CRUSADER_ARCHON": 397,
+          "LEGEND_ANCIENT": 266,
+          "DIVINE_IMMORTAL": 90,
+          "UNKNOWN": 60,
+          "OUT_OF_RANGE": 0
+        }
+      },
+      "comparison": {
+        "referenceSubset": "RANKED_AVG_RANK_IN_PRODUCTION_RANGE",
+        "externalMatches": 939,
+        "absoluteDifferenceAtoB": -513,
+        "absoluteDifferenceBtoA": -506,
+        "relativeDifferenceAtoB": -0.5463258785942492,
+        "relativeDifferenceBtoA": -0.5388711395101171,
+        "stratzToExternalRatioAtoB": 0.4536741214057508,
+        "stratzToExternalRatioBtoA": 0.46112886048988283,
+        "externalWinsAvsStratzWinsAtoB": {
+          "external": 445,
+          "stratz": 202
+        }
+      },
+      "coverage": "PARTIAL",
+      "productionThresholdApplied": false,
+      "productionThresholdNote": "External coverage is not complete; the production threshold is not used as an error criterion."
+    },
+    {
+      "canonicalPairId": "3:95",
+      "bucket": 2964,
+      "stratz": {
+        "gamesAtoB": 454,
+        "gamesBtoA": 471,
+        "winsAtoB": 196,
+        "winsBtoA": 267
+      },
+      "external": {
+        "directional": false,
+        "note": "One external match with A and B on opposing teams counts once for the pair; the source defines no A→B/B→A direction.",
+        "subsets": {
+          "ALL_PUBLIC": {
+            "matches": 3735,
+            "heroAWins": 1682,
+            "heroBWins": 2053,
+            "winnerUnknown": 0
+          },
+          "RANKED_MATCHMAKING": {
+            "matches": 1022,
+            "heroAWins": 456,
+            "heroBWins": 566,
+            "winnerUnknown": 0
+          },
+          "RANKED_AVG_RANK_IN_PRODUCTION_RANGE": {
+            "matches": 966,
+            "heroAWins": 435,
+            "heroBWins": 531,
+            "winnerUnknown": 0
+          }
+        },
+        "rankedByAverageRankGroup": {
+          "HERALD_GUARDIAN": 189,
+          "CRUSADER_ARCHON": 399,
+          "LEGEND_ANCIENT": 315,
+          "DIVINE_IMMORTAL": 63,
+          "UNKNOWN": 56,
+          "OUT_OF_RANGE": 0
+        }
+      },
+      "comparison": {
+        "referenceSubset": "RANKED_AVG_RANK_IN_PRODUCTION_RANGE",
+        "externalMatches": 966,
+        "absoluteDifferenceAtoB": -512,
+        "absoluteDifferenceBtoA": -495,
+        "relativeDifferenceAtoB": -0.5300207039337475,
+        "relativeDifferenceBtoA": -0.5124223602484472,
+        "stratzToExternalRatioAtoB": 0.4699792960662526,
+        "stratzToExternalRatioBtoA": 0.48757763975155277,
+        "externalWinsAvsStratzWinsAtoB": {
+          "external": 435,
+          "stratz": 196
+        }
+      },
+      "coverage": "PARTIAL",
+      "productionThresholdApplied": false,
+      "productionThresholdNote": "External coverage is not complete; the production threshold is not used as an error criterion."
+    },
+    {
+      "canonicalPairId": "3:95",
+      "bucket": 2965,
+      "stratz": {
+        "gamesAtoB": 435,
+        "gamesBtoA": 441,
+        "winsAtoB": 201,
+        "winsBtoA": 238
+      },
+      "external": {
+        "directional": false,
+        "note": "One external match with A and B on opposing teams counts once for the pair; the source defines no A→B/B→A direction.",
+        "subsets": {
+          "ALL_PUBLIC": {
+            "matches": 3632,
+            "heroAWins": 1622,
+            "heroBWins": 2010,
+            "winnerUnknown": 0
+          },
+          "RANKED_MATCHMAKING": {
+            "matches": 921,
+            "heroAWins": 417,
+            "heroBWins": 504,
+            "winnerUnknown": 0
+          },
+          "RANKED_AVG_RANK_IN_PRODUCTION_RANGE": {
+            "matches": 848,
+            "heroAWins": 389,
+            "heroBWins": 459,
+            "winnerUnknown": 0
+          }
+        },
+        "rankedByAverageRankGroup": {
+          "HERALD_GUARDIAN": 167,
+          "CRUSADER_ARCHON": 354,
+          "LEGEND_ANCIENT": 254,
+          "DIVINE_IMMORTAL": 73,
+          "UNKNOWN": 73,
+          "OUT_OF_RANGE": 0
+        }
+      },
+      "comparison": {
+        "referenceSubset": "RANKED_AVG_RANK_IN_PRODUCTION_RANGE",
+        "externalMatches": 848,
+        "absoluteDifferenceAtoB": -413,
+        "absoluteDifferenceBtoA": -407,
+        "relativeDifferenceAtoB": -0.48702830188679247,
+        "relativeDifferenceBtoA": -0.47995283018867924,
+        "stratzToExternalRatioAtoB": 0.5129716981132075,
+        "stratzToExternalRatioBtoA": 0.5200471698113207,
+        "externalWinsAvsStratzWinsAtoB": {
+          "external": 389,
+          "stratz": 201
+        }
+      },
+      "coverage": "PARTIAL",
+      "productionThresholdApplied": false,
+      "productionThresholdNote": "External coverage is not complete; the production threshold is not used as an error criterion."
+    },
+    {
+      "canonicalPairId": "3:95",
+      "bucket": 2966,
+      "stratz": {
+        "gamesAtoB": 470,
+        "gamesBtoA": 474,
+        "winsAtoB": 229,
+        "winsBtoA": 246
+      },
+      "external": {
+        "directional": false,
+        "note": "One external match with A and B on opposing teams counts once for the pair; the source defines no A→B/B→A direction.",
+        "subsets": {
+          "ALL_PUBLIC": {
+            "matches": 3470,
+            "heroAWins": 1604,
+            "heroBWins": 1866,
+            "winnerUnknown": 0
+          },
+          "RANKED_MATCHMAKING": {
+            "matches": 938,
+            "heroAWins": 450,
+            "heroBWins": 488,
+            "winnerUnknown": 0
+          },
+          "RANKED_AVG_RANK_IN_PRODUCTION_RANGE": {
+            "matches": 878,
+            "heroAWins": 425,
+            "heroBWins": 453,
+            "winnerUnknown": 0
+          }
+        },
+        "rankedByAverageRankGroup": {
+          "HERALD_GUARDIAN": 173,
+          "CRUSADER_ARCHON": 344,
+          "LEGEND_ANCIENT": 287,
+          "DIVINE_IMMORTAL": 74,
+          "UNKNOWN": 60,
+          "OUT_OF_RANGE": 0
+        }
+      },
+      "comparison": {
+        "referenceSubset": "RANKED_AVG_RANK_IN_PRODUCTION_RANGE",
+        "externalMatches": 878,
+        "absoluteDifferenceAtoB": -408,
+        "absoluteDifferenceBtoA": -404,
+        "relativeDifferenceAtoB": -0.4646924829157175,
+        "relativeDifferenceBtoA": -0.4601366742596811,
+        "stratzToExternalRatioAtoB": 0.5353075170842825,
+        "stratzToExternalRatioBtoA": 0.5398633257403189,
+        "externalWinsAvsStratzWinsAtoB": {
+          "external": 425,
+          "stratz": 229
+        }
+      },
+      "coverage": "PARTIAL",
+      "productionThresholdApplied": false,
+      "productionThresholdNote": "External coverage is not complete; the production threshold is not used as an error criterion."
+    },
+    {
+      "canonicalPairId": "4:58",
+      "bucket": 2963,
+      "stratz": {
+        "gamesAtoB": 530,
+        "gamesBtoA": 516,
+        "winsAtoB": 282,
+        "winsBtoA": 246
+      },
+      "external": {
+        "directional": false,
+        "note": "One external match with A and B on opposing teams counts once for the pair; the source defines no A→B/B→A direction.",
+        "subsets": {
+          "ALL_PUBLIC": {
+            "matches": 5525,
+            "heroAWins": 2791,
+            "heroBWins": 2734,
+            "winnerUnknown": 0
+          },
+          "RANKED_MATCHMAKING": {
+            "matches": 1453,
+            "heroAWins": 800,
+            "heroBWins": 653,
+            "winnerUnknown": 0
+          },
+          "RANKED_AVG_RANK_IN_PRODUCTION_RANGE": {
+            "matches": 1298,
+            "heroAWins": 705,
+            "heroBWins": 593,
+            "winnerUnknown": 0
+          }
+        },
+        "rankedByAverageRankGroup": {
+          "HERALD_GUARDIAN": 356,
+          "CRUSADER_ARCHON": 506,
+          "LEGEND_ANCIENT": 347,
+          "DIVINE_IMMORTAL": 89,
+          "UNKNOWN": 155,
+          "OUT_OF_RANGE": 0
+        }
+      },
+      "comparison": {
+        "referenceSubset": "RANKED_AVG_RANK_IN_PRODUCTION_RANGE",
+        "externalMatches": 1298,
+        "absoluteDifferenceAtoB": -768,
+        "absoluteDifferenceBtoA": -782,
+        "relativeDifferenceAtoB": -0.5916795069337443,
+        "relativeDifferenceBtoA": -0.6024653312788906,
+        "stratzToExternalRatioAtoB": 0.4083204930662558,
+        "stratzToExternalRatioBtoA": 0.3975346687211094,
+        "externalWinsAvsStratzWinsAtoB": {
+          "external": 705,
+          "stratz": 282
+        }
+      },
+      "coverage": "PARTIAL",
+      "productionThresholdApplied": false,
+      "productionThresholdNote": "External coverage is not complete; the production threshold is not used as an error criterion."
+    },
+    {
+      "canonicalPairId": "4:58",
+      "bucket": 2964,
+      "stratz": {
+        "gamesAtoB": 595,
+        "gamesBtoA": 586,
+        "winsAtoB": 326,
+        "winsBtoA": 266
+      },
+      "external": {
+        "directional": false,
+        "note": "One external match with A and B on opposing teams counts once for the pair; the source defines no A→B/B→A direction.",
+        "subsets": {
+          "ALL_PUBLIC": {
+            "matches": 5764,
+            "heroAWins": 2890,
+            "heroBWins": 2874,
+            "winnerUnknown": 0
+          },
+          "RANKED_MATCHMAKING": {
+            "matches": 1472,
+            "heroAWins": 786,
+            "heroBWins": 686,
+            "winnerUnknown": 0
+          },
+          "RANKED_AVG_RANK_IN_PRODUCTION_RANGE": {
+            "matches": 1327,
+            "heroAWins": 691,
+            "heroBWins": 636,
+            "winnerUnknown": 0
+          }
+        },
+        "rankedByAverageRankGroup": {
+          "HERALD_GUARDIAN": 391,
+          "CRUSADER_ARCHON": 547,
+          "LEGEND_ANCIENT": 322,
+          "DIVINE_IMMORTAL": 67,
+          "UNKNOWN": 145,
+          "OUT_OF_RANGE": 0
+        }
+      },
+      "comparison": {
+        "referenceSubset": "RANKED_AVG_RANK_IN_PRODUCTION_RANGE",
+        "externalMatches": 1327,
+        "absoluteDifferenceAtoB": -732,
+        "absoluteDifferenceBtoA": -741,
+        "relativeDifferenceAtoB": -0.5516201959306707,
+        "relativeDifferenceBtoA": -0.5584024114544084,
+        "stratzToExternalRatioAtoB": 0.4483798040693293,
+        "stratzToExternalRatioBtoA": 0.44159758854559156,
+        "externalWinsAvsStratzWinsAtoB": {
+          "external": 691,
+          "stratz": 326
+        }
+      },
+      "coverage": "PARTIAL",
+      "productionThresholdApplied": false,
+      "productionThresholdNote": "External coverage is not complete; the production threshold is not used as an error criterion."
+    },
+    {
+      "canonicalPairId": "4:58",
+      "bucket": 2965,
+      "stratz": {
+        "gamesAtoB": 678,
+        "gamesBtoA": 651,
+        "winsAtoB": 339,
+        "winsBtoA": 326
+      },
+      "external": {
+        "directional": false,
+        "note": "One external match with A and B on opposing teams counts once for the pair; the source defines no A→B/B→A direction.",
+        "subsets": {
+          "ALL_PUBLIC": {
+            "matches": 5612,
+            "heroAWins": 2787,
+            "heroBWins": 2825,
+            "winnerUnknown": 0
+          },
+          "RANKED_MATCHMAKING": {
+            "matches": 1434,
+            "heroAWins": 748,
+            "heroBWins": 686,
+            "winnerUnknown": 0
+          },
+          "RANKED_AVG_RANK_IN_PRODUCTION_RANGE": {
+            "matches": 1288,
+            "heroAWins": 665,
+            "heroBWins": 623,
+            "winnerUnknown": 0
+          }
+        },
+        "rankedByAverageRankGroup": {
+          "HERALD_GUARDIAN": 371,
+          "CRUSADER_ARCHON": 509,
+          "LEGEND_ANCIENT": 327,
+          "DIVINE_IMMORTAL": 81,
+          "UNKNOWN": 146,
+          "OUT_OF_RANGE": 0
+        }
+      },
+      "comparison": {
+        "referenceSubset": "RANKED_AVG_RANK_IN_PRODUCTION_RANGE",
+        "externalMatches": 1288,
+        "absoluteDifferenceAtoB": -610,
+        "absoluteDifferenceBtoA": -637,
+        "relativeDifferenceAtoB": -0.47360248447204967,
+        "relativeDifferenceBtoA": -0.4945652173913043,
+        "stratzToExternalRatioAtoB": 0.5263975155279503,
+        "stratzToExternalRatioBtoA": 0.5054347826086957,
+        "externalWinsAvsStratzWinsAtoB": {
+          "external": 665,
+          "stratz": 339
+        }
+      },
+      "coverage": "PARTIAL",
+      "productionThresholdApplied": false,
+      "productionThresholdNote": "External coverage is not complete; the production threshold is not used as an error criterion."
+    },
+    {
+      "canonicalPairId": "4:58",
+      "bucket": 2966,
+      "stratz": {
+        "gamesAtoB": 671,
+        "gamesBtoA": 667,
+        "winsAtoB": 372,
+        "winsBtoA": 302
+      },
+      "external": {
+        "directional": false,
+        "note": "One external match with A and B on opposing teams counts once for the pair; the source defines no A→B/B→A direction.",
+        "subsets": {
+          "ALL_PUBLIC": {
+            "matches": 5318,
+            "heroAWins": 2653,
+            "heroBWins": 2665,
+            "winnerUnknown": 0
+          },
+          "RANKED_MATCHMAKING": {
+            "matches": 1422,
+            "heroAWins": 768,
+            "heroBWins": 654,
+            "winnerUnknown": 0
+          },
+          "RANKED_AVG_RANK_IN_PRODUCTION_RANGE": {
+            "matches": 1284,
+            "heroAWins": 682,
+            "heroBWins": 602,
+            "winnerUnknown": 0
+          }
+        },
+        "rankedByAverageRankGroup": {
+          "HERALD_GUARDIAN": 357,
+          "CRUSADER_ARCHON": 519,
+          "LEGEND_ANCIENT": 333,
+          "DIVINE_IMMORTAL": 75,
+          "UNKNOWN": 138,
+          "OUT_OF_RANGE": 0
+        }
+      },
+      "comparison": {
+        "referenceSubset": "RANKED_AVG_RANK_IN_PRODUCTION_RANGE",
+        "externalMatches": 1284,
+        "absoluteDifferenceAtoB": -613,
+        "absoluteDifferenceBtoA": -617,
+        "relativeDifferenceAtoB": -0.47741433021806856,
+        "relativeDifferenceBtoA": -0.48052959501557635,
+        "stratzToExternalRatioAtoB": 0.5225856697819314,
+        "stratzToExternalRatioBtoA": 0.5194704049844237,
+        "externalWinsAvsStratzWinsAtoB": {
+          "external": 682,
+          "stratz": 372
+        }
+      },
+      "coverage": "PARTIAL",
+      "productionThresholdApplied": false,
+      "productionThresholdNote": "External coverage is not complete; the production threshold is not used as an error criterion."
+    },
+    {
+      "canonicalPairId": "5:89",
+      "bucket": 2963,
+      "stratz": {
+        "gamesAtoB": 1197,
+        "gamesBtoA": 1227,
+        "winsAtoB": 699,
+        "winsBtoA": 525
+      },
+      "external": {
+        "directional": false,
+        "note": "One external match with A and B on opposing teams counts once for the pair; the source defines no A→B/B→A direction.",
+        "subsets": {
+          "ALL_PUBLIC": {
+            "matches": 8373,
+            "heroAWins": 4599,
+            "heroBWins": 3774,
+            "winnerUnknown": 0
+          },
+          "RANKED_MATCHMAKING": {
+            "matches": 2870,
+            "heroAWins": 1618,
+            "heroBWins": 1252,
+            "winnerUnknown": 0
+          },
+          "RANKED_AVG_RANK_IN_PRODUCTION_RANGE": {
+            "matches": 2708,
+            "heroAWins": 1534,
+            "heroBWins": 1174,
+            "winnerUnknown": 0
+          }
+        },
+        "rankedByAverageRankGroup": {
+          "HERALD_GUARDIAN": 512,
+          "CRUSADER_ARCHON": 1248,
+          "LEGEND_ANCIENT": 793,
+          "DIVINE_IMMORTAL": 155,
+          "UNKNOWN": 162,
+          "OUT_OF_RANGE": 0
+        }
+      },
+      "comparison": {
+        "referenceSubset": "RANKED_AVG_RANK_IN_PRODUCTION_RANGE",
+        "externalMatches": 2708,
+        "absoluteDifferenceAtoB": -1511,
+        "absoluteDifferenceBtoA": -1481,
+        "relativeDifferenceAtoB": -0.5579763663220089,
+        "relativeDifferenceBtoA": -0.5468980797636632,
+        "stratzToExternalRatioAtoB": 0.44202363367799113,
+        "stratzToExternalRatioBtoA": 0.4531019202363368,
+        "externalWinsAvsStratzWinsAtoB": {
+          "external": 1534,
+          "stratz": 699
+        }
+      },
+      "coverage": "PARTIAL",
+      "productionThresholdApplied": false,
+      "productionThresholdNote": "External coverage is not complete; the production threshold is not used as an error criterion."
+    },
+    {
+      "canonicalPairId": "5:89",
+      "bucket": 2964,
+      "stratz": {
+        "gamesAtoB": 1319,
+        "gamesBtoA": 1351,
+        "winsAtoB": 758,
+        "winsBtoA": 580
+      },
+      "external": {
+        "directional": false,
+        "note": "One external match with A and B on opposing teams counts once for the pair; the source defines no A→B/B→A direction.",
+        "subsets": {
+          "ALL_PUBLIC": {
+            "matches": 8891,
+            "heroAWins": 4703,
+            "heroBWins": 4188,
+            "winnerUnknown": 0
+          },
+          "RANKED_MATCHMAKING": {
+            "matches": 3112,
+            "heroAWins": 1711,
+            "heroBWins": 1401,
+            "winnerUnknown": 0
+          },
+          "RANKED_AVG_RANK_IN_PRODUCTION_RANGE": {
+            "matches": 2941,
+            "heroAWins": 1613,
+            "heroBWins": 1328,
+            "winnerUnknown": 0
+          }
+        },
+        "rankedByAverageRankGroup": {
+          "HERALD_GUARDIAN": 609,
+          "CRUSADER_ARCHON": 1382,
+          "LEGEND_ANCIENT": 781,
+          "DIVINE_IMMORTAL": 169,
+          "UNKNOWN": 171,
+          "OUT_OF_RANGE": 0
+        }
+      },
+      "comparison": {
+        "referenceSubset": "RANKED_AVG_RANK_IN_PRODUCTION_RANGE",
+        "externalMatches": 2941,
+        "absoluteDifferenceAtoB": -1622,
+        "absoluteDifferenceBtoA": -1590,
+        "relativeDifferenceAtoB": -0.5515130907854471,
+        "relativeDifferenceBtoA": -0.5406324379462768,
+        "stratzToExternalRatioAtoB": 0.44848690921455286,
+        "stratzToExternalRatioBtoA": 0.4593675620537232,
+        "externalWinsAvsStratzWinsAtoB": {
+          "external": 1613,
+          "stratz": 758
+        }
+      },
+      "coverage": "PARTIAL",
+      "productionThresholdApplied": false,
+      "productionThresholdNote": "External coverage is not complete; the production threshold is not used as an error criterion."
+    },
+    {
+      "canonicalPairId": "5:89",
+      "bucket": 2965,
+      "stratz": {
+        "gamesAtoB": 1760,
+        "gamesBtoA": 1808,
+        "winsAtoB": 931,
+        "winsBtoA": 858
+      },
+      "external": {
+        "directional": false,
+        "note": "One external match with A and B on opposing teams counts once for the pair; the source defines no A→B/B→A direction.",
+        "subsets": {
+          "ALL_PUBLIC": {
+            "matches": 9423,
+            "heroAWins": 5033,
+            "heroBWins": 4390,
+            "winnerUnknown": 0
+          },
+          "RANKED_MATCHMAKING": {
+            "matches": 3512,
+            "heroAWins": 1916,
+            "heroBWins": 1596,
+            "winnerUnknown": 0
+          },
+          "RANKED_AVG_RANK_IN_PRODUCTION_RANGE": {
+            "matches": 3308,
+            "heroAWins": 1811,
+            "heroBWins": 1497,
+            "winnerUnknown": 0
+          }
+        },
+        "rankedByAverageRankGroup": {
+          "HERALD_GUARDIAN": 652,
+          "CRUSADER_ARCHON": 1511,
+          "LEGEND_ANCIENT": 988,
+          "DIVINE_IMMORTAL": 157,
+          "UNKNOWN": 204,
+          "OUT_OF_RANGE": 0
+        }
+      },
+      "comparison": {
+        "referenceSubset": "RANKED_AVG_RANK_IN_PRODUCTION_RANGE",
+        "externalMatches": 3308,
+        "absoluteDifferenceAtoB": -1548,
+        "absoluteDifferenceBtoA": -1500,
+        "relativeDifferenceAtoB": -0.46795646916565903,
+        "relativeDifferenceBtoA": -0.4534461910519952,
+        "stratzToExternalRatioAtoB": 0.532043530834341,
+        "stratzToExternalRatioBtoA": 0.5465538089480049,
+        "externalWinsAvsStratzWinsAtoB": {
+          "external": 1811,
+          "stratz": 931
+        }
+      },
+      "coverage": "PARTIAL",
+      "productionThresholdApplied": false,
+      "productionThresholdNote": "External coverage is not complete; the production threshold is not used as an error criterion."
+    },
+    {
+      "canonicalPairId": "5:89",
+      "bucket": 2966,
+      "stratz": {
+        "gamesAtoB": 1533,
+        "gamesBtoA": 1579,
+        "winsAtoB": 843,
+        "winsBtoA": 716
+      },
+      "external": {
+        "directional": false,
+        "note": "One external match with A and B on opposing teams counts once for the pair; the source defines no A→B/B→A direction.",
+        "subsets": {
+          "ALL_PUBLIC": {
+            "matches": 8558,
+            "heroAWins": 4599,
+            "heroBWins": 3959,
+            "winnerUnknown": 0
+          },
+          "RANKED_MATCHMAKING": {
+            "matches": 3093,
+            "heroAWins": 1764,
+            "heroBWins": 1329,
+            "winnerUnknown": 0
+          },
+          "RANKED_AVG_RANK_IN_PRODUCTION_RANGE": {
+            "matches": 2907,
+            "heroAWins": 1659,
+            "heroBWins": 1248,
+            "winnerUnknown": 0
+          }
+        },
+        "rankedByAverageRankGroup": {
+          "HERALD_GUARDIAN": 577,
+          "CRUSADER_ARCHON": 1289,
+          "LEGEND_ANCIENT": 869,
+          "DIVINE_IMMORTAL": 172,
+          "UNKNOWN": 186,
+          "OUT_OF_RANGE": 0
+        }
+      },
+      "comparison": {
+        "referenceSubset": "RANKED_AVG_RANK_IN_PRODUCTION_RANGE",
+        "externalMatches": 2907,
+        "absoluteDifferenceAtoB": -1374,
+        "absoluteDifferenceBtoA": -1328,
+        "relativeDifferenceAtoB": -0.4726522187822497,
+        "relativeDifferenceBtoA": -0.456828345373237,
+        "stratzToExternalRatioAtoB": 0.5273477812177503,
+        "stratzToExternalRatioBtoA": 0.543171654626763,
+        "externalWinsAvsStratzWinsAtoB": {
+          "external": 1659,
+          "stratz": 843
+        }
+      },
+      "coverage": "PARTIAL",
+      "productionThresholdApplied": false,
+      "productionThresholdNote": "External coverage is not complete; the production threshold is not used as an error criterion."
+    },
+    {
+      "canonicalPairId": "47:89",
+      "bucket": 2963,
+      "stratz": {
+        "gamesAtoB": 712,
+        "gamesBtoA": 737,
+        "winsAtoB": 346,
+        "winsBtoA": 388
+      },
+      "external": {
+        "directional": false,
+        "note": "One external match with A and B on opposing teams counts once for the pair; the source defines no A→B/B→A direction.",
+        "subsets": {
+          "ALL_PUBLIC": {
+            "matches": 7804,
+            "heroAWins": 3553,
+            "heroBWins": 4251,
+            "winnerUnknown": 0
+          },
+          "RANKED_MATCHMAKING": {
+            "matches": 1765,
+            "heroAWins": 813,
+            "heroBWins": 952,
+            "winnerUnknown": 0
+          },
+          "RANKED_AVG_RANK_IN_PRODUCTION_RANGE": {
+            "matches": 1638,
+            "heroAWins": 756,
+            "heroBWins": 882,
+            "winnerUnknown": 0
+          }
+        },
+        "rankedByAverageRankGroup": {
+          "HERALD_GUARDIAN": 412,
+          "CRUSADER_ARCHON": 687,
+          "LEGEND_ANCIENT": 442,
+          "DIVINE_IMMORTAL": 97,
+          "UNKNOWN": 127,
+          "OUT_OF_RANGE": 0
+        }
+      },
+      "comparison": {
+        "referenceSubset": "RANKED_AVG_RANK_IN_PRODUCTION_RANGE",
+        "externalMatches": 1638,
+        "absoluteDifferenceAtoB": -926,
+        "absoluteDifferenceBtoA": -901,
+        "relativeDifferenceAtoB": -0.5653235653235653,
+        "relativeDifferenceBtoA": -0.5500610500610501,
+        "stratzToExternalRatioAtoB": 0.4346764346764347,
+        "stratzToExternalRatioBtoA": 0.44993894993894995,
+        "externalWinsAvsStratzWinsAtoB": {
+          "external": 756,
+          "stratz": 346
+        }
+      },
+      "coverage": "PARTIAL",
+      "productionThresholdApplied": false,
+      "productionThresholdNote": "External coverage is not complete; the production threshold is not used as an error criterion."
+    },
+    {
+      "canonicalPairId": "47:89",
+      "bucket": 2964,
+      "stratz": {
+        "gamesAtoB": 766,
+        "gamesBtoA": 791,
+        "winsAtoB": 359,
+        "winsBtoA": 424
+      },
+      "external": {
+        "directional": false,
+        "note": "One external match with A and B on opposing teams counts once for the pair; the source defines no A→B/B→A direction.",
+        "subsets": {
+          "ALL_PUBLIC": {
+            "matches": 8197,
+            "heroAWins": 3737,
+            "heroBWins": 4460,
+            "winnerUnknown": 0
+          },
+          "RANKED_MATCHMAKING": {
+            "matches": 1836,
+            "heroAWins": 829,
+            "heroBWins": 1007,
+            "winnerUnknown": 0
+          },
+          "RANKED_AVG_RANK_IN_PRODUCTION_RANGE": {
+            "matches": 1716,
+            "heroAWins": 783,
+            "heroBWins": 933,
+            "winnerUnknown": 0
+          }
+        },
+        "rankedByAverageRankGroup": {
+          "HERALD_GUARDIAN": 406,
+          "CRUSADER_ARCHON": 774,
+          "LEGEND_ANCIENT": 445,
+          "DIVINE_IMMORTAL": 91,
+          "UNKNOWN": 120,
+          "OUT_OF_RANGE": 0
+        }
+      },
+      "comparison": {
+        "referenceSubset": "RANKED_AVG_RANK_IN_PRODUCTION_RANGE",
+        "externalMatches": 1716,
+        "absoluteDifferenceAtoB": -950,
+        "absoluteDifferenceBtoA": -925,
+        "relativeDifferenceAtoB": -0.5536130536130536,
+        "relativeDifferenceBtoA": -0.539044289044289,
+        "stratzToExternalRatioAtoB": 0.44638694638694637,
+        "stratzToExternalRatioBtoA": 0.460955710955711,
+        "externalWinsAvsStratzWinsAtoB": {
+          "external": 783,
+          "stratz": 359
+        }
+      },
+      "coverage": "PARTIAL",
+      "productionThresholdApplied": false,
+      "productionThresholdNote": "External coverage is not complete; the production threshold is not used as an error criterion."
+    },
+    {
+      "canonicalPairId": "47:89",
+      "bucket": 2965,
+      "stratz": {
+        "gamesAtoB": 892,
+        "gamesBtoA": 911,
+        "winsAtoB": 388,
+        "winsBtoA": 515
+      },
+      "external": {
+        "directional": false,
+        "note": "One external match with A and B on opposing teams counts once for the pair; the source defines no A→B/B→A direction.",
+        "subsets": {
+          "ALL_PUBLIC": {
+            "matches": 8130,
+            "heroAWins": 3786,
+            "heroBWins": 4344,
+            "winnerUnknown": 0
+          },
+          "RANKED_MATCHMAKING": {
+            "matches": 1812,
+            "heroAWins": 839,
+            "heroBWins": 973,
+            "winnerUnknown": 0
+          },
+          "RANKED_AVG_RANK_IN_PRODUCTION_RANGE": {
+            "matches": 1686,
+            "heroAWins": 783,
+            "heroBWins": 903,
+            "winnerUnknown": 0
+          }
+        },
+        "rankedByAverageRankGroup": {
+          "HERALD_GUARDIAN": 411,
+          "CRUSADER_ARCHON": 765,
+          "LEGEND_ANCIENT": 423,
+          "DIVINE_IMMORTAL": 87,
+          "UNKNOWN": 126,
+          "OUT_OF_RANGE": 0
+        }
+      },
+      "comparison": {
+        "referenceSubset": "RANKED_AVG_RANK_IN_PRODUCTION_RANGE",
+        "externalMatches": 1686,
+        "absoluteDifferenceAtoB": -794,
+        "absoluteDifferenceBtoA": -775,
+        "relativeDifferenceAtoB": -0.4709371293001186,
+        "relativeDifferenceBtoA": -0.4596678529062871,
+        "stratzToExternalRatioAtoB": 0.5290628706998813,
+        "stratzToExternalRatioBtoA": 0.5403321470937129,
+        "externalWinsAvsStratzWinsAtoB": {
+          "external": 783,
+          "stratz": 388
+        }
+      },
+      "coverage": "PARTIAL",
+      "productionThresholdApplied": false,
+      "productionThresholdNote": "External coverage is not complete; the production threshold is not used as an error criterion."
+    },
+    {
+      "canonicalPairId": "47:89",
+      "bucket": 2966,
+      "stratz": {
+        "gamesAtoB": 845,
+        "gamesBtoA": 843,
+        "winsAtoB": 354,
+        "winsBtoA": 489
+      },
+      "external": {
+        "directional": false,
+        "note": "One external match with A and B on opposing teams counts once for the pair; the source defines no A→B/B→A direction.",
+        "subsets": {
+          "ALL_PUBLIC": {
+            "matches": 7420,
+            "heroAWins": 3412,
+            "heroBWins": 4008,
+            "winnerUnknown": 0
+          },
+          "RANKED_MATCHMAKING": {
+            "matches": 1642,
+            "heroAWins": 702,
+            "heroBWins": 940,
+            "winnerUnknown": 0
+          },
+          "RANKED_AVG_RANK_IN_PRODUCTION_RANGE": {
+            "matches": 1528,
+            "heroAWins": 652,
+            "heroBWins": 876,
+            "winnerUnknown": 0
+          }
+        },
+        "rankedByAverageRankGroup": {
+          "HERALD_GUARDIAN": 389,
+          "CRUSADER_ARCHON": 665,
+          "LEGEND_ANCIENT": 401,
+          "DIVINE_IMMORTAL": 73,
+          "UNKNOWN": 114,
+          "OUT_OF_RANGE": 0
+        }
+      },
+      "comparison": {
+        "referenceSubset": "RANKED_AVG_RANK_IN_PRODUCTION_RANGE",
+        "externalMatches": 1528,
+        "absoluteDifferenceAtoB": -683,
+        "absoluteDifferenceBtoA": -685,
+        "relativeDifferenceAtoB": -0.4469895287958115,
+        "relativeDifferenceBtoA": -0.44829842931937175,
+        "stratzToExternalRatioAtoB": 0.5530104712041884,
+        "stratzToExternalRatioBtoA": 0.5517015706806283,
+        "externalWinsAvsStratzWinsAtoB": {
+          "external": 652,
+          "stratz": 354
+        }
+      },
+      "coverage": "PARTIAL",
+      "productionThresholdApplied": false,
+      "productionThresholdNote": "External coverage is not complete; the production threshold is not used as an error criterion."
+    },
+    {
+      "canonicalPairId": "58:61",
+      "bucket": 2963,
+      "stratz": {
+        "gamesAtoB": 301,
+        "gamesBtoA": 318,
+        "winsAtoB": 137,
+        "winsBtoA": 179
+      },
+      "external": {
+        "directional": false,
+        "note": "One external match with A and B on opposing teams counts once for the pair; the source defines no A→B/B→A direction.",
+        "subsets": {
+          "ALL_PUBLIC": {
+            "matches": 3238,
+            "heroAWins": 1578,
+            "heroBWins": 1660,
+            "winnerUnknown": 0
+          },
+          "RANKED_MATCHMAKING": {
+            "matches": 1026,
+            "heroAWins": 412,
+            "heroBWins": 614,
+            "winnerUnknown": 0
+          },
+          "RANKED_AVG_RANK_IN_PRODUCTION_RANGE": {
+            "matches": 907,
+            "heroAWins": 389,
+            "heroBWins": 518,
+            "winnerUnknown": 0
+          }
+        },
+        "rankedByAverageRankGroup": {
+          "HERALD_GUARDIAN": 245,
+          "CRUSADER_ARCHON": 365,
+          "LEGEND_ANCIENT": 235,
+          "DIVINE_IMMORTAL": 62,
+          "UNKNOWN": 119,
+          "OUT_OF_RANGE": 0
+        }
+      },
+      "comparison": {
+        "referenceSubset": "RANKED_AVG_RANK_IN_PRODUCTION_RANGE",
+        "externalMatches": 907,
+        "absoluteDifferenceAtoB": -606,
+        "absoluteDifferenceBtoA": -589,
+        "relativeDifferenceAtoB": -0.6681367144432194,
+        "relativeDifferenceBtoA": -0.649393605292172,
+        "stratzToExternalRatioAtoB": 0.3318632855567806,
+        "stratzToExternalRatioBtoA": 0.350606394707828,
+        "externalWinsAvsStratzWinsAtoB": {
+          "external": 389,
+          "stratz": 137
+        }
+      },
+      "coverage": "PARTIAL",
+      "productionThresholdApplied": false,
+      "productionThresholdNote": "External coverage is not complete; the production threshold is not used as an error criterion."
+    },
+    {
+      "canonicalPairId": "58:61",
+      "bucket": 2964,
+      "stratz": {
+        "gamesAtoB": 282,
+        "gamesBtoA": 290,
+        "winsAtoB": 136,
+        "winsBtoA": 151
+      },
+      "external": {
+        "directional": false,
+        "note": "One external match with A and B on opposing teams counts once for the pair; the source defines no A→B/B→A direction.",
+        "subsets": {
+          "ALL_PUBLIC": {
+            "matches": 3127,
+            "heroAWins": 1548,
+            "heroBWins": 1579,
+            "winnerUnknown": 0
+          },
+          "RANKED_MATCHMAKING": {
+            "matches": 913,
+            "heroAWins": 394,
+            "heroBWins": 519,
+            "winnerUnknown": 0
+          },
+          "RANKED_AVG_RANK_IN_PRODUCTION_RANGE": {
+            "matches": 817,
+            "heroAWins": 363,
+            "heroBWins": 454,
+            "winnerUnknown": 0
+          }
+        },
+        "rankedByAverageRankGroup": {
+          "HERALD_GUARDIAN": 205,
+          "CRUSADER_ARCHON": 348,
+          "LEGEND_ANCIENT": 207,
+          "DIVINE_IMMORTAL": 57,
+          "UNKNOWN": 96,
+          "OUT_OF_RANGE": 0
+        }
+      },
+      "comparison": {
+        "referenceSubset": "RANKED_AVG_RANK_IN_PRODUCTION_RANGE",
+        "externalMatches": 817,
+        "absoluteDifferenceAtoB": -535,
+        "absoluteDifferenceBtoA": -527,
+        "relativeDifferenceAtoB": -0.6548347613219094,
+        "relativeDifferenceBtoA": -0.6450428396572827,
+        "stratzToExternalRatioAtoB": 0.34516523867809057,
+        "stratzToExternalRatioBtoA": 0.35495716034271724,
+        "externalWinsAvsStratzWinsAtoB": {
+          "external": 363,
+          "stratz": 136
+        }
+      },
+      "coverage": "PARTIAL",
+      "productionThresholdApplied": false,
+      "productionThresholdNote": "External coverage is not complete; the production threshold is not used as an error criterion."
+    },
+    {
+      "canonicalPairId": "58:61",
+      "bucket": 2965,
+      "stratz": {
+        "gamesAtoB": 362,
+        "gamesBtoA": 375,
+        "winsAtoB": 171,
+        "winsBtoA": 203
+      },
+      "external": {
+        "directional": false,
+        "note": "One external match with A and B on opposing teams counts once for the pair; the source defines no A→B/B→A direction.",
+        "subsets": {
+          "ALL_PUBLIC": {
+            "matches": 3105,
+            "heroAWins": 1559,
+            "heroBWins": 1546,
+            "winnerUnknown": 0
+          },
+          "RANKED_MATCHMAKING": {
+            "matches": 939,
+            "heroAWins": 403,
+            "heroBWins": 536,
+            "winnerUnknown": 0
+          },
+          "RANKED_AVG_RANK_IN_PRODUCTION_RANGE": {
+            "matches": 840,
+            "heroAWins": 373,
+            "heroBWins": 467,
+            "winnerUnknown": 0
+          }
+        },
+        "rankedByAverageRankGroup": {
+          "HERALD_GUARDIAN": 203,
+          "CRUSADER_ARCHON": 376,
+          "LEGEND_ANCIENT": 199,
+          "DIVINE_IMMORTAL": 62,
+          "UNKNOWN": 99,
+          "OUT_OF_RANGE": 0
+        }
+      },
+      "comparison": {
+        "referenceSubset": "RANKED_AVG_RANK_IN_PRODUCTION_RANGE",
+        "externalMatches": 840,
+        "absoluteDifferenceAtoB": -478,
+        "absoluteDifferenceBtoA": -465,
+        "relativeDifferenceAtoB": -0.569047619047619,
+        "relativeDifferenceBtoA": -0.5535714285714286,
+        "stratzToExternalRatioAtoB": 0.430952380952381,
+        "stratzToExternalRatioBtoA": 0.44642857142857145,
+        "externalWinsAvsStratzWinsAtoB": {
+          "external": 373,
+          "stratz": 171
+        }
+      },
+      "coverage": "PARTIAL",
+      "productionThresholdApplied": false,
+      "productionThresholdNote": "External coverage is not complete; the production threshold is not used as an error criterion."
+    },
+    {
+      "canonicalPairId": "58:61",
+      "bucket": 2966,
+      "stratz": {
+        "gamesAtoB": 373,
+        "gamesBtoA": 378,
+        "winsAtoB": 168,
+        "winsBtoA": 207
+      },
+      "external": {
+        "directional": false,
+        "note": "One external match with A and B on opposing teams counts once for the pair; the source defines no A→B/B→A direction.",
+        "subsets": {
+          "ALL_PUBLIC": {
+            "matches": 2984,
+            "heroAWins": 1457,
+            "heroBWins": 1527,
+            "winnerUnknown": 0
+          },
+          "RANKED_MATCHMAKING": {
+            "matches": 885,
+            "heroAWins": 370,
+            "heroBWins": 515,
+            "winnerUnknown": 0
+          },
+          "RANKED_AVG_RANK_IN_PRODUCTION_RANGE": {
+            "matches": 790,
+            "heroAWins": 345,
+            "heroBWins": 445,
+            "winnerUnknown": 0
+          }
+        },
+        "rankedByAverageRankGroup": {
+          "HERALD_GUARDIAN": 187,
+          "CRUSADER_ARCHON": 346,
+          "LEGEND_ANCIENT": 217,
+          "DIVINE_IMMORTAL": 40,
+          "UNKNOWN": 95,
+          "OUT_OF_RANGE": 0
+        }
+      },
+      "comparison": {
+        "referenceSubset": "RANKED_AVG_RANK_IN_PRODUCTION_RANGE",
+        "externalMatches": 790,
+        "absoluteDifferenceAtoB": -417,
+        "absoluteDifferenceBtoA": -412,
+        "relativeDifferenceAtoB": -0.5278481012658228,
+        "relativeDifferenceBtoA": -0.5215189873417722,
+        "stratzToExternalRatioAtoB": 0.47215189873417723,
+        "stratzToExternalRatioBtoA": 0.47848101265822784,
+        "externalWinsAvsStratzWinsAtoB": {
+          "external": 345,
+          "stratz": 168
+        }
+      },
+      "coverage": "PARTIAL",
+      "productionThresholdApplied": false,
+      "productionThresholdNote": "External coverage is not complete; the production threshold is not used as an error criterion."
+    },
+    {
+      "canonicalPairId": "58:83",
+      "bucket": 2963,
+      "stratz": {
+        "gamesAtoB": 343,
+        "gamesBtoA": 363,
+        "winsAtoB": 192,
+        "winsBtoA": 163
+      },
+      "external": {
+        "directional": false,
+        "note": "One external match with A and B on opposing teams counts once for the pair; the source defines no A→B/B→A direction.",
+        "subsets": {
+          "ALL_PUBLIC": {
+            "matches": 3103,
+            "heroAWins": 1657,
+            "heroBWins": 1446,
+            "winnerUnknown": 0
+          },
+          "RANKED_MATCHMAKING": {
+            "matches": 1018,
+            "heroAWins": 521,
+            "heroBWins": 497,
+            "winnerUnknown": 0
+          },
+          "RANKED_AVG_RANK_IN_PRODUCTION_RANGE": {
+            "matches": 880,
+            "heroAWins": 471,
+            "heroBWins": 409,
+            "winnerUnknown": 0
+          }
+        },
+        "rankedByAverageRankGroup": {
+          "HERALD_GUARDIAN": 193,
+          "CRUSADER_ARCHON": 349,
+          "LEGEND_ANCIENT": 284,
+          "DIVINE_IMMORTAL": 54,
+          "UNKNOWN": 138,
+          "OUT_OF_RANGE": 0
+        }
+      },
+      "comparison": {
+        "referenceSubset": "RANKED_AVG_RANK_IN_PRODUCTION_RANGE",
+        "externalMatches": 880,
+        "absoluteDifferenceAtoB": -537,
+        "absoluteDifferenceBtoA": -517,
+        "relativeDifferenceAtoB": -0.6102272727272727,
+        "relativeDifferenceBtoA": -0.5875,
+        "stratzToExternalRatioAtoB": 0.38977272727272727,
+        "stratzToExternalRatioBtoA": 0.4125,
+        "externalWinsAvsStratzWinsAtoB": {
+          "external": 471,
+          "stratz": 192
+        }
+      },
+      "coverage": "PARTIAL",
+      "productionThresholdApplied": false,
+      "productionThresholdNote": "External coverage is not complete; the production threshold is not used as an error criterion."
+    },
+    {
+      "canonicalPairId": "58:83",
+      "bucket": 2964,
+      "stratz": {
+        "gamesAtoB": 310,
+        "gamesBtoA": 318,
+        "winsAtoB": 165,
+        "winsBtoA": 149
+      },
+      "external": {
+        "directional": false,
+        "note": "One external match with A and B on opposing teams counts once for the pair; the source defines no A→B/B→A direction.",
+        "subsets": {
+          "ALL_PUBLIC": {
+            "matches": 3011,
+            "heroAWins": 1596,
+            "heroBWins": 1415,
+            "winnerUnknown": 0
+          },
+          "RANKED_MATCHMAKING": {
+            "matches": 942,
+            "heroAWins": 481,
+            "heroBWins": 461,
+            "winnerUnknown": 0
+          },
+          "RANKED_AVG_RANK_IN_PRODUCTION_RANGE": {
+            "matches": 760,
+            "heroAWins": 407,
+            "heroBWins": 353,
+            "winnerUnknown": 0
+          }
+        },
+        "rankedByAverageRankGroup": {
+          "HERALD_GUARDIAN": 153,
+          "CRUSADER_ARCHON": 298,
+          "LEGEND_ANCIENT": 254,
+          "DIVINE_IMMORTAL": 55,
+          "UNKNOWN": 182,
+          "OUT_OF_RANGE": 0
+        }
+      },
+      "comparison": {
+        "referenceSubset": "RANKED_AVG_RANK_IN_PRODUCTION_RANGE",
+        "externalMatches": 760,
+        "absoluteDifferenceAtoB": -450,
+        "absoluteDifferenceBtoA": -442,
+        "relativeDifferenceAtoB": -0.5921052631578947,
+        "relativeDifferenceBtoA": -0.5815789473684211,
+        "stratzToExternalRatioAtoB": 0.40789473684210525,
+        "stratzToExternalRatioBtoA": 0.41842105263157897,
+        "externalWinsAvsStratzWinsAtoB": {
+          "external": 407,
+          "stratz": 165
+        }
+      },
+      "coverage": "PARTIAL",
+      "productionThresholdApplied": false,
+      "productionThresholdNote": "External coverage is not complete; the production threshold is not used as an error criterion."
+    },
+    {
+      "canonicalPairId": "58:83",
+      "bucket": 2965,
+      "stratz": {
+        "gamesAtoB": 357,
+        "gamesBtoA": 352,
+        "winsAtoB": 190,
+        "winsBtoA": 162
+      },
+      "external": {
+        "directional": false,
+        "note": "One external match with A and B on opposing teams counts once for the pair; the source defines no A→B/B→A direction.",
+        "subsets": {
+          "ALL_PUBLIC": {
+            "matches": 2684,
+            "heroAWins": 1438,
+            "heroBWins": 1246,
+            "winnerUnknown": 0
+          },
+          "RANKED_MATCHMAKING": {
+            "matches": 804,
+            "heroAWins": 408,
+            "heroBWins": 396,
+            "winnerUnknown": 0
+          },
+          "RANKED_AVG_RANK_IN_PRODUCTION_RANGE": {
+            "matches": 676,
+            "heroAWins": 353,
+            "heroBWins": 323,
+            "winnerUnknown": 0
+          }
+        },
+        "rankedByAverageRankGroup": {
+          "HERALD_GUARDIAN": 131,
+          "CRUSADER_ARCHON": 286,
+          "LEGEND_ANCIENT": 201,
+          "DIVINE_IMMORTAL": 58,
+          "UNKNOWN": 128,
+          "OUT_OF_RANGE": 0
+        }
+      },
+      "comparison": {
+        "referenceSubset": "RANKED_AVG_RANK_IN_PRODUCTION_RANGE",
+        "externalMatches": 676,
+        "absoluteDifferenceAtoB": -319,
+        "absoluteDifferenceBtoA": -324,
+        "relativeDifferenceAtoB": -0.4718934911242604,
+        "relativeDifferenceBtoA": -0.47928994082840237,
+        "stratzToExternalRatioAtoB": 0.5281065088757396,
+        "stratzToExternalRatioBtoA": 0.5207100591715976,
+        "externalWinsAvsStratzWinsAtoB": {
+          "external": 353,
+          "stratz": 190
+        }
+      },
+      "coverage": "PARTIAL",
+      "productionThresholdApplied": false,
+      "productionThresholdNote": "External coverage is not complete; the production threshold is not used as an error criterion."
+    },
+    {
+      "canonicalPairId": "58:83",
+      "bucket": 2966,
+      "stratz": {
+        "gamesAtoB": 308,
+        "gamesBtoA": 306,
+        "winsAtoB": 163,
+        "winsBtoA": 149
+      },
+      "external": {
+        "directional": false,
+        "note": "One external match with A and B on opposing teams counts once for the pair; the source defines no A→B/B→A direction.",
+        "subsets": {
+          "ALL_PUBLIC": {
+            "matches": 2559,
+            "heroAWins": 1317,
+            "heroBWins": 1242,
+            "winnerUnknown": 0
+          },
+          "RANKED_MATCHMAKING": {
+            "matches": 758,
+            "heroAWins": 369,
+            "heroBWins": 389,
+            "winnerUnknown": 0
+          },
+          "RANKED_AVG_RANK_IN_PRODUCTION_RANGE": {
+            "matches": 583,
+            "heroAWins": 302,
+            "heroBWins": 281,
+            "winnerUnknown": 0
+          }
+        },
+        "rankedByAverageRankGroup": {
+          "HERALD_GUARDIAN": 151,
+          "CRUSADER_ARCHON": 235,
+          "LEGEND_ANCIENT": 161,
+          "DIVINE_IMMORTAL": 36,
+          "UNKNOWN": 175,
+          "OUT_OF_RANGE": 0
+        }
+      },
+      "comparison": {
+        "referenceSubset": "RANKED_AVG_RANK_IN_PRODUCTION_RANGE",
+        "externalMatches": 583,
+        "absoluteDifferenceAtoB": -275,
+        "absoluteDifferenceBtoA": -277,
+        "relativeDifferenceAtoB": -0.4716981132075472,
+        "relativeDifferenceBtoA": -0.4751286449399657,
+        "stratzToExternalRatioAtoB": 0.5283018867924528,
+        "stratzToExternalRatioBtoA": 0.5248713550600344,
+        "externalWinsAvsStratzWinsAtoB": {
+          "external": 302,
+          "stratz": 163
+        }
+      },
+      "coverage": "PARTIAL",
+      "productionThresholdApplied": false,
+      "productionThresholdNote": "External coverage is not complete; the production threshold is not used as an error criterion."
+    },
+    {
+      "canonicalPairId": "59:89",
+      "bucket": 2963,
+      "stratz": {
+        "gamesAtoB": 374,
+        "gamesBtoA": 368,
+        "winsAtoB": 185,
+        "winsBtoA": 187
+      },
+      "external": {
+        "directional": false,
+        "note": "One external match with A and B on opposing teams counts once for the pair; the source defines no A→B/B→A direction.",
+        "subsets": {
+          "ALL_PUBLIC": {
+            "matches": 5205,
+            "heroAWins": 2339,
+            "heroBWins": 2866,
+            "winnerUnknown": 0
+          },
+          "RANKED_MATCHMAKING": {
+            "matches": 1045,
+            "heroAWins": 469,
+            "heroBWins": 576,
+            "winnerUnknown": 0
+          },
+          "RANKED_AVG_RANK_IN_PRODUCTION_RANGE": {
+            "matches": 955,
+            "heroAWins": 433,
+            "heroBWins": 522,
+            "winnerUnknown": 0
+          }
+        },
+        "rankedByAverageRankGroup": {
+          "HERALD_GUARDIAN": 236,
+          "CRUSADER_ARCHON": 427,
+          "LEGEND_ANCIENT": 233,
+          "DIVINE_IMMORTAL": 59,
+          "UNKNOWN": 90,
+          "OUT_OF_RANGE": 0
+        }
+      },
+      "comparison": {
+        "referenceSubset": "RANKED_AVG_RANK_IN_PRODUCTION_RANGE",
+        "externalMatches": 955,
+        "absoluteDifferenceAtoB": -581,
+        "absoluteDifferenceBtoA": -587,
+        "relativeDifferenceAtoB": -0.6083769633507854,
+        "relativeDifferenceBtoA": -0.6146596858638743,
+        "stratzToExternalRatioAtoB": 0.39162303664921466,
+        "stratzToExternalRatioBtoA": 0.38534031413612563,
+        "externalWinsAvsStratzWinsAtoB": {
+          "external": 433,
+          "stratz": 185
+        }
+      },
+      "coverage": "PARTIAL",
+      "productionThresholdApplied": false,
+      "productionThresholdNote": "External coverage is not complete; the production threshold is not used as an error criterion."
+    },
+    {
+      "canonicalPairId": "59:89",
+      "bucket": 2964,
+      "stratz": {
+        "gamesAtoB": 429,
+        "gamesBtoA": 450,
+        "winsAtoB": 194,
+        "winsBtoA": 249
+      },
+      "external": {
+        "directional": false,
+        "note": "One external match with A and B on opposing teams counts once for the pair; the source defines no A→B/B→A direction.",
+        "subsets": {
+          "ALL_PUBLIC": {
+            "matches": 5807,
+            "heroAWins": 2600,
+            "heroBWins": 3207,
+            "winnerUnknown": 0
+          },
+          "RANKED_MATCHMAKING": {
+            "matches": 1147,
+            "heroAWins": 504,
+            "heroBWins": 643,
+            "winnerUnknown": 0
+          },
+          "RANKED_AVG_RANK_IN_PRODUCTION_RANGE": {
+            "matches": 1026,
+            "heroAWins": 458,
+            "heroBWins": 568,
+            "winnerUnknown": 0
+          }
+        },
+        "rankedByAverageRankGroup": {
+          "HERALD_GUARDIAN": 259,
+          "CRUSADER_ARCHON": 446,
+          "LEGEND_ANCIENT": 269,
+          "DIVINE_IMMORTAL": 52,
+          "UNKNOWN": 121,
+          "OUT_OF_RANGE": 0
+        }
+      },
+      "comparison": {
+        "referenceSubset": "RANKED_AVG_RANK_IN_PRODUCTION_RANGE",
+        "externalMatches": 1026,
+        "absoluteDifferenceAtoB": -597,
+        "absoluteDifferenceBtoA": -576,
+        "relativeDifferenceAtoB": -0.5818713450292398,
+        "relativeDifferenceBtoA": -0.5614035087719298,
+        "stratzToExternalRatioAtoB": 0.41812865497076024,
+        "stratzToExternalRatioBtoA": 0.43859649122807015,
+        "externalWinsAvsStratzWinsAtoB": {
+          "external": 458,
+          "stratz": 194
+        }
+      },
+      "coverage": "PARTIAL",
+      "productionThresholdApplied": false,
+      "productionThresholdNote": "External coverage is not complete; the production threshold is not used as an error criterion."
+    },
+    {
+      "canonicalPairId": "59:89",
+      "bucket": 2965,
+      "stratz": {
+        "gamesAtoB": 475,
+        "gamesBtoA": 505,
+        "winsAtoB": 207,
+        "winsBtoA": 289
+      },
+      "external": {
+        "directional": false,
+        "note": "One external match with A and B on opposing teams counts once for the pair; the source defines no A→B/B→A direction.",
+        "subsets": {
+          "ALL_PUBLIC": {
+            "matches": 5315,
+            "heroAWins": 2318,
+            "heroBWins": 2997,
+            "winnerUnknown": 0
+          },
+          "RANKED_MATCHMAKING": {
+            "matches": 1095,
+            "heroAWins": 472,
+            "heroBWins": 623,
+            "winnerUnknown": 0
+          },
+          "RANKED_AVG_RANK_IN_PRODUCTION_RANGE": {
+            "matches": 994,
+            "heroAWins": 431,
+            "heroBWins": 563,
+            "winnerUnknown": 0
+          }
+        },
+        "rankedByAverageRankGroup": {
+          "HERALD_GUARDIAN": 269,
+          "CRUSADER_ARCHON": 410,
+          "LEGEND_ANCIENT": 257,
+          "DIVINE_IMMORTAL": 58,
+          "UNKNOWN": 101,
+          "OUT_OF_RANGE": 0
+        }
+      },
+      "comparison": {
+        "referenceSubset": "RANKED_AVG_RANK_IN_PRODUCTION_RANGE",
+        "externalMatches": 994,
+        "absoluteDifferenceAtoB": -519,
+        "absoluteDifferenceBtoA": -489,
+        "relativeDifferenceAtoB": -0.5221327967806841,
+        "relativeDifferenceBtoA": -0.4919517102615694,
+        "stratzToExternalRatioAtoB": 0.4778672032193159,
+        "stratzToExternalRatioBtoA": 0.5080482897384306,
+        "externalWinsAvsStratzWinsAtoB": {
+          "external": 431,
+          "stratz": 207
+        }
+      },
+      "coverage": "PARTIAL",
+      "productionThresholdApplied": false,
+      "productionThresholdNote": "External coverage is not complete; the production threshold is not used as an error criterion."
+    },
+    {
+      "canonicalPairId": "59:89",
+      "bucket": 2966,
+      "stratz": {
+        "gamesAtoB": 455,
+        "gamesBtoA": 458,
+        "winsAtoB": 188,
+        "winsBtoA": 269
+      },
+      "external": {
+        "directional": false,
+        "note": "One external match with A and B on opposing teams counts once for the pair; the source defines no A→B/B→A direction.",
+        "subsets": {
+          "ALL_PUBLIC": {
+            "matches": 4726,
+            "heroAWins": 2053,
+            "heroBWins": 2673,
+            "winnerUnknown": 0
+          },
+          "RANKED_MATCHMAKING": {
+            "matches": 945,
+            "heroAWins": 412,
+            "heroBWins": 533,
+            "winnerUnknown": 0
+          },
+          "RANKED_AVG_RANK_IN_PRODUCTION_RANGE": {
+            "matches": 858,
+            "heroAWins": 385,
+            "heroBWins": 473,
+            "winnerUnknown": 0
+          }
+        },
+        "rankedByAverageRankGroup": {
+          "HERALD_GUARDIAN": 223,
+          "CRUSADER_ARCHON": 384,
+          "LEGEND_ANCIENT": 196,
+          "DIVINE_IMMORTAL": 55,
+          "UNKNOWN": 87,
+          "OUT_OF_RANGE": 0
+        }
+      },
+      "comparison": {
+        "referenceSubset": "RANKED_AVG_RANK_IN_PRODUCTION_RANGE",
+        "externalMatches": 858,
+        "absoluteDifferenceAtoB": -403,
+        "absoluteDifferenceBtoA": -400,
+        "relativeDifferenceAtoB": -0.4696969696969697,
+        "relativeDifferenceBtoA": -0.4662004662004662,
+        "stratzToExternalRatioAtoB": 0.5303030303030303,
+        "stratzToExternalRatioBtoA": 0.5337995337995338,
+        "externalWinsAvsStratzWinsAtoB": {
+          "external": 385,
+          "stratz": 188
+        }
+      },
+      "coverage": "PARTIAL",
+      "productionThresholdApplied": false,
+      "productionThresholdNote": "External coverage is not complete; the production threshold is not used as an error criterion."
+    },
+    {
+      "canonicalPairId": "61:79",
+      "bucket": 2963,
+      "stratz": {
+        "gamesAtoB": 263,
+        "gamesBtoA": 243,
+        "winsAtoB": 155,
+        "winsBtoA": 107
+      },
+      "external": {
+        "directional": false,
+        "note": "One external match with A and B on opposing teams counts once for the pair; the source defines no A→B/B→A direction.",
+        "subsets": {
+          "ALL_PUBLIC": {
+            "matches": 2080,
+            "heroAWins": 1180,
+            "heroBWins": 900,
+            "winnerUnknown": 0
+          },
+          "RANKED_MATCHMAKING": {
+            "matches": 795,
+            "heroAWins": 516,
+            "heroBWins": 279,
+            "winnerUnknown": 0
+          },
+          "RANKED_AVG_RANK_IN_PRODUCTION_RANGE": {
+            "matches": 727,
+            "heroAWins": 452,
+            "heroBWins": 275,
+            "winnerUnknown": 0
+          }
+        },
+        "rankedByAverageRankGroup": {
+          "HERALD_GUARDIAN": 127,
+          "CRUSADER_ARCHON": 266,
+          "LEGEND_ANCIENT": 248,
+          "DIVINE_IMMORTAL": 86,
+          "UNKNOWN": 68,
+          "OUT_OF_RANGE": 0
+        }
+      },
+      "comparison": {
+        "referenceSubset": "RANKED_AVG_RANK_IN_PRODUCTION_RANGE",
+        "externalMatches": 727,
+        "absoluteDifferenceAtoB": -464,
+        "absoluteDifferenceBtoA": -484,
+        "relativeDifferenceAtoB": -0.6382393397524071,
+        "relativeDifferenceBtoA": -0.6657496561210454,
+        "stratzToExternalRatioAtoB": 0.36176066024759285,
+        "stratzToExternalRatioBtoA": 0.3342503438789546,
+        "externalWinsAvsStratzWinsAtoB": {
+          "external": 452,
+          "stratz": 155
+        }
+      },
+      "coverage": "PARTIAL",
+      "productionThresholdApplied": false,
+      "productionThresholdNote": "External coverage is not complete; the production threshold is not used as an error criterion."
+    },
+    {
+      "canonicalPairId": "61:79",
+      "bucket": 2964,
+      "stratz": {
+        "gamesAtoB": 249,
+        "gamesBtoA": 242,
+        "winsAtoB": 141,
+        "winsBtoA": 104
+      },
+      "external": {
+        "directional": false,
+        "note": "One external match with A and B on opposing teams counts once for the pair; the source defines no A→B/B→A direction.",
+        "subsets": {
+          "ALL_PUBLIC": {
+            "matches": 2022,
+            "heroAWins": 1157,
+            "heroBWins": 865,
+            "winnerUnknown": 0
+          },
+          "RANKED_MATCHMAKING": {
+            "matches": 737,
+            "heroAWins": 480,
+            "heroBWins": 257,
+            "winnerUnknown": 0
+          },
+          "RANKED_AVG_RANK_IN_PRODUCTION_RANGE": {
+            "matches": 671,
+            "heroAWins": 424,
+            "heroBWins": 247,
+            "winnerUnknown": 0
+          }
+        },
+        "rankedByAverageRankGroup": {
+          "HERALD_GUARDIAN": 103,
+          "CRUSADER_ARCHON": 273,
+          "LEGEND_ANCIENT": 237,
+          "DIVINE_IMMORTAL": 58,
+          "UNKNOWN": 66,
+          "OUT_OF_RANGE": 0
+        }
+      },
+      "comparison": {
+        "referenceSubset": "RANKED_AVG_RANK_IN_PRODUCTION_RANGE",
+        "externalMatches": 671,
+        "absoluteDifferenceAtoB": -422,
+        "absoluteDifferenceBtoA": -429,
+        "relativeDifferenceAtoB": -0.6289120715350224,
+        "relativeDifferenceBtoA": -0.639344262295082,
+        "stratzToExternalRatioAtoB": 0.3710879284649776,
+        "stratzToExternalRatioBtoA": 0.36065573770491804,
+        "externalWinsAvsStratzWinsAtoB": {
+          "external": 424,
+          "stratz": 141
+        }
+      },
+      "coverage": "PARTIAL",
+      "productionThresholdApplied": false,
+      "productionThresholdNote": "External coverage is not complete; the production threshold is not used as an error criterion."
+    },
+    {
+      "canonicalPairId": "61:79",
+      "bucket": 2965,
+      "stratz": {
+        "gamesAtoB": 311,
+        "gamesBtoA": 301,
+        "winsAtoB": 164,
+        "winsBtoA": 145
+      },
+      "external": {
+        "directional": false,
+        "note": "One external match with A and B on opposing teams counts once for the pair; the source defines no A→B/B→A direction.",
+        "subsets": {
+          "ALL_PUBLIC": {
+            "matches": 2231,
+            "heroAWins": 1295,
+            "heroBWins": 936,
+            "winnerUnknown": 0
+          },
+          "RANKED_MATCHMAKING": {
+            "matches": 811,
+            "heroAWins": 520,
+            "heroBWins": 291,
+            "winnerUnknown": 0
+          },
+          "RANKED_AVG_RANK_IN_PRODUCTION_RANGE": {
+            "matches": 727,
+            "heroAWins": 456,
+            "heroBWins": 271,
+            "winnerUnknown": 0
+          }
+        },
+        "rankedByAverageRankGroup": {
+          "HERALD_GUARDIAN": 142,
+          "CRUSADER_ARCHON": 279,
+          "LEGEND_ANCIENT": 241,
+          "DIVINE_IMMORTAL": 65,
+          "UNKNOWN": 84,
+          "OUT_OF_RANGE": 0
+        }
+      },
+      "comparison": {
+        "referenceSubset": "RANKED_AVG_RANK_IN_PRODUCTION_RANGE",
+        "externalMatches": 727,
+        "absoluteDifferenceAtoB": -416,
+        "absoluteDifferenceBtoA": -426,
+        "relativeDifferenceAtoB": -0.5722145804676754,
+        "relativeDifferenceBtoA": -0.5859697386519945,
+        "stratzToExternalRatioAtoB": 0.42778541953232463,
+        "stratzToExternalRatioBtoA": 0.4140302613480055,
+        "externalWinsAvsStratzWinsAtoB": {
+          "external": 456,
+          "stratz": 164
+        }
+      },
+      "coverage": "PARTIAL",
+      "productionThresholdApplied": false,
+      "productionThresholdNote": "External coverage is not complete; the production threshold is not used as an error criterion."
+    },
+    {
+      "canonicalPairId": "61:79",
+      "bucket": 2966,
+      "stratz": {
+        "gamesAtoB": 359,
+        "gamesBtoA": 351,
+        "winsAtoB": 201,
+        "winsBtoA": 151
+      },
+      "external": {
+        "directional": false,
+        "note": "One external match with A and B on opposing teams counts once for the pair; the source defines no A→B/B→A direction.",
+        "subsets": {
+          "ALL_PUBLIC": {
+            "matches": 2249,
+            "heroAWins": 1321,
+            "heroBWins": 928,
+            "winnerUnknown": 0
+          },
+          "RANKED_MATCHMAKING": {
+            "matches": 865,
+            "heroAWins": 545,
+            "heroBWins": 320,
+            "winnerUnknown": 0
+          },
+          "RANKED_AVG_RANK_IN_PRODUCTION_RANGE": {
+            "matches": 793,
+            "heroAWins": 491,
+            "heroBWins": 302,
+            "winnerUnknown": 0
+          }
+        },
+        "rankedByAverageRankGroup": {
+          "HERALD_GUARDIAN": 111,
+          "CRUSADER_ARCHON": 339,
+          "LEGEND_ANCIENT": 263,
+          "DIVINE_IMMORTAL": 80,
+          "UNKNOWN": 72,
+          "OUT_OF_RANGE": 0
+        }
+      },
+      "comparison": {
+        "referenceSubset": "RANKED_AVG_RANK_IN_PRODUCTION_RANGE",
+        "externalMatches": 793,
+        "absoluteDifferenceAtoB": -434,
+        "absoluteDifferenceBtoA": -442,
+        "relativeDifferenceAtoB": -0.5472887767969735,
+        "relativeDifferenceBtoA": -0.5573770491803278,
+        "stratzToExternalRatioAtoB": 0.4527112232030265,
+        "stratzToExternalRatioBtoA": 0.4426229508196721,
+        "externalWinsAvsStratzWinsAtoB": {
+          "external": 491,
+          "stratz": 201
+        }
+      },
+      "coverage": "PARTIAL",
+      "productionThresholdApplied": false,
+      "productionThresholdNote": "External coverage is not complete; the production threshold is not used as an error criterion."
+    }
+  ],
+  "reconciliationSummary": {
+    "pairWeeks": 32,
+    "stratzReverseCountsEqual": 0,
+    "externalCountIsSymmetricByConstruction": true,
+    "stratzToExternalRatio": {
+      "min": 0.3318632855567806,
+      "max": 0.5530104712041884,
+      "median": 0.4536741214057508
+    },
+    "stratzWithinExternalReference": 32,
+    "interpretation": "Descriptive only. External coverage is partial/unverified and its rank filter is not equivalent, so these numbers neither confirm nor refute a STRATZ defect."
+  },
+  "sourceHashes": {
+    "fix9Input": {
+      "path": "scripts/stratz-diagnostic-input.json",
+      "physicalSha256": "291350d18a0195dfa9b2292b08a832267234dac6b8b16b8f045c71cd5afba002"
+    },
+    "fix10Repeatability": {
+      "path": "research/data-quality/stratz-reverse-pair-repeatability-evidence.json",
+      "physicalSha256": "278c740c10747da0c91642cd02efb5ebaca741c8b935a6d6b8b771420d89978e"
+    },
+    "fix10Report": {
+      "path": "research/data-quality/stratz-reverse-pair-asymmetry-report.json",
+      "physicalSha256": "ef5e27a1ca55cb1876d210027ff58c2f4a11f7f35ca3c24f9754ad71f584cf95"
+    },
+    "fix11Evidence": {
+      "path": "research/data-quality/stratz-reverse-pair-root-cause-evidence.json",
+      "physicalSha256": "7ed6d5daac42dbcc19995caf5518518ccac3ef6de42a4fd62c7468af7363494b"
+    },
+    "fix11Raw": {
+      "path": "research/data-quality/stratz-reverse-pair-root-cause-raw-responses.json",
+      "physicalSha256": "0e426ac478489e23e1d35cd1336fe2487ab101364ff8b041f433714c1ccf6e7b"
+    },
+    "fix12Evidence": {
+      "path": "research/data-quality/stratz-reverse-pair-bracket-semantics-evidence.json",
+      "physicalSha256": "0a1953f079b6a94fbade6cbad77a16d6423fe829af1a003440b5b8f9ecc9a0be"
+    },
+    "fix12Raw": {
+      "path": "research/data-quality/stratz-reverse-pair-bracket-raw-responses.json",
+      "physicalSha256": "5db0fed846569d45b7c55f4cd5a8cbcc6de2c3e2963b2c098de723b3e5542a74"
+    },
+    "fix13Evidence": {
+      "path": "research/data-quality/stratz-reverse-pair-partition-semantics-evidence.json",
+      "physicalSha256": "7166a0d95b4429076c7b387198928a0e885ca413c85d886d3134dee4a660f9fe"
+    },
+    "fix14Evidence": {
+      "path": "research/data-quality/stratz-reverse-pair-match-level-evidence.json",
+      "physicalSha256": "91143b20f42f4227081d69bcbbae937ce1da8da4b480065047ae0a4d0a6ce862"
+    },
+    "fix14Raw": {
+      "path": "research/data-quality/stratz-reverse-pair-match-level-raw-responses.json",
+      "physicalSha256": "69f4b06b1e05a7703b6a6e403b007c978fc3214f1ea2f90cac0027b35c297ba5"
+    },
+    "productionHeroes": {
+      "path": "public/data/heroes.json",
+      "physicalSha256": "59ecc2bc9b55a62232bf7d40b85c1d4c306602e89addda6d3faa9ed38a2c061d"
+    },
+    "productionMatchups": {
+      "path": "public/data/matchups.json",
+      "physicalSha256": "0a9e54aaa925494f7ad876c992e782cfd45d297b3952c8afefb8decc3ad02e8b"
+    },
+    "productionMeta": {
+      "path": "public/data/meta.json",
+      "physicalSha256": "9db099dedf5c5f0d052590d98d194807e2580a16694fc562ae9ffbf1d144857e"
+    }
+  },
+  "limitations": [
+    "public_matches completeness relative to all matchmaking games is not documented by OpenDota.",
+    "Rank is a per-match average (avg_rank_tier over num_rank_tier players); STRATZ bracketBasicIds semantics (per player vs per match) are unknown, so filters are not equivalent.",
+    "Lobby/game-mode scope of STRATZ matchCount is unknown; several external subsets are reported instead of one.",
+    "129106 of 26860455 in-window public_matches rows have zeroed hero arrays and cannot be attributed to any pair.",
+    "Window boundaries are reached through match_id ranges with a start_time margin of 2.00 days before and 1.28 days after the window; matches whose start_time is in the window but whose match_id lies outside these ranges are not observed."
+  ],
+  "evidenceSha256": "ce3f408f1c82291882f46fd3b4620a7643c2b777ad9eaec41b7a5620797d1133",
+  "rootCause": {
+    "status": "UNRESOLVED",
+    "productionPublishAllowed": false,
+    "categories": [
+      {
+        "category": "STRATZ_MATCHUP_DIRECTIONAL_SEMANTICS_CONFIRMED",
+        "applies": false,
+        "reason": "No official STRATZ answer."
+      },
+      {
+        "category": "STRATZ_VENDOR_CONFIRMED_ISSUE",
+        "applies": false,
+        "reason": "No official STRATZ answer."
+      },
+      {
+        "category": "EXTERNAL_SOURCE_RECONCILIATION_CONFIRMED",
+        "applies": false,
+        "reason": "External coverage is not complete and filters are not equivalent."
+      },
+      {
+        "category": "PUBLIC_SOURCE_COVERAGE_INSUFFICIENT",
+        "applies": true,
+        "reason": "COVERAGE_RELATIVE_TO_STRATZ_UNVERIFIED, ZEROED_HERO_ROWS"
+      },
+      {
+        "category": "MATCH_LEVEL_EVIDENCE_UNAVAILABLE",
+        "applies": true,
+        "reason": "STRATZ exposes no match IDs for matchUp rows (FIX14); external match IDs cannot be mapped onto STRATZ directional rows."
+      },
+      {
+        "category": "UNRESOLVED",
+        "applies": true,
+        "reason": "Neither an official answer nor a complete, equivalent independent reconciliation exists."
+      }
+    ],
+    "note": "Stable aggregate counts alone do not prove a STRATZ defect."
+  }
+}

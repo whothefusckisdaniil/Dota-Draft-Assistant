@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "ticketReference": null,
+  "receivedAt": null,
+  "sender": null,
+  "source": null,
+  "originalResponse": "",
+  "attachments": [],
+  "responseSha256": "",
+  "inputStatus": "NOT_RECEIVED"
+}

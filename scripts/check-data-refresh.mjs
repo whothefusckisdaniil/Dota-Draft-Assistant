@@ -36,7 +36,6 @@ function validatePublishedMeta(meta) {
 
   for (const [name, layer] of [
     ['positionData', meta.positionData],
-    ['itemData', meta.itemData],
   ]) {
     if (
       layer?.completeWeeksOnly !== true ||

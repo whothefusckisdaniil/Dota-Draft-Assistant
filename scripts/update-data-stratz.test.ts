@@ -13,7 +13,16 @@ import { describe, expect, it, vi } from 'vitest';
 import { mkdtemp, readFile, readdir, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { buildDataset, validateProductionContract } from './update-data-stratz.mjs';
+import {
+  PUBLISHED_FILES,
+  aggregateStratzMatchupChunks,
+  buildDataset,
+  buildPublishPayload,
+  validateProductionContract,
+} from './update-data-stratz.mjs';
+import { DATASET_FILES } from './dataset-publish.mjs';
+import { existsSync, readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { publishDatasetAtomically } from './dataset-publish.mjs';
 
 type Row = { hero_id: number; games_played: number; wins: number };
@@ -213,22 +222,6 @@ function matchupFixture(ids: number[]): Record<string, { hero_id: number; games_
   return ds;
 }
 
-/** Item catalogue fixture: 145 is purchasable so the statistics reference resolves. */
-function itemsFixture() {
-  return {
-    145: { id: 145, name: 'Battle Fury', dname: 'item_bfury', shortName: '', cost: 3900, isPurchasable: true, isStackable: false, isSideShop: false, stockMax: 0, isSupportFullItem: false, image: '', components: [] },
-  };
-}
-
-/** Item statistics fixture: one hero, one position, one item. */
-function itemStatsFixture(ids: number[]) {
-  const out: Record<string, unknown> = {};
-  for (const id of ids) {
-    out[String(id)] = { 1: { 145: { purchases: 100, wins: 50, heroGames: 1000, byMinute: { 8: 100 }, instances: { 0: 100 } } } };
-  }
-  return out;
-}
-
 const NOW = new Date('2026-09-28T12:00:00Z');
 const silent = () => {};
 const metaFor = (patch = '7.42', n = 100) => async () => ({ heroes: heroFixture(IDS_100), latestPatch: patch, heroCount: n });
@@ -255,8 +248,6 @@ describe('buildDataset — the STRATZ query is driven by FRESH metadata (ТЗ §
         return matchupFixture(heroIds);
       },
       fetchPositions: async (heroIds: number[]) => positionFixture(heroIds),
-      fetchItems: async () => itemsFixture(),
-      fetchItemsStats: async (ids: number[]) => itemStatsFixture(ids),
       now: NOW,
       log: silent,
     });
@@ -271,8 +262,6 @@ describe('buildDataset — the STRATZ query is driven by FRESH metadata (ТЗ §
       fetchMetadata: async () => ({ heroes: heroFixture(ids), latestPatch: '7.42', heroCount: 101 }),
       fetchMatchups: async (heroIds: number[]) => matchupFixture(heroIds),
       fetchPositions: async (ids: number[]) => positionFixture(ids),
-      fetchItems: async () => itemsFixture(),
-      fetchItemsStats: async (ids: number[]) => itemStatsFixture(ids),
       now: NOW,
       log: silent,
     });
@@ -293,8 +282,6 @@ describe('buildDataset — the STRATZ query is driven by FRESH metadata (ТЗ §
       fetchMetadata: async () => ({ heroes: heroFixture(ids), latestPatch: '7.42', heroCount: 126 }),
       fetchMatchups: async (heroIds: number[]) => matchupFixture(heroIds),
       fetchPositions: async (ids: number[]) => positionFixture(ids),
-      fetchItems: async () => itemsFixture(),
-      fetchItemsStats: async (ids: number[]) => itemStatsFixture(ids),
       now: NOW,
       log: silent,
     });
@@ -313,8 +300,6 @@ describe('buildDataset — the STRATZ query is driven by FRESH metadata (ТЗ §
       }),
       fetchMatchups: async (heroIds: number[]) => matchupFixture(heroIds),
       fetchPositions: async (ids: number[]) => positionFixture(ids),
-      fetchItems: async () => itemsFixture(),
-      fetchItemsStats: async (ids: number[]) => itemStatsFixture(ids),
       now: NOW,
       log: silent,
     });
@@ -330,8 +315,6 @@ describe('buildDataset — latestPatch is never inherited from the old meta.json
       fetchMetadata: metaFor('9.99', 100),
       fetchMatchups: async (ids: number[]) => matchupFixture(ids),
       fetchPositions: async (ids: number[]) => positionFixture(ids),
-      fetchItems: async () => itemsFixture(),
-      fetchItemsStats: async (ids: number[]) => itemStatsFixture(ids),
       now: NOW,
       log: silent,
     });
@@ -343,8 +326,6 @@ describe('buildDataset — latestPatch is never inherited from the old meta.json
       fetchMetadata: metaFor('7.42'),
       fetchMatchups: async (ids: number[]) => matchupFixture(ids),
       fetchPositions: async (ids: number[]) => positionFixture(ids),
-      fetchItems: async () => itemsFixture(),
-      fetchItemsStats: async (ids: number[]) => itemStatsFixture(ids),
       now: NOW,
       log: silent,
     });
@@ -364,8 +345,6 @@ describe('buildDataset — failure policy (ТЗ §3, §8D)', () => {
         fetchMetadata: async () => { throw new Error('OpenDota 500'); },
         fetchMatchups: stratz as never,
         fetchPositions: async (ids: number[]) => positionFixture(ids),
-        fetchItems: async () => itemsFixture(),
-        fetchItemsStats: async (ids: number[]) => itemStatsFixture(ids),
         now: NOW,
         log: silent,
       }),
@@ -379,8 +358,6 @@ describe('buildDataset — failure policy (ТЗ §3, §8D)', () => {
         fetchMetadata: metaFor('', 100),
         fetchMatchups: async (ids: number[]) => matchupFixture(ids),
         fetchPositions: async (ids: number[]) => positionFixture(ids),
-        fetchItems: async () => itemsFixture(),
-        fetchItemsStats: async (ids: number[]) => itemStatsFixture(ids),
         now: NOW,
         log: silent,
       }),
@@ -408,8 +385,6 @@ describe('buildDataset — failure policy (ТЗ §3, §8D)', () => {
           return t;
         },
         fetchPositions: async (ids: number[]) => positionFixture(ids),
-        fetchItems: async () => itemsFixture(),
-        fetchItemsStats: async (ids: number[]) => itemStatsFixture(ids),
         now: NOW,
         log: silent,
       }),
@@ -424,8 +399,6 @@ describe('buildDataset — failure policy (ТЗ §3, §8D)', () => {
         // STRATZ still knows hero 55: a stale response must not sneak it back in.
         fetchMatchups: async () => matchupFixture(IDS_100),
         fetchPositions: async (ids: number[]) => positionFixture(ids),
-        fetchItems: async () => itemsFixture(),
-        fetchItemsStats: async (ids: number[]) => itemStatsFixture(ids),
         now: NOW,
         log: silent,
       }),
@@ -440,8 +413,6 @@ describe('buildDataset — the published triple describes one snapshot (ТЗ §8
       fetchMetadata: async () => ({ heroes: heroFixture(ids), latestPatch: '7.43', heroCount: 101 }),
       fetchMatchups: async (heroIds: number[]) => matchupFixture(heroIds),
       fetchPositions: async (ids: number[]) => positionFixture(ids),
-      fetchItems: async () => itemsFixture(),
-      fetchItemsStats: async (ids: number[]) => itemStatsFixture(ids),
       now: NOW,
       log: silent,
     });
@@ -468,8 +439,6 @@ describe('buildDataset — the published triple describes one snapshot (ТЗ §8
       fetchMetadata: metaFor(),
       fetchMatchups: async (ids: number[]) => matchupFixture(ids),
       fetchPositions: async (ids: number[]) => positionFixture(ids),
-      fetchItems: async () => itemsFixture(),
-      fetchItemsStats: async (ids: number[]) => itemStatsFixture(ids),
       now: NOW,
       log: silent,
     });
@@ -489,8 +458,6 @@ describe('buildDataset — no stale latestPatch (ТЗ §8C)', () => {
       fetchMetadata: metaFor('7.43'),
       fetchMatchups: async (ids: number[]) => matchupFixture(ids),
       fetchPositions: async (ids: number[]) => positionFixture(ids),
-      fetchItems: async () => itemsFixture(),
-      fetchItemsStats: async (ids: number[]) => itemStatsFixture(ids),
       now: NOW,
       log: silent,
     });
@@ -506,8 +473,6 @@ describe('buildDataset — no stale latestPatch (ТЗ §8C)', () => {
         fetchMetadata: metaFor(fresh),
         fetchMatchups: async (ids: number[]) => matchupFixture(ids),
         fetchPositions: async (ids: number[]) => positionFixture(ids),
-        fetchItems: async () => itemsFixture(),
-        fetchItemsStats: async (ids: number[]) => itemStatsFixture(ids),
         now: NOW,
         log: silent,
       });
@@ -520,8 +485,6 @@ describe('buildDataset — no stale latestPatch (ТЗ §8C)', () => {
       fetchMetadata: metaFor('7.42', 100),
       fetchMatchups: async (ids: number[]) => matchupFixture(ids),
       fetchPositions: async (ids: number[]) => positionFixture(ids),
-      fetchItems: async () => itemsFixture(),
-      fetchItemsStats: async (ids: number[]) => itemStatsFixture(ids),
       now: NOW,
       log: silent,
     });
@@ -581,8 +544,6 @@ describe('buildDataset — failure policy (ТЗ §8D, §3)', () => {
         fetchMetadata: metaFor(),
         fetchMatchups: async () => truncated,
         fetchPositions: async (ids: number[]) => positionFixture(ids),
-        fetchItems: async () => itemsFixture(),
-        fetchItemsStats: async (ids: number[]) => itemStatsFixture(ids),
         now: NOW,
         log: silent,
       }),
@@ -598,8 +559,6 @@ describe('dataset snapshot coherence (ТЗ §8E)', () => {
         fetchMetadata: async () => ({ heroes: heroFixture(ids), latestPatch: '7.42', heroCount: n }),
         fetchMatchups: async (heroIds: number[]) => matchupFixture(heroIds),
         fetchPositions: async (ids: number[]) => positionFixture(ids),
-        fetchItems: async () => itemsFixture(),
-        fetchItemsStats: async (ids: number[]) => itemStatsFixture(ids),
         now: NOW,
         log: silent,
       });
@@ -622,8 +581,6 @@ describe('dataset snapshot coherence (ТЗ §8E)', () => {
         fetchMetadata: async () => ({ heroes: heroFixture(ids), latestPatch: '7.42', heroCount: 126 }),
         fetchMatchups: async () => ds,
         fetchPositions: async (ids: number[]) => positionFixture(ids),
-        fetchItems: async () => itemsFixture(),
-        fetchItemsStats: async (ids: number[]) => itemStatsFixture(ids),
         now: NOW,
         log: silent,
       }),
@@ -639,12 +596,10 @@ describe('end-to-end: build -> publish -> serve (ТЗ §7/§8E)', () => {
     const dir = path.join(root, 'data');
     try {
       const ids = Array.from({ length: 101 }, (_, i) => i + 1);
-      const { heroes, matchups, positions, items, itemStats, meta } = await buildDataset({
+      const { heroes, matchups, positions, meta } = await buildDataset({
         fetchMetadata: async () => ({ heroes: heroFixture(ids), latestPatch: '7.42', heroCount: 101 }),
         fetchMatchups: async (h: number[]) => matchupFixture(h),
         fetchPositions: async (h: number[]) => positionFixture(h),
-        fetchItems: async () => itemsFixture(),
-        fetchItemsStats: async (ids: number[]) => itemStatsFixture(ids),
         now: NOW,
         log: silent,
       });
@@ -652,8 +607,6 @@ describe('end-to-end: build -> publish -> serve (ТЗ §7/§8E)', () => {
         'heroes.json': heroes,
         'matchups.json': matchups,
         'positions.json': positions,
-        'items.json': items,
-        'item-stats.json': itemStats,
         'meta.json': meta,
       });
 
@@ -687,8 +640,6 @@ describe('end-to-end: build -> publish -> serve (ТЗ §7/§8E)', () => {
       'heroes.json': heroFixture(staleIds, { pubPick: 1 }),
       'matchups.json': matchupFixture(staleIds),
       'positions.json': positionFixture(staleIds),
-      'items.json': itemsFixture(),
-      'item-stats.json': itemStatsFixture(staleIds),
       'meta.json': { source: 'STRATZ', heroMetadataSource: 'OpenDota', latestPatch: '7.40', heroCount: 3 },
     };
     try {
@@ -702,8 +653,6 @@ describe('end-to-end: build -> publish -> serve (ТЗ §7/§8E)', () => {
           },
           fetchMatchups: async (h: number[]) => matchupFixture(h),
           fetchPositions: async (ids: number[]) => positionFixture(ids),
-          fetchItems: async () => itemsFixture(),
-          fetchItemsStats: async (ids: number[]) => itemStatsFixture(ids),
           now: NOW,
           log: silent,
         }),
@@ -723,8 +672,6 @@ describe('buildDataset — latestPatch is always fresh (ТЗ §8C)', () => {
       fetchMetadata: metaFor('7.44'),
       fetchMatchups: async (ids: number[]) => matchupFixture(ids),
       fetchPositions: async (ids: number[]) => positionFixture(ids),
-      fetchItems: async () => itemsFixture(),
-      fetchItemsStats: async (ids: number[]) => itemStatsFixture(ids),
       now: NOW,
       log: silent,
     });
@@ -738,8 +685,6 @@ describe('buildDataset — latestPatch is always fresh (ТЗ §8C)', () => {
       fetchMetadata: metaFor('7.38'),
       fetchMatchups: async (ids: number[]) => matchupFixture(ids),
       fetchPositions: async (ids: number[]) => positionFixture(ids),
-      fetchItems: async () => itemsFixture(),
-      fetchItemsStats: async (ids: number[]) => itemStatsFixture(ids),
       now: NOW,
       log: silent,
     });
@@ -753,8 +698,6 @@ describe('buildDataset — latestPatch is always fresh (ТЗ §8C)', () => {
       fetchMetadata: async () => ({ heroes: heroFixture(ids), latestPatch: '7.42', heroCount: 101 }),
       fetchMatchups: async (h: number[]) => matchupFixture(h),
       fetchPositions: async (ids: number[]) => positionFixture(ids),
-      fetchItems: async () => itemsFixture(),
-      fetchItemsStats: async (ids: number[]) => itemStatsFixture(ids),
       now: NOW,
       log: silent,
     });
@@ -826,8 +769,6 @@ describe('buildDataset — failure policy (ТЗ §8D)', () => {
         fetchMetadata: async () => ({ heroes: heroFixture(ids), latestPatch: '7.42', heroCount: 101 }),
         fetchMatchups: async () => matchupFixture(IDS_100), // stale 100-hero answer
         fetchPositions: async (h: number[]) => positionFixture(h),
-        fetchItems: async () => itemsFixture(),
-        fetchItemsStats: async (ids: number[]) => itemStatsFixture(ids),
         now: NOW,
         log: silent,
       }),
@@ -842,8 +783,6 @@ describe('buildDataset — one consistent snapshot (ТЗ §8E)', () => {
       fetchMetadata: async () => ({ heroes: heroFixture(ids), latestPatch: '7.42', heroCount: 101 }),
       fetchMatchups: async (h: number[]) => matchupFixture(h),
       fetchPositions: async (ids: number[]) => positionFixture(ids),
-      fetchItems: async () => itemsFixture(),
-      fetchItemsStats: async (ids: number[]) => itemStatsFixture(ids),
       now: NOW,
       log: silent,
     });
@@ -859,8 +798,6 @@ describe('buildDataset — one consistent snapshot (ТЗ §8E)', () => {
       fetchMetadata: metaFor(),
       fetchMatchups: async (ids: number[]) => matchupFixture(ids),
       fetchPositions: async (ids: number[]) => positionFixture(ids),
-      fetchItems: async () => itemsFixture(),
-      fetchItemsStats: async (ids: number[]) => itemStatsFixture(ids),
       now: NOW,
       log: silent,
     });
@@ -876,3 +813,247 @@ describe('buildDataset — one consistent snapshot (ТЗ §8E)', () => {
   });
 });
 
+
+// ---------------------------------------------------------------------------
+// ТЗ №77 — the refresh serves Counterpick only: no item endpoints, no item
+// layers, exactly four published files.
+// ---------------------------------------------------------------------------
+
+describe('buildDataset — no item data (ТЗ №77)', () => {
+  const run = async (extra: Record<string, unknown> = {}) => {
+    const calls: string[] = [];
+    const logs: string[] = [];
+    const result = await buildDataset({
+      fetchMetadata: async () => { calls.push('metadata'); return metaFor()(); },
+      fetchMatchups: async (ids: number[]) => { calls.push('matchups'); return matchupFixture(ids); },
+      fetchPositions: async (ids: number[]) => { calls.push('positions'); return positionFixture(ids); },
+      now: NOW,
+      log: (line: string) => logs.push(line),
+      ...extra,
+    } as never);
+    return { result, calls, logs };
+  };
+
+  it('never calls item endpoints, even when item fetchers are passed in', async () => {
+    const fetchItems = vi.fn(async () => ({}));
+    const fetchItemsStats = vi.fn(async () => ({}));
+    const { calls } = await run({ fetchItems, fetchItemsStats });
+    expect(fetchItems).not.toHaveBeenCalled();
+    expect(fetchItemsStats).not.toHaveBeenCalled();
+    expect(calls).toEqual(['metadata', 'matchups', 'positions']);
+  });
+
+  it('returns no item layers and no meta.itemData', async () => {
+    const { result } = await run();
+    expect(Object.keys(result).sort()).toEqual(['heroes', 'matchups', 'meta', 'positionInfo', 'positions', 'validationResult']);
+    expect(result.meta).not.toHaveProperty('itemData');
+    expect(JSON.stringify(result.meta)).not.toMatch(/item/i);
+  });
+
+  it('keeps the matchup contract and the position checks', async () => {
+    const { result, logs } = await run();
+    expect(result.meta.dataQuality.checksPassed).toBe(13);
+    expect(result.positionInfo.heroCount).toBe(100);
+    expect(logs.join('\n')).not.toMatch(/item/i);
+    await expect(buildDataset({
+      fetchMetadata: metaFor(),
+      fetchMatchups: async (ids: number[]) => matchupFixture(ids),
+      fetchPositions: async (ids: number[]) => positionFixture(ids.slice(1)),
+      now: NOW,
+      log: silent,
+    })).rejects.toThrow();
+  });
+
+  it('publishes exactly heroes, matchups, positions and meta', async () => {
+    const { result } = await run();
+    expect([...PUBLISHED_FILES]).toEqual(['heroes.json', 'matchups.json', 'positions.json', 'meta.json']);
+    expect(Object.keys(buildPublishPayload(result))).toEqual([...PUBLISHED_FILES]);
+    expect([...DATASET_FILES].sort()).toEqual([...PUBLISHED_FILES].sort());
+    expect(() => buildPublishPayload({ ...result, positions: undefined } as never)).toThrow(/positions\.json/);
+  });
+
+  it('has no item pipeline left in the generator source', () => {
+    const root = fileURLToPath(new URL('..', import.meta.url));
+    const source = readFileSync(`${root}scripts/update-data-stratz.mjs`, 'utf8');
+    expect(source).not.toMatch(/itemFullPurchase|stratz\/items\.mjs|fetchItems|item-stats\.json|'items\.json'|pruneItemCatalogue|validateItemData|heroGamesByPosition/);
+    expect(existsSync(`${root}scripts/stratz/items.mjs`)).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// aggregateStratzMatchupChunks — production GraphQL contract
+// ---------------------------------------------------------------------------
+
+const vsRow = (heroId1: number, heroId2: number, matchCount = 100, winCount = 50) => ({
+  heroId1,
+  heroId2,
+  matchCount,
+  winCount,
+});
+const dryad = (heroId: number, vs: ReturnType<typeof vsRow>[] = []) => ({ heroId, vs });
+const response = (buckets: Record<string, ReturnType<typeof dryad>[]>) => ({
+  data: { heroStats: Object.fromEntries(
+    Object.entries(buckets).map(([bucket, heroes]) => [`w${bucket}`, heroes]),
+  ) },
+});
+const chunk = (chunkIndex: number, chunkHeroIds: number[], result: ReturnType<typeof response>) => ({
+  chunkIndex,
+  chunkHeroIds,
+  response: result,
+});
+const aggregate = (
+  chunks: ReturnType<typeof chunk>[],
+  buckets = [2957],
+  validHeroIds = [1, 2, 3, 4],
+) => aggregateStratzMatchupChunks(chunks, { buckets }, new Set(validHeroIds));
+const one = (heroId: number, vs: ReturnType<typeof vsRow>[], bucket = 2957) =>
+  chunk(0, [heroId], response({ [bucket]: [dryad(heroId, vs)] }));
+
+describe('aggregateStratzMatchupChunks — production GraphQL contract', () => {
+  it('uses winCount when enemyId === heroId1', () => {
+    expect(aggregate([one(1, [vsRow(1, 2, 100, 40)])])).toEqual({
+      '1': [{ hero_id: 2, games_played: 100, wins: 40 }],
+    });
+  });
+
+  it('complements winCount when enemyId === heroId2', () => {
+    expect(aggregate([one(2, [vsRow(1, 2, 100, 40)])])).toEqual({
+      '2': [{ hero_id: 1, games_played: 100, wins: 60 }],
+    });
+  });
+
+  it('aggregates multiple matchup rows for one hero', () => {
+    expect(aggregate([one(1, [vsRow(1, 2, 100, 40), vsRow(1, 3, 80, 20)])])).toEqual({
+      '1': [
+        { hero_id: 2, games_played: 100, wins: 40 },
+        { hero_id: 3, games_played: 80, wins: 20 },
+      ],
+    });
+  });
+
+  it('aggregates several dryads in a response', () => {
+    expect(aggregate([chunk(0, [1, 2], response({
+      2957: [dryad(1, [vsRow(1, 3)]), dryad(2, [vsRow(2, 3, 70, 25)])],
+    }))])).toEqual({
+      '1': [{ hero_id: 3, games_played: 100, wins: 50 }],
+      '2': [{ hero_id: 3, games_played: 70, wins: 25 }],
+    });
+  });
+
+  it('sums observations from multiple buckets', () => {
+    expect(aggregate([chunk(0, [1], response({
+      2957: [dryad(1, [vsRow(1, 2, 100, 40)])],
+      2958: [dryad(1, [vsRow(1, 2, 50, 20)])],
+    }))], [2957, 2958])).toEqual({
+      '1': [{ hero_id: 2, games_played: 150, wins: 60 }],
+    });
+  });
+
+  it('aggregates disjoint chunks', () => {
+    expect(aggregate([
+      one(1, [vsRow(1, 2, 100, 40)]),
+      chunk(1, [2], response({ 2957: [dryad(2, [vsRow(1, 2, 80, 30)])] })),
+    ])).toEqual({
+      '1': [{ hero_id: 2, games_played: 100, wins: 40 }],
+      '2': [{ hero_id: 1, games_played: 80, wins: 50 }],
+    });
+  });
+
+  it('returns an empty dataset for an empty dryad list', () => {
+    expect(aggregate([chunk(0, [1], response({ 2957: [] }))])).toEqual({});
+  });
+
+  it('returns an empty dataset for a dryad with no vs rows', () => {
+    expect(aggregate([one(1, [])])).toEqual({});
+  });
+
+  it('retains a zero-game matchup', () => {
+    expect(aggregate([one(1, [vsRow(1, 2, 0, 0)])])).toEqual({
+      '1': [{ hero_id: 2, games_played: 0, wins: 0 }],
+    });
+  });
+
+  it('rejects duplicate hero IDs inside a requested chunk', () => {
+    expect(() => aggregate([chunk(0, [1, 1], response({ 2957: [] }))])).toThrow(/duplicate Hero IDs/);
+  });
+
+  it('rejects duplicate dryad hero IDs in one bucket', () => {
+    expect(() => aggregate([
+      chunk(0, [1], response({ 2957: [dryad(1)] })),
+      chunk(1, [1], response({ 2957: [dryad(1)] })),
+    ])).toThrow(/Duplicate heroId/);
+  });
+
+  it('rejects a dryad outside its requested chunk', () => {
+    expect(() => aggregate([chunk(0, [1], response({ 2957: [dryad(2)] }))])).toThrow(/not in current requested/);
+  });
+
+  it('rejects an invalid dryad heroId', () => {
+    expect(() => aggregate([chunk(0, [1], response({ 2957: [dryad(0)] }))])).toThrow(/Invalid heroId/);
+  });
+
+  it('rejects an invalid heroId1', () => {
+    expect(() => aggregate([one(1, [vsRow(0, 2)])])).toThrow(/Invalid heroId1/);
+  });
+
+  it('rejects an invalid heroId2', () => {
+    expect(() => aggregate([one(1, [vsRow(1, 0)])])).toThrow(/Invalid heroId2/);
+  });
+
+  it('rejects a self-matchup', () => {
+    expect(() => aggregate([one(1, [vsRow(1, 1)])])).toThrow(/Self-matchup/);
+  });
+
+  it('rejects a matchup with the wrong orientation', () => {
+    expect(() => aggregate([one(1, [vsRow(2, 3)])])).toThrow(/Orientation error/);
+  });
+
+  it('rejects an opponent outside the global valid hero set', () => {
+    expect(() => aggregate([one(1, [vsRow(1, 99)])])).toThrow(/global valid hero ID set/);
+  });
+
+  it('rejects a non-integer matchCount', () => {
+    expect(() => aggregate([one(1, [vsRow(1, 2, 2.5, 1)])])).toThrow(/Invalid matchCount/);
+  });
+
+  it('rejects a non-integer winCount', () => {
+    expect(() => aggregate([one(1, [vsRow(1, 2, 10, 1.5)])])).toThrow(/Invalid winCount/);
+  });
+
+  it('rejects negative game counts', () => {
+    expect(() => aggregate([one(1, [vsRow(1, 2, -1, 0)])])).toThrow(/Invalid matchCount/);
+  });
+
+  it('rejects winCount greater than matchCount', () => {
+    expect(() => aggregate([one(1, [vsRow(1, 2, 10, 11)])])).toThrow(/Invalid winCount/);
+  });
+
+  it('rejects duplicate directed matchups in one bucket', () => {
+    expect(() => aggregate([one(1, [vsRow(1, 2), vsRow(1, 2, 90, 40)])])).toThrow(/Duplicate matchup row/);
+  });
+
+  it('rejects overlapping chunks that return the same hero', () => {
+    expect(() => aggregate([
+      chunk(0, [1], response({ 2957: [dryad(1)] })),
+      chunk(1, [1], response({ 2957: [dryad(1)] })),
+    ])).toThrow(/Duplicate heroId/);
+  });
+
+  it('does not fabricate observations for a missing bucket', () => {
+    expect(aggregate([
+      chunk(0, [1], response({ 2957: [dryad(1, [vsRow(1, 2)])] })),
+    ], [2957, 2958])).toEqual({
+      '1': [{ hero_id: 2, games_played: 100, wins: 50 }],
+    });
+  });
+
+  it('preserves both row orientations and sums games and wins correctly', () => {
+    expect(aggregate([
+      one(1, [vsRow(1, 2, 100, 40)]),
+      chunk(1, [2], response({ 2957: [dryad(2, [vsRow(1, 2, 100, 40)])] })),
+    ])).toEqual({
+      '1': [{ hero_id: 2, games_played: 100, wins: 40 }],
+      '2': [{ hero_id: 1, games_played: 100, wins: 60 }],
+    });
+  });
+});

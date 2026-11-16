@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "escalation": "research/data-quality/stratz-support-escalation-final.md",
+  "status": "DRAFTED",
+  "submission": {
+    "sent": false,
+    "ticketReference": null,
+    "submissionChannel": null,
+    "sentAt": null,
+    "confirmedBy": null
+  },
+  "statusHistory": [
+    {
+      "status": "DRAFTED",
+      "by": "generator",
+      "note": "Final escalation generated (FIX17); not sent."
+    }
+  ],
+  "policy": "Status changes only through transitionEscalation(). SENT and later states require explicit human confirmation; generating Markdown never changes the status."
+}

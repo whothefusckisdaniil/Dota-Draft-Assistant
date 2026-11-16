@@ -63,7 +63,7 @@ The decision rules are:
 **Patch detection is not an immediate publication trigger.** `latestPatch`
 means the latest Dota patch reported by OpenDota when the dataset was
 published. It does not mean every statistic in the snapshot comes exclusively
-from that patch: matchup and item statistics are not patch-filtered. A patch
+from that patch: matchup and position statistics are not patch-filtered. A patch
 change with no new complete bucket leaves the committed snapshot, including
 its displayed patch label, untouched. An OpenDota fetch error or malformed
 published metadata fails closed; it never falls back to old metadata.

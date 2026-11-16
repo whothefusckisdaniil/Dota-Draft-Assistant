@@ -1,0 +1,214 @@
+# FIX16 run log 2026-11-13T10:24:04Z
+## raw sha256
+3898599572177131decbb6b2cf8e184d7313eb7ac02fa08987e5d6e79b02b22f  research/data-quality/stratz-opendota-coverage-validation-raw-responses.json
+## build
+{
+  "research/data-quality/stratz-opendota-coverage-validation-evidence.json": "WRITTEN",
+  "research/data-quality/stratz-support-escalation-v2.md": "WRITTEN",
+  "research/data-quality/stratz-support-escalation-v2.json": "WRITTEN"
+}
+exit 0
+## check
+{
+  "research/data-quality/stratz-opendota-coverage-validation-evidence.json": "REPRODUCED",
+  "research/data-quality/stratz-support-escalation-v2.md": "REPRODUCED",
+  "research/data-quality/stratz-support-escalation-v2.json": "REPRODUCED"
+}
+exit 0
+## FIX15 frozen check
+{
+  "research/data-quality/stratz-support-escalation.md": "FROZEN_HASH_OK",
+  "research/data-quality/stratz-support-escalation.json": "FROZEN_HASH_OK",
+  "research/data-quality/stratz-external-source-feasibility.json": "FROZEN_HASH_OK",
+  "research/data-quality/stratz-external-match-level-evidence.json": "FROZEN_HASH_OK",
+  "research/data-quality/stratz-external-match-level-raw-responses.json": "FROZEN_HASH_OK"
+}
+exit 0
+## vitest FIX16 (after fixing a stale field name in test 7)
+ Test Files  1 passed (1)
+      Tests  23 passed (23)
+## vitest FIX12–FIX15
+ Test Files  4 passed (4)
+      Tests  98 passed (98)
+## protected hashes (22)
+OK  scripts/stratz-diagnostic-input.json  291350d18a0195dfa9b2292b08a832267234dac6b8b16b8f045c71cd5afba002
+OK  research/data-quality/stratz-reverse-pair-repeatability-evidence.json  278c740c10747da0c91642cd02efb5ebaca741c8b935a6d6b8b771420d89978e
+OK  research/data-quality/stratz-reverse-pair-asymmetry-report.json  ef5e27a1ca55cb1876d210027ff58c2f4a11f7f35ca3c24f9754ad71f584cf95
+OK  research/data-quality/stratz-reverse-pair-root-cause-evidence.json  7ed6d5daac42dbcc19995caf5518518ccac3ef6de42a4fd62c7468af7363494b
+OK  research/data-quality/stratz-reverse-pair-root-cause-raw-responses.json  0e426ac478489e23e1d35cd1336fe2487ab101364ff8b041f433714c1ccf6e7b
+OK  research/data-quality/stratz-reverse-pair-bracket-semantics-evidence.json  0a1953f079b6a94fbade6cbad77a16d6423fe829af1a003440b5b8f9ecc9a0be
+OK  research/data-quality/stratz-reverse-pair-bracket-raw-responses.json  5db0fed846569d45b7c55f4cd5a8cbcc6de2c3e2963b2c098de723b3e5542a74
+OK  research/data-quality/stratz-reverse-pair-partition-semantics-evidence.json  7166a0d95b4429076c7b387198928a0e885ca413c85d886d3134dee4a660f9fe
+OK  research/data-quality/stratz-reverse-pair-match-level-evidence.json  91143b20f42f4227081d69bcbbae937ce1da8da4b480065047ae0a4d0a6ce862
+OK  research/data-quality/stratz-reverse-pair-match-level-raw-responses.json  69f4b06b1e05a7703b6a6e403b007c978fc3214f1ea2f90cac0027b35c297ba5
+OK  public/data/heroes.json  59ecc2bc9b55a62232bf7d40b85c1d4c306602e89addda6d3faa9ed38a2c061d
+OK  public/data/matchups.json  0a9e54aaa925494f7ad876c992e782cfd45d297b3952c8afefb8decc3ad02e8b
+OK  public/data/meta.json  9db099dedf5c5f0d052590d98d194807e2580a16694fc562ae9ffbf1d144857e
+OK  scripts/update-data-stratz.mjs  b142bf249e4510bce4f12ef004fbea96cd7b0c9f33a563a30d6ccc3c3ea65431
+OK  research/data-quality/stratz-support-escalation.md  02f0a98c1c616845c6a528322fdaa6203454ee00cb2d9eb60d1305740d640d58
+OK  research/data-quality/stratz-support-escalation.json  cbe70befeaece68dfd7aa00ca8a2a7de4a51ec2b901d3c8a2d2f6332fb216ca3
+OK  research/data-quality/stratz-external-source-feasibility.json  ebcb245cb9154aa4ccb7853aac606009e764895fe7a121b4df33be5ed0e93587
+OK  research/data-quality/stratz-external-match-level-evidence.json  af54bca9575e839f60a2ca2a91ff89b9a369b301a65a4fc132749313abf16a4e
+OK  research/data-quality/stratz-external-match-level-raw-responses.json  aae3c1b1f00d090f30c299b517a0f14fe56047296213945c365e8cdae5a71344
+OK  public/data/item-stats.json  295d22a67bbc40ac010f58636870607514f925e455927005385ab549b8c9c27f
+OK  public/data/items.json  5584b16925fdac49ad7950edeb670594045c415860a3c57281191c38ba1e3ca7
+OK  public/data/positions.json  4a0e6ba79e8b5ebe12fb3a56ba107742a5dd920a178a7d61afe11af2387853da
+count 22
+## FIX16 outputs
+808dd41362d0509e87037f65fd94ec5a0206e6f79d681a37d13c22ef19a19e98  research/data-quality/stratz-opendota-coverage-validation-evidence.json
+3898599572177131decbb6b2cf8e184d7313eb7ac02fa08987e5d6e79b02b22f  research/data-quality/stratz-opendota-coverage-validation-raw-responses.json
+cc6f029f55d956b2ef505961619750d5520e0bc1bd68f233dd1b8b5b4ba71c39  research/data-quality/stratz-support-escalation-v2.json
+009f3b58cc23df5eecdf3f47ca7963e83c3f1b58e708c7c906e21f799936bd76  research/data-quality/stratz-support-escalation-v2.md
+## summary
+{
+ "rangeStatus": {
+  "fix16Ranges": 155,
+  "byRole": {
+   "fix15-range": 152,
+   "extension": 3
+  },
+  "ok": 155,
+  "failed": 0,
+  "fix15RangesFullyRemeasured": 152,
+  "fix15RangesIncomplete": [],
+  "timeoutSplits": 0,
+  "fix15ChunkStatus": {
+   "ok": 152,
+   "failed": 0
+  }
+ },
+ "continuity": "CONTIGUOUS",
+ "remeasure": "CONTIGUOUS",
+ "totals": "CONSISTENT_WITH_DRIFT",
+ "mono": {
+  "result": "REFUTED_STRICT_MONOTONICITY",
+  "byGroup": {
+   "within:extension-below": 365,
+   "within:main": 5855,
+   "within:extension-above": 1088,
+   "border:extension-below-internal-border": 32,
+   "border:extension-below->main": 30,
+   "border:main-fix15-chunk-border": 1085,
+   "border:main->extension-above": 40,
+   "pairRecords": 683
+  },
+  "max": 5855,
+  "chain": true,
+  "within": {
+   "extension-below": {
+    "ranges": 2,
+    "rows": 401039,
+    "backwardSteps": 37556,
+    "equalSteps": 204601,
+    "forwardSteps": 158880,
+    "largeJumps": 0,
+    "maxBackwardStepSec": 356,
+    "maxDropBelowRunningMaxSec": 365,
+    "worstRange": [
+     9042184385,
+     9042484385
+    ]
+   },
+   "main": {
+    "ranges": 152,
+    "rows": 29697222,
+    "backwardSteps": 3233930,
+    "equalSteps": 15029443,
+    "forwardSteps": 11433697,
+    "largeJumps": 4,
+    "maxBackwardStepSec": 5855,
+    "maxDropBelowRunningMaxSec": 5855,
+    "worstRange": [
+     9042784385,
+     9043084385
+    ]
+   },
+   "extension-above": {
+    "ranges": 1,
+    "rows": 39280,
+    "backwardSteps": 6765,
+    "equalSteps": 15153,
+    "forwardSteps": 17361,
+    "largeJumps": 0,
+    "maxBackwardStepSec": 1087,
+    "maxDropBelowRunningMaxSec": 1088,
+    "worstRange": [
+     9087866301,
+     9087955454
+    ]
+   }
+  },
+  "borders": {
+   "extension-below-internal-border": {
+    "borders": 1,
+    "adjacentOverlaps": 1,
+    "maxAdjacentOverlapSec": 32,
+    "maxDropBelowRunningMaxSec": 32,
+    "worstBorderAtId": 9042184385
+   },
+   "extension-below->main": {
+    "borders": 1,
+    "adjacentOverlaps": 1,
+    "maxAdjacentOverlapSec": 30,
+    "maxDropBelowRunningMaxSec": 30,
+    "worstBorderAtId": 9042484385
+   },
+   "main-fix15-chunk-border": {
+    "borders": 151,
+    "adjacentOverlaps": 151,
+    "maxAdjacentOverlapSec": 1085,
+    "maxDropBelowRunningMaxSec": 1085,
+    "worstBorderAtId": 9043084385
+   },
+   "main->extension-above": {
+    "borders": 1,
+    "adjacentOverlaps": 1,
+    "maxAdjacentOverlapSec": 40,
+    "maxDropBelowRunningMaxSec": 40,
+    "worstBorderAtId": 9087866301
+   }
+  }
+ },
+ "boundaries": {
+  "status": "BOUNDARIES_EMPIRICALLY_SUPPORTED",
+  "lowerDays": 1.9886,
+  "upperDays": 1.2788,
+  "ratio": 18.9,
+  "below": 0,
+  "above": 0
+ },
+ "heroInWindow": {
+  "byClass": {
+   "NULL_ARRAY": 0,
+   "INCOMPLETE_ARRAY": 2208,
+   "NULL_ELEMENT": 0,
+   "ZEROED_HERO": 128904,
+   "COMPLETE": 26729343
+  },
+  "unclassifiable": 131112,
+  "zeroFlagNonExclusive": 129106,
+  "rows": 26860455
+ },
+ "coverage": {
+  "status": "PARTIAL",
+  "classification": "PARTIAL_MATCH_COVERAGE",
+  "enumerationIntegrity": "PASS",
+  "reasons": [
+   "SOURCE_COMPLETENESS_UNDOCUMENTED",
+   "COVERAGE_RELATIVE_TO_STRATZ_UNVERIFIED",
+   "SOURCE_ROWS_CHANGED_SINCE_FIX15",
+   "BOUNDARY_COMPLETENESS_NOT_PROVEN",
+   "UNCLASSIFIABLE_HERO_ARRAYS"
+  ],
+  "completeRequires": "Documented completeness of the source plus filters equivalent to STRATZ; not set automatically."
+ },
+ "rootCause": [
+  "UNRESOLVED",
+  false
+ ],
+ "escalation": {
+  "path": "research/data-quality/stratz-support-escalation-v2.json",
+  "status": "DRAFTED"
+ }
+}
+ M scripts/update-data-stratz.mjs

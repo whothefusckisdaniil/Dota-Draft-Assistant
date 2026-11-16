@@ -4,6 +4,19 @@
 > No taxonomy is produced, and none should be, from these sources.
 > Production scoring, datasets, UI and workflows are untouched.
 
+> **Scope correction (ТЗ №47, 2026-10-08):** the original audit incorrectly
+> generalized its GameTracking finding. It checked `content/dota` and the
+> tracking path summary but missed the extracted VPK subtree
+> `game/dota/pak01_dir/scripts/npc/`, which contains `npc_heroes.txt`,
+> per-hero KV files, `npc_abilities.txt`, and `items.txt`. A pinned-source
+> audit now finds 127/127 production hero files, 790/790 referenced
+> `Ability1`–`Ability9` identifiers with definitions, and 199/199 exact item
+> key joins. The OpenDota constants and free-form-marker measurements below
+> remain valid for those sources; this document's old claim that no
+> machine-readable Valve hero→ability source exists is superseded. The files
+> provide mechanics data, not normalized threat/response rules. See
+> the Threat / Response Taxonomy research (retired by ТЗ №77).
+
 ## 1. The question
 
 Not "which heroes stun", but:
@@ -11,31 +24,34 @@ Not "which heroes stun", but:
 > can a control profile be derived **machine-readably**, for the whole hero
 > pool, without a hand-written hero list?
 
-The designated primary source does not contain the data the design assumed, and
-the secondary source has no way to attach an ability to a hero.
+The OpenDota secondary source has no way to attach an ability to a hero, and its
+free-form ability markers are not a complete control taxonomy. The original
+audit missed a separate, versioned GameTracking VPK extraction; §47 audits that
+source independently.
 
 ## 2. Source audit — the two structural findings
 
-**Valve GameTracking-Dota2 tracks no ability data at all.** Its `files.json`
-lists **22 tracked paths, 0 of them ability files**; `content/dota` contains
-only `materials` and `panorama`, and `panorama` holds 2 entries, neither
-ability-related. There is no `npc_abilities` to read, so no commit SHA can be
-pinned for something that does not exist.
+**Historical scope note:** this audit only inspected the `content/dota`
+subtree and did not expand VPK extraction rules in `files.json`. The later §47
+check found ability/hero files in
+`game/dota/pak01_dir/scripts/npc/`. The measurements in the next paragraph
+remain specifically about the OpenDota endpoint and its 127 hero records.
 
 **OpenDota `/constants/heroes` exposes no ability list.** The hero record fields
 are `id, name, primary_attr, attack_type, roles, img, icon, base_*, *_gain,
 attack_range, ..., localized_name`. There is **no `abilities` array on any of the
-127 heroes (0/127)**. The hero → ability edge the whole taxonomy needs does not
-exist machine-readably in either source.
+127 heroes (0/127)**. The hero → ability edge is absent from this OpenDota
+endpoint; §47 establishes that it is present in the separate versioned Valve
+KV source.
 
 ## 3. What evidence *does* exist
 
-`/constants/abilities` has **3084 records, 1334 with `attrib[]`, 3390 distinct
-attribute keys**. Top-level fields are `dname, attrib, img, behavior, desc, cd,
-mc, lore, bkbpierce, dispellable, dmg_type, target_team, target_type,
+OpenDota `/constants/abilities` has **3084 records, 1334 with `attrib[]`, 3390
+distinct attribute keys**. Top-level fields are `dname, attrib, img, behavior,
+desc, cd, mc, lore, bkbpierce, dispellable, dmg_type, target_team, target_type,
 is_innate, dmg` — **there is no top-level `stun`, `root`, `silence`, `mute`,
 `disarm`, `hex` or `break` field**. All control signal lives inside free-form,
-per-ability `attrib.key` strings.
+per-ability `attrib.key` strings in this OpenDota endpoint.
 
 | Category | Explicit marker | Abilities | Key variants |
 | --- | --- | ---: | ---: |
@@ -117,26 +133,28 @@ itself the point: there is nothing stable to correlate.
 ## 7. Verdict
 
 ```text
-VERDICT: CONTROL_NOT_IDENTIFIABLE
+VERDICT: CONTROL_NOT_IDENTIFIABLE (original OpenDota/free-form-marker scope)
 ```
 
-The designated primary source tracks no ability data, and the secondary source
-exposes no machine-readable hero → ability join (0/127). All eight measured
-categories have at least one explicit marker, covering only 229/3084 abilities,
-and canonical mechanics such as Lion's Impale carry no marker at all — so
-absence of a marker cannot distinguish "does not do it" from "not measured".
+The OpenDota secondary source exposes no machine-readable hero → ability join
+(0/127). Its free-form marker audit found markers on only 229/3084 abilities,
+and canonical mechanics such as Lion's Impale carry no marker — so absence of a
+marker cannot distinguish "does not do it" from "not measured". The source
+correction above establishes that a separate Valve KV hero→ability source is
+available; that source has not been converted into a complete control
+taxonomy.
 
-This is a **measurement** about the sources, not a judgement about Dota. The
-mechanics are real and well documented; they are simply not exposed as
-machine-readable data by either source.
+This is a **measurement** about the audited marker schema, not a judgement
+about Dota. The mechanics are real; a source field's absence is not proof that
+a mechanic is absent.
 
 ## 8. What would change the answer
 
 - A maintained, machine-readable control taxonomy keyed to hero and ability —
-  a curated dataset, i.e. the manual mapping this project is trying to avoid,
-  which would also have to be maintained across patches.
-- Valve ability KV data (the `npc_abilities` files GameTracking does not track),
-  read directly from the Dota content install.
+  a curated dataset which would have to be maintained across patches. The
+  versioned Valve KV source path and its coverage are audited in §47; raw game
+  data still does not itself supply canonical threat taxonomy or item response
+  rules.
 - Explicit semantic fields in OpenDota's ability records.
 
 ## 9. The capability/threat boundary (§23)

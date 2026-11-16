@@ -8,3 +8,6 @@ dist-ssr/
 .env.*.local
 
 *.tsbuildinfo
+
+# Retired item/build research (ТЗ №77): kept locally for reference, never published
+archive/

@@ -1,0 +1,4818 @@
+{
+  "schemaVersion": 1,
+  "diagnostic": "TZ #76-FIX14 STRATZ match-level reverse-pair reconciliation",
+  "createdAt": "2026-11-13T07:42:16.310Z",
+  "productionParameters": {
+    "brackets": [
+      "HERALD_GUARDIAN",
+      "CRUSADER_ARCHON",
+      "LEGEND_ANCIENT",
+      "DIVINE_IMMORTAL"
+    ],
+    "bucketSeconds": 604800,
+    "buckets": [
+      2963,
+      2964,
+      2965,
+      2966
+    ],
+    "bracketSource": "scripts/update-data-stratz.mjs:BRACKETS"
+  },
+  "sourceHashes": {
+    "before": {
+      "fix9Input": {
+        "path": "scripts/stratz-diagnostic-input.json",
+        "physicalSha256": "291350d18a0195dfa9b2292b08a832267234dac6b8b16b8f045c71cd5afba002"
+      },
+      "fix10Repeatability": {
+        "path": "research/data-quality/stratz-reverse-pair-repeatability-evidence.json",
+        "physicalSha256": "278c740c10747da0c91642cd02efb5ebaca741c8b935a6d6b8b771420d89978e"
+      },
+      "fix10Report": {
+        "path": "research/data-quality/stratz-reverse-pair-asymmetry-report.json",
+        "physicalSha256": "ef5e27a1ca55cb1876d210027ff58c2f4a11f7f35ca3c24f9754ad71f584cf95"
+      },
+      "fix11Evidence": {
+        "path": "research/data-quality/stratz-reverse-pair-root-cause-evidence.json",
+        "physicalSha256": "7ed6d5daac42dbcc19995caf5518518ccac3ef6de42a4fd62c7468af7363494b"
+      },
+      "fix11Raw": {
+        "path": "research/data-quality/stratz-reverse-pair-root-cause-raw-responses.json",
+        "physicalSha256": "0e426ac478489e23e1d35cd1336fe2487ab101364ff8b041f433714c1ccf6e7b"
+      },
+      "fix12Evidence": {
+        "path": "research/data-quality/stratz-reverse-pair-bracket-semantics-evidence.json",
+        "physicalSha256": "0a1953f079b6a94fbade6cbad77a16d6423fe829af1a003440b5b8f9ecc9a0be"
+      },
+      "fix12Raw": {
+        "path": "research/data-quality/stratz-reverse-pair-bracket-raw-responses.json",
+        "physicalSha256": "5db0fed846569d45b7c55f4cd5a8cbcc6de2c3e2963b2c098de723b3e5542a74"
+      },
+      "fix13Evidence": {
+        "path": "research/data-quality/stratz-reverse-pair-partition-semantics-evidence.json",
+        "physicalSha256": "7166a0d95b4429076c7b387198928a0e885ca413c85d886d3134dee4a660f9fe"
+      },
+      "productionHeroes": {
+        "path": "public/data/heroes.json",
+        "physicalSha256": "59ecc2bc9b55a62232bf7d40b85c1d4c306602e89addda6d3faa9ed38a2c061d"
+      },
+      "productionMatchups": {
+        "path": "public/data/matchups.json",
+        "physicalSha256": "0a9e54aaa925494f7ad876c992e782cfd45d297b3952c8afefb8decc3ad02e8b"
+      },
+      "productionMeta": {
+        "path": "public/data/meta.json",
+        "physicalSha256": "9db099dedf5c5f0d052590d98d194807e2580a16694fc562ae9ffbf1d144857e"
+      }
+    },
+    "after": {
+      "fix9Input": {
+        "path": "scripts/stratz-diagnostic-input.json",
+        "physicalSha256": "291350d18a0195dfa9b2292b08a832267234dac6b8b16b8f045c71cd5afba002"
+      },
+      "fix10Repeatability": {
+        "path": "research/data-quality/stratz-reverse-pair-repeatability-evidence.json",
+        "physicalSha256": "278c740c10747da0c91642cd02efb5ebaca741c8b935a6d6b8b771420d89978e"
+      },
+      "fix10Report": {
+        "path": "research/data-quality/stratz-reverse-pair-asymmetry-report.json",
+        "physicalSha256": "ef5e27a1ca55cb1876d210027ff58c2f4a11f7f35ca3c24f9754ad71f584cf95"
+      },
+      "fix11Evidence": {
+        "path": "research/data-quality/stratz-reverse-pair-root-cause-evidence.json",
+        "physicalSha256": "7ed6d5daac42dbcc19995caf5518518ccac3ef6de42a4fd62c7468af7363494b"
+      },
+      "fix11Raw": {
+        "path": "research/data-quality/stratz-reverse-pair-root-cause-raw-responses.json",
+        "physicalSha256": "0e426ac478489e23e1d35cd1336fe2487ab101364ff8b041f433714c1ccf6e7b"
+      },
+      "fix12Evidence": {
+        "path": "research/data-quality/stratz-reverse-pair-bracket-semantics-evidence.json",
+        "physicalSha256": "0a1953f079b6a94fbade6cbad77a16d6423fe829af1a003440b5b8f9ecc9a0be"
+      },
+      "fix12Raw": {
+        "path": "research/data-quality/stratz-reverse-pair-bracket-raw-responses.json",
+        "physicalSha256": "5db0fed846569d45b7c55f4cd5a8cbcc6de2c3e2963b2c098de723b3e5542a74"
+      },
+      "fix13Evidence": {
+        "path": "research/data-quality/stratz-reverse-pair-partition-semantics-evidence.json",
+        "physicalSha256": "7166a0d95b4429076c7b387198928a0e885ca413c85d886d3134dee4a660f9fe"
+      },
+      "productionHeroes": {
+        "path": "public/data/heroes.json",
+        "physicalSha256": "59ecc2bc9b55a62232bf7d40b85c1d4c306602e89addda6d3faa9ed38a2c061d"
+      },
+      "productionMatchups": {
+        "path": "public/data/matchups.json",
+        "physicalSha256": "0a9e54aaa925494f7ad876c992e782cfd45d297b3952c8afefb8decc3ad02e8b"
+      },
+      "productionMeta": {
+        "path": "public/data/meta.json",
+        "physicalSha256": "9db099dedf5c5f0d052590d98d194807e2580a16694fc562ae9ffbf1d144857e"
+      }
+    },
+    "unchanged": true
+  },
+  "upstreamEvidence": {
+    "fix13EvidenceSha256": "bdaaa3caca2c6e321e0aebfd5250b689dfc8ac7f84c9303ade88212d2dab8d1b",
+    "fix13PartitionStatus": "PROVEN_ON_SAMPLE",
+    "fix13RootCauseStatus": "UNRESOLVED"
+  },
+  "schemaIntrospection": {
+    "status": "VERIFIED",
+    "queryHash": "5c1313de906bc7fb2f3287e53620b5ffc402e0f82904a26c4fbeac5995099cad",
+    "responseHash": "8a16760dff5841d1090c38ff063a6bd930b8c9739379f0809a2d31eb0a0a3ace",
+    "typeCount": 513,
+    "rawArtifact": "research/data-quality/stratz-reverse-pair-match-level-raw-responses.json"
+  },
+  "discoveredCapabilities": {
+    "status": "MATCH_LEVEL_EVIDENCE_UNAVAILABLE",
+    "queryRootType": "DotaQuery",
+    "typeCount": 513,
+    "matchType": {
+      "typeName": "MatchType",
+      "lookupRootField": {
+        "name": "match",
+        "found": true,
+        "graphqlType": "MatchType",
+        "nullable": true,
+        "description": "Find match details by the match id. id is a required input field.",
+        "args": [
+          {
+            "name": "id",
+            "graphqlType": "Long!",
+            "nullable": false,
+            "description": "The id of the Dota match to include in this query, excluding all results that do not include this id."
+          }
+        ]
+      },
+      "fields": [
+        {
+          "name": "id",
+          "found": true,
+          "graphqlType": "Long",
+          "nullable": true,
+          "description": null,
+          "args": []
+        },
+        {
+          "name": "startDateTime",
+          "found": true,
+          "graphqlType": "Long",
+          "nullable": true,
+          "description": null,
+          "args": []
+        },
+        {
+          "name": "endDateTime",
+          "found": true,
+          "graphqlType": "Long",
+          "nullable": true,
+          "description": null,
+          "args": []
+        },
+        {
+          "name": "didRadiantWin",
+          "found": true,
+          "graphqlType": "Boolean",
+          "nullable": true,
+          "description": null,
+          "args": []
+        },
+        {
+          "name": "bracket",
+          "found": true,
+          "graphqlType": "Byte",
+          "nullable": true,
+          "description": null,
+          "args": []
+        },
+        {
+          "name": "rank",
+          "found": true,
+          "graphqlType": "Int",
+          "nullable": true,
+          "description": null,
+          "args": []
+        },
+        {
+          "name": "actualRank",
+          "found": true,
+          "graphqlType": "Short",
+          "nullable": true,
+          "description": null,
+          "args": []
+        },
+        {
+          "name": "averageRank",
+          "found": true,
+          "graphqlType": "Short",
+          "nullable": true,
+          "description": null,
+          "args": []
+        },
+        {
+          "name": "lobbyType",
+          "found": true,
+          "graphqlType": "LobbyTypeEnum",
+          "nullable": true,
+          "description": null,
+          "args": []
+        },
+        {
+          "name": "gameMode",
+          "found": true,
+          "graphqlType": "GameModeEnumType",
+          "nullable": true,
+          "description": null,
+          "args": []
+        },
+        {
+          "name": "isStats",
+          "found": true,
+          "graphqlType": "Boolean",
+          "nullable": true,
+          "description": null,
+          "args": []
+        },
+        {
+          "name": "players",
+          "found": true,
+          "graphqlType": "[MatchPlayerType]",
+          "nullable": true,
+          "description": null,
+          "args": [
+            {
+              "name": "steamAccountId",
+              "graphqlType": "Long",
+              "nullable": true,
+              "description": "The steam account id to include in this query, excluding all results that do not have this steam account id."
+            }
+          ]
+        }
+      ],
+      "participantType": "MatchPlayerType",
+      "participantFields": [
+        {
+          "name": "matchId",
+          "found": true,
+          "graphqlType": "Long",
+          "nullable": true,
+          "description": null,
+          "args": []
+        },
+        {
+          "name": "heroId",
+          "found": true,
+          "graphqlType": "Short",
+          "nullable": true,
+          "description": null,
+          "args": []
+        },
+        {
+          "name": "isRadiant",
+          "found": true,
+          "graphqlType": "Boolean",
+          "nullable": true,
+          "description": null,
+          "args": []
+        },
+        {
+          "name": "isVictory",
+          "found": true,
+          "graphqlType": "Boolean",
+          "nullable": true,
+          "description": null,
+          "args": []
+        },
+        {
+          "name": "playerSlot",
+          "found": true,
+          "graphqlType": "Byte",
+          "nullable": true,
+          "description": null,
+          "args": []
+        },
+        {
+          "name": "steamAccountId",
+          "found": true,
+          "graphqlType": "Long",
+          "nullable": true,
+          "description": null,
+          "args": []
+        }
+      ]
+    },
+    "matchIdentityCarrierTypes": [
+      "AghanimLabPlayerSeasonOneType",
+      "DireTideCustomGamePlayerType",
+      "FeatType",
+      "FeedType",
+      "HeroGuideType",
+      "HeroRampageObjectType",
+      "MatchLivePlayerType",
+      "MatchLiveType",
+      "MatchPlayerStatsType",
+      "MatchPlayerType",
+      "MatchReplayUploadPlayerType",
+      "MatchType",
+      "PlayerPlayedWithProPlayerMatchType",
+      "TwitchTrackerPlayerMatchType"
+    ],
+    "aggregateEndpoint": {
+      "path": "heroStats.matchUp",
+      "field": {
+        "name": "matchUp",
+        "found": true,
+        "graphqlType": "[HeroDryadType]",
+        "nullable": true,
+        "description": "Returns back a list of the hero matchups, showing how that hero's win rate is affected with or against other heroes.",
+        "args": [
+          {
+            "name": "heroId",
+            "graphqlType": "Short",
+            "nullable": true,
+            "description": "The hero id to include in this query, excluding all results that do not include this hero."
+          },
+          {
+            "name": "heroIds",
+            "graphqlType": "[Short]",
+            "nullable": true,
+            "description": "An array of hero ids to include in this query, excluding all results that do not include one of these heroes."
+          },
+          {
+            "name": "week",
+            "graphqlType": "Long",
+            "nullable": true,
+            "description": "The week to include in this query, excluding all results that do not include this week. The value is an epoc TimeStamp of the week of data you want. Leaving null gives the current week."
+          },
+          {
+            "name": "bracketBasicIds",
+            "graphqlType": "[RankBracketBasicEnum]",
+            "nullable": true,
+            "description": "An array of rank ids to include in this query, excluding all results that do not include one of these ranks. The value ranges from 0-8 with 0 being unknown MMR and 1-8 is low to high MMR brackets. Example 7 is Divine."
+          },
+          {
+            "name": "orderBy",
+            "graphqlType": "Byte",
+            "nullable": true,
+            "description": "Id representing how to order dryads and triads. Synergy is STRATZ formula to help determine the best outcome of wins and picks in one. Accepted Inputs : Synergy = 0, Pick = 1, Win = 2, Loss = 3, Disadvantage = 4, Advantage = 5"
+          },
+          {
+            "name": "matchLimit",
+            "graphqlType": "Int",
+            "nullable": true,
+            "description": "Minimum amount of MatchCount required for a Duo to qualify"
+          },
+          {
+            "name": "skip",
+            "graphqlType": "Int",
+            "nullable": true,
+            "description": "The amount of data to skip before collecting your query. This is useful for Paging."
+          },
+          {
+            "name": "take",
+            "graphqlType": "Int",
+            "nullable": true,
+            "description": "The amount to have returned in your query. The maximum of this is always dynamic. Limit : "
+          }
+        ]
+      },
+      "rowTypes": [
+        {
+          "typeName": "HeroDryadType",
+          "fields": [
+            {
+              "name": "heroId",
+              "graphqlType": "Short",
+              "description": null
+            },
+            {
+              "name": "with",
+              "graphqlType": "[HeroStatsHeroDryadType]",
+              "description": null
+            },
+            {
+              "name": "matchCountWith",
+              "graphqlType": "Long",
+              "description": null
+            },
+            {
+              "name": "vs",
+              "graphqlType": "[HeroStatsHeroDryadType]",
+              "description": null
+            },
+            {
+              "name": "matchCountVs",
+              "graphqlType": "Long",
+              "description": null
+            }
+          ],
+          "matchIdentityFields": []
+        },
+        {
+          "typeName": "HeroStatsHeroDryadType",
+          "fields": [
+            {
+              "name": "heroId1",
+              "graphqlType": "Short",
+              "description": null
+            },
+            {
+              "name": "heroId2",
+              "graphqlType": "Short",
+              "description": null
+            },
+            {
+              "name": "week",
+              "graphqlType": "Int",
+              "description": null
+            },
+            {
+              "name": "bracketBasicIds",
+              "graphqlType": "RankBracketBasicEnum",
+              "description": null
+            },
+            {
+              "name": "kills",
+              "graphqlType": "Long",
+              "description": null
+            },
+            {
+              "name": "matchCount",
+              "graphqlType": "Long",
+              "description": null
+            },
+            {
+              "name": "deaths",
+              "graphqlType": "Long",
+              "description": null
+            },
+            {
+              "name": "assists",
+              "graphqlType": "Long",
+              "description": null
+            },
+            {
+              "name": "networth",
+              "graphqlType": "Long",
+              "description": null
+            },
+            {
+              "name": "duration",
+              "graphqlType": "Long",
+              "description": null
+            },
+            {
+              "name": "winCount",
+              "graphqlType": "Long",
+              "description": null
+            },
+            {
+              "name": "firstBloodTime",
+              "graphqlType": "Long",
+              "description": null
+            },
+            {
+              "name": "cs",
+              "graphqlType": "Long",
+              "description": null
+            },
+            {
+              "name": "dn",
+              "graphqlType": "Long",
+              "description": null
+            },
+            {
+              "name": "goldEarned",
+              "graphqlType": "Long",
+              "description": null
+            },
+            {
+              "name": "xp",
+              "graphqlType": "Long",
+              "description": null
+            },
+            {
+              "name": "heroDamage",
+              "graphqlType": "Long",
+              "description": null
+            },
+            {
+              "name": "towerDamage",
+              "graphqlType": "Long",
+              "description": null
+            },
+            {
+              "name": "heroHealing",
+              "graphqlType": "Long",
+              "description": null
+            },
+            {
+              "name": "level",
+              "graphqlType": "Long",
+              "description": null
+            },
+            {
+              "name": "synergy",
+              "graphqlType": "Decimal",
+              "description": null
+            },
+            {
+              "name": "winRateHeroId1",
+              "graphqlType": "Decimal",
+              "description": null
+            },
+            {
+              "name": "winRateHeroId2",
+              "graphqlType": "Decimal",
+              "description": null
+            },
+            {
+              "name": "winsAverage",
+              "graphqlType": "Decimal",
+              "description": null
+            }
+          ],
+          "matchIdentityFields": []
+        }
+      ],
+      "exposesMatchIdentities": false,
+      "paginationUnit": "skip/take page over hero dryad rows (argument descriptions); no match-level cursor"
+    },
+    "matchListEndpoints": [
+      {
+        "path": "guild.matches",
+        "carrierType": "MatchType",
+        "returns": "[MatchType]",
+        "descriptions": [
+          "For getting access to one specific Guild which was used at the start of TI10 Compendium.",
+          null
+        ],
+        "scope": "ENTITY_SCOPED",
+        "requiredEntityArguments": [
+          "DotaQuery.guild(id)"
+        ],
+        "heroArguments": [],
+        "heroPairFilter": false,
+        "timeFilter": false,
+        "bracketFilter": false,
+        "paginationArguments": [
+          "skip",
+          "take"
+        ],
+        "populationCandidate": false
+      },
+      {
+        "path": "heroStats.guide.guides",
+        "carrierType": "HeroGuideType",
+        "returns": "[HeroGuideType]",
+        "descriptions": [
+          "Queries used to gain insights into hero data and statistics.",
+          null,
+          "Guides are auto-generated of games that are successful in a game."
+        ],
+        "scope": "UNSCOPED",
+        "requiredEntityArguments": [],
+        "heroArguments": [
+          "heroId",
+          "withHeroId",
+          "againstHeroId"
+        ],
+        "heroPairFilter": true,
+        "timeFilter": false,
+        "bracketFilter": false,
+        "paginationArguments": [
+          "take",
+          "skip"
+        ],
+        "populationCandidate": false
+      },
+      {
+        "path": "heroStats.rampages",
+        "carrierType": "HeroRampageObjectType",
+        "returns": "[HeroRampageObjectType]",
+        "descriptions": [
+          "Queries used to gain insights into hero data and statistics.",
+          null
+        ],
+        "scope": "UNSCOPED",
+        "requiredEntityArguments": [],
+        "heroArguments": [
+          "heroId"
+        ],
+        "heroPairFilter": false,
+        "timeFilter": true,
+        "bracketFilter": true,
+        "paginationArguments": [
+          "take",
+          "after",
+          "before"
+        ],
+        "populationCandidate": false
+      },
+      {
+        "path": "league.liveMatches",
+        "carrierType": "MatchLiveType",
+        "returns": "[MatchLiveType]",
+        "descriptions": [
+          "Find league details by league Id. Id is a required field.",
+          null
+        ],
+        "scope": "ENTITY_SCOPED",
+        "requiredEntityArguments": [
+          "DotaQuery.league(id)"
+        ],
+        "heroArguments": [],
+        "heroPairFilter": false,
+        "timeFilter": false,
+        "bracketFilter": false,
+        "paginationArguments": [],
+        "populationCandidate": false
+      },
+      {
+        "path": "league.matches",
+        "carrierType": "MatchType",
+        "returns": "[MatchType]",
+        "descriptions": [
+          "Find league details by league Id. Id is a required field.",
+          null
+        ],
+        "scope": "ENTITY_SCOPED",
+        "requiredEntityArguments": [
+          "DotaQuery.league(id)"
+        ],
+        "heroArguments": [
+          "heroIds",
+          "withFriendHeroIds"
+        ],
+        "heroPairFilter": true,
+        "timeFilter": true,
+        "bracketFilter": true,
+        "paginationArguments": [
+          "take",
+          "skip"
+        ],
+        "populationCandidate": false
+      },
+      {
+        "path": "live.matches",
+        "carrierType": "MatchLiveType",
+        "returns": "[MatchLiveType]",
+        "descriptions": [
+          "Queries used to find live match data.",
+          "Find all live matches. A live match is data where a match is on the Dota watch list and still active. All League games are also Live."
+        ],
+        "scope": "UNSCOPED",
+        "requiredEntityArguments": [],
+        "heroArguments": [
+          "heroId"
+        ],
+        "heroPairFilter": false,
+        "timeFilter": false,
+        "bracketFilter": false,
+        "paginationArguments": [
+          "take",
+          "skip"
+        ],
+        "populationCandidate": false
+      },
+      {
+        "path": "matches",
+        "carrierType": "MatchType",
+        "returns": "[MatchType]",
+        "descriptions": [
+          "Find match details for each match id. ids is a required input field."
+        ],
+        "scope": "ENTITY_SCOPED",
+        "requiredEntityArguments": [
+          "DotaQuery.matches(ids)"
+        ],
+        "heroArguments": [],
+        "heroPairFilter": false,
+        "timeFilter": false,
+        "bracketFilter": false,
+        "paginationArguments": [],
+        "populationCandidate": false
+      },
+      {
+        "path": "player.feats",
+        "carrierType": "FeatType",
+        "returns": "[FeatType]",
+        "descriptions": [
+          "Find player details by steam account id. id is a required input field.",
+          "A list of the high achivement skills by a Player."
+        ],
+        "scope": "ENTITY_SCOPED",
+        "requiredEntityArguments": [
+          "DotaQuery.player(steamAccountId)"
+        ],
+        "heroArguments": [],
+        "heroPairFilter": false,
+        "timeFilter": false,
+        "bracketFilter": false,
+        "paginationArguments": [
+          "take",
+          "skip"
+        ],
+        "populationCandidate": false
+      },
+      {
+        "path": "player.matches",
+        "carrierType": "MatchType",
+        "returns": "[MatchType]",
+        "descriptions": [
+          "Find player details by steam account id. id is a required input field.",
+          "Find match details by steam account id. steamAccountId is a required input field."
+        ],
+        "scope": "ENTITY_SCOPED",
+        "requiredEntityArguments": [
+          "DotaQuery.player(steamAccountId)"
+        ],
+        "heroArguments": [
+          "heroIds",
+          "withFriendHeroIds",
+          "withEnemyHeroIds"
+        ],
+        "heroPairFilter": true,
+        "timeFilter": true,
+        "bracketFilter": true,
+        "paginationArguments": [
+          "take",
+          "skip",
+          "after",
+          "before"
+        ],
+        "populationCandidate": false
+      },
+      {
+        "path": "stratz.search.direTideMatches.players",
+        "carrierType": "DireTideCustomGamePlayerType",
+        "returns": "[DireTideCustomGamePlayerType]",
+        "descriptions": [
+          "Stratz specific queries.",
+          null,
+          null,
+          null
+        ],
+        "scope": "UNSCOPED",
+        "requiredEntityArguments": [],
+        "heroArguments": [],
+        "heroPairFilter": false,
+        "timeFilter": false,
+        "bracketFilter": false,
+        "paginationArguments": [
+          "take"
+        ],
+        "populationCandidate": false
+      },
+      {
+        "path": "stratz.search.matches",
+        "carrierType": "MatchType",
+        "returns": "[MatchType]",
+        "descriptions": [
+          "Stratz specific queries.",
+          null,
+          null
+        ],
+        "scope": "UNSCOPED",
+        "requiredEntityArguments": [],
+        "heroArguments": [],
+        "heroPairFilter": false,
+        "timeFilter": false,
+        "bracketFilter": false,
+        "paginationArguments": [
+          "take"
+        ],
+        "populationCandidate": false
+      },
+      {
+        "path": "stratz.user.feed.data",
+        "carrierType": "FeedType",
+        "returns": "[FeedType]",
+        "descriptions": [
+          "Stratz specific queries.",
+          null,
+          "Returns a list of feed events for the logged in user.",
+          null
+        ],
+        "scope": "UNSCOPED",
+        "requiredEntityArguments": [],
+        "heroArguments": [],
+        "heroPairFilter": false,
+        "timeFilter": false,
+        "bracketFilter": false,
+        "paginationArguments": [
+          "skip",
+          "take"
+        ],
+        "populationCandidate": false
+      },
+      {
+        "path": "team.matches",
+        "carrierType": "MatchType",
+        "returns": "[MatchType]",
+        "descriptions": [
+          "Find player details for each steam account id. ids is a required input field.",
+          "Find match details by leauge id."
+        ],
+        "scope": "ENTITY_SCOPED",
+        "requiredEntityArguments": [
+          "DotaQuery.team(teamId)"
+        ],
+        "heroArguments": [
+          "heroIds",
+          "withFriendHeroIds"
+        ],
+        "heroPairFilter": true,
+        "timeFilter": true,
+        "bracketFilter": true,
+        "paginationArguments": [
+          "take",
+          "skip"
+        ],
+        "populationCandidate": false
+      },
+      {
+        "path": "team.series.matches",
+        "carrierType": "MatchType",
+        "returns": "[MatchType]",
+        "descriptions": [
+          "Find player details for each steam account id. ids is a required input field.",
+          "Find match details by series id.",
+          null
+        ],
+        "scope": "ENTITY_SCOPED",
+        "requiredEntityArguments": [
+          "DotaQuery.team(teamId)"
+        ],
+        "heroArguments": [],
+        "heroPairFilter": false,
+        "timeFilter": false,
+        "bracketFilter": false,
+        "paginationArguments": [
+          "take",
+          "skip"
+        ],
+        "populationCandidate": false
+      },
+      {
+        "path": "team.series.node.matches",
+        "carrierType": "MatchType",
+        "returns": "[MatchType]",
+        "descriptions": [
+          "Find player details for each steam account id. ids is a required input field.",
+          "Find match details by series id.",
+          null,
+          null
+        ],
+        "scope": "ENTITY_SCOPED",
+        "requiredEntityArguments": [
+          "DotaQuery.team(teamId)"
+        ],
+        "heroArguments": [],
+        "heroPairFilter": false,
+        "timeFilter": false,
+        "bracketFilter": false,
+        "paginationArguments": [
+          "take",
+          "skip"
+        ],
+        "populationCandidate": false
+      },
+      {
+        "path": "vendor.twitchTracker.matches",
+        "carrierType": "TwitchTrackerPlayerMatchType",
+        "returns": "[TwitchTrackerPlayerMatchType]",
+        "descriptions": [
+          "Queries used by 3rd party applications.",
+          "Used by the Dota 2 Twitch Tracker for Dota Stats",
+          null
+        ],
+        "scope": "ENTITY_SCOPED",
+        "requiredEntityArguments": [
+          "VendorQuery.twitchTracker(steamAccountId)"
+        ],
+        "heroArguments": [],
+        "heroPairFilter": false,
+        "timeFilter": false,
+        "bracketFilter": false,
+        "paginationArguments": [],
+        "populationCandidate": false
+      },
+      {
+        "path": "yogurt.overview.matches.players",
+        "carrierType": "MatchReplayUploadPlayerType",
+        "returns": "[MatchReplayUploadPlayerType]",
+        "descriptions": [
+          "Queries used for Stratz Yogurt - users won't be able to access these calls until they have access to the app.",
+          "Find match replay uploads by match replay upload team id. matchReplayUploadTeamId and request are required input fields.",
+          null,
+          null
+        ],
+        "scope": "ENTITY_SCOPED",
+        "requiredEntityArguments": [
+          "YogurtQuery.overview(matchReplayUploadTeamId)"
+        ],
+        "heroArguments": [
+          "withFriendHeroId",
+          "withEnemyHeroId",
+          "byHeroId"
+        ],
+        "heroPairFilter": true,
+        "timeFilter": true,
+        "bracketFilter": false,
+        "paginationArguments": [
+          "take",
+          "skip"
+        ],
+        "populationCandidate": false
+      }
+    ],
+    "populationCandidates": [],
+    "criteria": "A population endpoint must be reachable without a required entity ID (player/team/league/match), must accept a hero-pair filter, a time filter and a rank-bracket filter, and must return match identities."
+  },
+  "queries": {
+    "networkRequests": 1,
+    "requests": [
+      {
+        "requestId": "fix14-full-schema-introspection",
+        "kind": "SCHEMA_INTROSPECTION",
+        "status": "VERIFIED",
+        "queryHash": "5c1313de906bc7fb2f3287e53620b5ffc402e0f82904a26c4fbeac5995099cad",
+        "responseHash": "8a16760dff5841d1090c38ff063a6bd930b8c9739379f0809a2d31eb0a0a3ace",
+        "transportCreated": true,
+        "transportClosed": true
+      }
+    ],
+    "matchLevelRequests": 0,
+    "matchLevelRequestsNote": "Not issued: the schema exposes no endpoint that can enumerate the matches behind matchUp. Entity-scoped or subset endpoints (player/team/league matches, guides, rampages, live, search) were not used as substitutes.",
+    "preliminaryIntrospection": "One identical staging introspection was issued during development (not archived) to design this parser; the archived request is the authoritative one."
+  },
+  "pairs": [
+    {
+      "canonicalPairId": "3:95",
+      "heroAId": 3,
+      "heroBId": 95,
+      "heroA": "Bane",
+      "heroB": "Troll Warlord"
+    },
+    {
+      "canonicalPairId": "4:58",
+      "heroAId": 4,
+      "heroBId": 58,
+      "heroA": "Bloodseeker",
+      "heroB": "Enchantress"
+    },
+    {
+      "canonicalPairId": "5:89",
+      "heroAId": 5,
+      "heroBId": 89,
+      "heroA": "Crystal Maiden",
+      "heroB": "Naga Siren"
+    },
+    {
+      "canonicalPairId": "47:89",
+      "heroAId": 47,
+      "heroBId": 89,
+      "heroA": "Viper",
+      "heroB": "Naga Siren"
+    },
+    {
+      "canonicalPairId": "58:61",
+      "heroAId": 58,
+      "heroBId": 61,
+      "heroA": "Enchantress",
+      "heroB": "Broodmother"
+    },
+    {
+      "canonicalPairId": "58:83",
+      "heroAId": 58,
+      "heroBId": 83,
+      "heroA": "Enchantress",
+      "heroB": "Treant Protector"
+    },
+    {
+      "canonicalPairId": "59:89",
+      "heroAId": 59,
+      "heroBId": 89,
+      "heroA": "Huskar",
+      "heroB": "Naga Siren"
+    },
+    {
+      "canonicalPairId": "61:79",
+      "heroAId": 61,
+      "heroBId": 79,
+      "heroA": "Broodmother",
+      "heroB": "Shadow Demon"
+    }
+  ],
+  "matchSets": {
+    "status": "NOT_COLLECTED_MATCH_LEVEL_EVIDENCE_UNAVAILABLE",
+    "pairWeeks": [
+      {
+        "canonicalPairId": "3:95",
+        "bucket": 2963,
+        "AtoB": null,
+        "BtoA": null,
+        "comparison": {
+          "countAtoB": 0,
+          "countBtoA": 0,
+          "intersectionCount": 0,
+          "onlyAtoB": [],
+          "onlyBtoA": [],
+          "unionCount": 0,
+          "status": "INCOMPLETE"
+        }
+      },
+      {
+        "canonicalPairId": "3:95",
+        "bucket": 2964,
+        "AtoB": null,
+        "BtoA": null,
+        "comparison": {
+          "countAtoB": 0,
+          "countBtoA": 0,
+          "intersectionCount": 0,
+          "onlyAtoB": [],
+          "onlyBtoA": [],
+          "unionCount": 0,
+          "status": "INCOMPLETE"
+        }
+      },
+      {
+        "canonicalPairId": "3:95",
+        "bucket": 2965,
+        "AtoB": null,
+        "BtoA": null,
+        "comparison": {
+          "countAtoB": 0,
+          "countBtoA": 0,
+          "intersectionCount": 0,
+          "onlyAtoB": [],
+          "onlyBtoA": [],
+          "unionCount": 0,
+          "status": "INCOMPLETE"
+        }
+      },
+      {
+        "canonicalPairId": "3:95",
+        "bucket": 2966,
+        "AtoB": null,
+        "BtoA": null,
+        "comparison": {
+          "countAtoB": 0,
+          "countBtoA": 0,
+          "intersectionCount": 0,
+          "onlyAtoB": [],
+          "onlyBtoA": [],
+          "unionCount": 0,
+          "status": "INCOMPLETE"
+        }
+      },
+      {
+        "canonicalPairId": "4:58",
+        "bucket": 2963,
+        "AtoB": null,
+        "BtoA": null,
+        "comparison": {
+          "countAtoB": 0,
+          "countBtoA": 0,
+          "intersectionCount": 0,
+          "onlyAtoB": [],
+          "onlyBtoA": [],
+          "unionCount": 0,
+          "status": "INCOMPLETE"
+        }
+      },
+      {
+        "canonicalPairId": "4:58",
+        "bucket": 2964,
+        "AtoB": null,
+        "BtoA": null,
+        "comparison": {
+          "countAtoB": 0,
+          "countBtoA": 0,
+          "intersectionCount": 0,
+          "onlyAtoB": [],
+          "onlyBtoA": [],
+          "unionCount": 0,
+          "status": "INCOMPLETE"
+        }
+      },
+      {
+        "canonicalPairId": "4:58",
+        "bucket": 2965,
+        "AtoB": null,
+        "BtoA": null,
+        "comparison": {
+          "countAtoB": 0,
+          "countBtoA": 0,
+          "intersectionCount": 0,
+          "onlyAtoB": [],
+          "onlyBtoA": [],
+          "unionCount": 0,
+          "status": "INCOMPLETE"
+        }
+      },
+      {
+        "canonicalPairId": "4:58",
+        "bucket": 2966,
+        "AtoB": null,
+        "BtoA": null,
+        "comparison": {
+          "countAtoB": 0,
+          "countBtoA": 0,
+          "intersectionCount": 0,
+          "onlyAtoB": [],
+          "onlyBtoA": [],
+          "unionCount": 0,
+          "status": "INCOMPLETE"
+        }
+      },
+      {
+        "canonicalPairId": "5:89",
+        "bucket": 2963,
+        "AtoB": null,
+        "BtoA": null,
+        "comparison": {
+          "countAtoB": 0,
+          "countBtoA": 0,
+          "intersectionCount": 0,
+          "onlyAtoB": [],
+          "onlyBtoA": [],
+          "unionCount": 0,
+          "status": "INCOMPLETE"
+        }
+      },
+      {
+        "canonicalPairId": "5:89",
+        "bucket": 2964,
+        "AtoB": null,
+        "BtoA": null,
+        "comparison": {
+          "countAtoB": 0,
+          "countBtoA": 0,
+          "intersectionCount": 0,
+          "onlyAtoB": [],
+          "onlyBtoA": [],
+          "unionCount": 0,
+          "status": "INCOMPLETE"
+        }
+      },
+      {
+        "canonicalPairId": "5:89",
+        "bucket": 2965,
+        "AtoB": null,
+        "BtoA": null,
+        "comparison": {
+          "countAtoB": 0,
+          "countBtoA": 0,
+          "intersectionCount": 0,
+          "onlyAtoB": [],
+          "onlyBtoA": [],
+          "unionCount": 0,
+          "status": "INCOMPLETE"
+        }
+      },
+      {
+        "canonicalPairId": "5:89",
+        "bucket": 2966,
+        "AtoB": null,
+        "BtoA": null,
+        "comparison": {
+          "countAtoB": 0,
+          "countBtoA": 0,
+          "intersectionCount": 0,
+          "onlyAtoB": [],
+          "onlyBtoA": [],
+          "unionCount": 0,
+          "status": "INCOMPLETE"
+        }
+      },
+      {
+        "canonicalPairId": "47:89",
+        "bucket": 2963,
+        "AtoB": null,
+        "BtoA": null,
+        "comparison": {
+          "countAtoB": 0,
+          "countBtoA": 0,
+          "intersectionCount": 0,
+          "onlyAtoB": [],
+          "onlyBtoA": [],
+          "unionCount": 0,
+          "status": "INCOMPLETE"
+        }
+      },
+      {
+        "canonicalPairId": "47:89",
+        "bucket": 2964,
+        "AtoB": null,
+        "BtoA": null,
+        "comparison": {
+          "countAtoB": 0,
+          "countBtoA": 0,
+          "intersectionCount": 0,
+          "onlyAtoB": [],
+          "onlyBtoA": [],
+          "unionCount": 0,
+          "status": "INCOMPLETE"
+        }
+      },
+      {
+        "canonicalPairId": "47:89",
+        "bucket": 2965,
+        "AtoB": null,
+        "BtoA": null,
+        "comparison": {
+          "countAtoB": 0,
+          "countBtoA": 0,
+          "intersectionCount": 0,
+          "onlyAtoB": [],
+          "onlyBtoA": [],
+          "unionCount": 0,
+          "status": "INCOMPLETE"
+        }
+      },
+      {
+        "canonicalPairId": "47:89",
+        "bucket": 2966,
+        "AtoB": null,
+        "BtoA": null,
+        "comparison": {
+          "countAtoB": 0,
+          "countBtoA": 0,
+          "intersectionCount": 0,
+          "onlyAtoB": [],
+          "onlyBtoA": [],
+          "unionCount": 0,
+          "status": "INCOMPLETE"
+        }
+      },
+      {
+        "canonicalPairId": "58:61",
+        "bucket": 2963,
+        "AtoB": null,
+        "BtoA": null,
+        "comparison": {
+          "countAtoB": 0,
+          "countBtoA": 0,
+          "intersectionCount": 0,
+          "onlyAtoB": [],
+          "onlyBtoA": [],
+          "unionCount": 0,
+          "status": "INCOMPLETE"
+        }
+      },
+      {
+        "canonicalPairId": "58:61",
+        "bucket": 2964,
+        "AtoB": null,
+        "BtoA": null,
+        "comparison": {
+          "countAtoB": 0,
+          "countBtoA": 0,
+          "intersectionCount": 0,
+          "onlyAtoB": [],
+          "onlyBtoA": [],
+          "unionCount": 0,
+          "status": "INCOMPLETE"
+        }
+      },
+      {
+        "canonicalPairId": "58:61",
+        "bucket": 2965,
+        "AtoB": null,
+        "BtoA": null,
+        "comparison": {
+          "countAtoB": 0,
+          "countBtoA": 0,
+          "intersectionCount": 0,
+          "onlyAtoB": [],
+          "onlyBtoA": [],
+          "unionCount": 0,
+          "status": "INCOMPLETE"
+        }
+      },
+      {
+        "canonicalPairId": "58:61",
+        "bucket": 2966,
+        "AtoB": null,
+        "BtoA": null,
+        "comparison": {
+          "countAtoB": 0,
+          "countBtoA": 0,
+          "intersectionCount": 0,
+          "onlyAtoB": [],
+          "onlyBtoA": [],
+          "unionCount": 0,
+          "status": "INCOMPLETE"
+        }
+      },
+      {
+        "canonicalPairId": "58:83",
+        "bucket": 2963,
+        "AtoB": null,
+        "BtoA": null,
+        "comparison": {
+          "countAtoB": 0,
+          "countBtoA": 0,
+          "intersectionCount": 0,
+          "onlyAtoB": [],
+          "onlyBtoA": [],
+          "unionCount": 0,
+          "status": "INCOMPLETE"
+        }
+      },
+      {
+        "canonicalPairId": "58:83",
+        "bucket": 2964,
+        "AtoB": null,
+        "BtoA": null,
+        "comparison": {
+          "countAtoB": 0,
+          "countBtoA": 0,
+          "intersectionCount": 0,
+          "onlyAtoB": [],
+          "onlyBtoA": [],
+          "unionCount": 0,
+          "status": "INCOMPLETE"
+        }
+      },
+      {
+        "canonicalPairId": "58:83",
+        "bucket": 2965,
+        "AtoB": null,
+        "BtoA": null,
+        "comparison": {
+          "countAtoB": 0,
+          "countBtoA": 0,
+          "intersectionCount": 0,
+          "onlyAtoB": [],
+          "onlyBtoA": [],
+          "unionCount": 0,
+          "status": "INCOMPLETE"
+        }
+      },
+      {
+        "canonicalPairId": "58:83",
+        "bucket": 2966,
+        "AtoB": null,
+        "BtoA": null,
+        "comparison": {
+          "countAtoB": 0,
+          "countBtoA": 0,
+          "intersectionCount": 0,
+          "onlyAtoB": [],
+          "onlyBtoA": [],
+          "unionCount": 0,
+          "status": "INCOMPLETE"
+        }
+      },
+      {
+        "canonicalPairId": "59:89",
+        "bucket": 2963,
+        "AtoB": null,
+        "BtoA": null,
+        "comparison": {
+          "countAtoB": 0,
+          "countBtoA": 0,
+          "intersectionCount": 0,
+          "onlyAtoB": [],
+          "onlyBtoA": [],
+          "unionCount": 0,
+          "status": "INCOMPLETE"
+        }
+      },
+      {
+        "canonicalPairId": "59:89",
+        "bucket": 2964,
+        "AtoB": null,
+        "BtoA": null,
+        "comparison": {
+          "countAtoB": 0,
+          "countBtoA": 0,
+          "intersectionCount": 0,
+          "onlyAtoB": [],
+          "onlyBtoA": [],
+          "unionCount": 0,
+          "status": "INCOMPLETE"
+        }
+      },
+      {
+        "canonicalPairId": "59:89",
+        "bucket": 2965,
+        "AtoB": null,
+        "BtoA": null,
+        "comparison": {
+          "countAtoB": 0,
+          "countBtoA": 0,
+          "intersectionCount": 0,
+          "onlyAtoB": [],
+          "onlyBtoA": [],
+          "unionCount": 0,
+          "status": "INCOMPLETE"
+        }
+      },
+      {
+        "canonicalPairId": "59:89",
+        "bucket": 2966,
+        "AtoB": null,
+        "BtoA": null,
+        "comparison": {
+          "countAtoB": 0,
+          "countBtoA": 0,
+          "intersectionCount": 0,
+          "onlyAtoB": [],
+          "onlyBtoA": [],
+          "unionCount": 0,
+          "status": "INCOMPLETE"
+        }
+      },
+      {
+        "canonicalPairId": "61:79",
+        "bucket": 2963,
+        "AtoB": null,
+        "BtoA": null,
+        "comparison": {
+          "countAtoB": 0,
+          "countBtoA": 0,
+          "intersectionCount": 0,
+          "onlyAtoB": [],
+          "onlyBtoA": [],
+          "unionCount": 0,
+          "status": "INCOMPLETE"
+        }
+      },
+      {
+        "canonicalPairId": "61:79",
+        "bucket": 2964,
+        "AtoB": null,
+        "BtoA": null,
+        "comparison": {
+          "countAtoB": 0,
+          "countBtoA": 0,
+          "intersectionCount": 0,
+          "onlyAtoB": [],
+          "onlyBtoA": [],
+          "unionCount": 0,
+          "status": "INCOMPLETE"
+        }
+      },
+      {
+        "canonicalPairId": "61:79",
+        "bucket": 2965,
+        "AtoB": null,
+        "BtoA": null,
+        "comparison": {
+          "countAtoB": 0,
+          "countBtoA": 0,
+          "intersectionCount": 0,
+          "onlyAtoB": [],
+          "onlyBtoA": [],
+          "unionCount": 0,
+          "status": "INCOMPLETE"
+        }
+      },
+      {
+        "canonicalPairId": "61:79",
+        "bucket": 2966,
+        "AtoB": null,
+        "BtoA": null,
+        "comparison": {
+          "countAtoB": 0,
+          "countBtoA": 0,
+          "intersectionCount": 0,
+          "onlyAtoB": [],
+          "onlyBtoA": [],
+          "unionCount": 0,
+          "status": "INCOMPLETE"
+        }
+      }
+    ],
+    "note": "Null match sets mean \"not obtainable\", never \"zero matches\"."
+  },
+  "bucketReconciliation": {
+    "status": "UNVERIFIED",
+    "reason": "No per-match timestamps for the matchUp population are available.",
+    "productionBucketSemantics": "bucket b covers [b·BUCKET_SEC, (b+1)·BUCKET_SEC); matchUp week argument = b·BUCKET_SEC",
+    "windows": [
+      {
+        "bucket": 2963,
+        "startSecInclusive": 1792022400,
+        "endSecExclusive": 1792627200,
+        "startUtc": "2026-10-15T00:00:00.000Z",
+        "endUtcExclusive": "2026-10-22T00:00:00.000Z"
+      },
+      {
+        "bucket": 2964,
+        "startSecInclusive": 1792627200,
+        "endSecExclusive": 1793232000,
+        "startUtc": "2026-10-22T00:00:00.000Z",
+        "endUtcExclusive": "2026-10-29T00:00:00.000Z"
+      },
+      {
+        "bucket": 2965,
+        "startSecInclusive": 1793232000,
+        "endSecExclusive": 1793836800,
+        "startUtc": "2026-10-29T00:00:00.000Z",
+        "endUtcExclusive": "2026-11-05T00:00:00.000Z"
+      },
+      {
+        "bucket": 2966,
+        "startSecInclusive": 1793836800,
+        "endSecExclusive": 1794441600,
+        "startUtc": "2026-11-05T00:00:00.000Z",
+        "endUtcExclusive": "2026-11-12T00:00:00.000Z"
+      }
+    ],
+    "perDirectionTimestampFilteringPossible": "UNVERIFIED — both directions are requested with the same week argument; whether STRATZ assigns a match to a week identically for both heroes cannot be observed without match records."
+  },
+  "countReconciliation": {
+    "status": "MATCH_LEVEL_UNAVAILABLE",
+    "aggregateSourcesCompared": [
+      "fix9Batch",
+      "fix9SingleHero",
+      "fix10Repeatability",
+      "fix11QueryComposition",
+      "fix12ProductionFilter",
+      "fix13Partition"
+    ],
+    "aggregateStablePairWeeks": 32,
+    "aggregatePairWeeks": 32,
+    "rows": [
+      {
+        "canonicalPairId": "3:95",
+        "bucket": 2963,
+        "fix13Production": {
+          "AtoB": "426/202",
+          "BtoA": "433/226"
+        },
+        "sources": {
+          "fix9Batch": {
+            "AtoB": {
+              "observations": 1,
+              "distinct": [
+                "426/202"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 1,
+              "distinct": [
+                "433/226"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix9SingleHero": {
+            "AtoB": {
+              "observations": 1,
+              "distinct": [
+                "426/202"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 1,
+              "distinct": [
+                "433/226"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix10Repeatability": {
+            "AtoB": {
+              "observations": 0,
+              "distinct": [],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 0,
+              "distinct": [],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix11QueryComposition": {
+            "AtoB": {
+              "observations": 4,
+              "distinct": [
+                "426/202"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 8,
+              "distinct": [
+                "433/226"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix12ProductionFilter": {
+            "AtoB": {
+              "observations": 1,
+              "distinct": [
+                "426/202"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 1,
+              "distinct": [
+                "433/226"
+              ],
+              "rejectedNonProduction": 0
+            }
+          }
+        },
+        "distinctAtoBValues": 1,
+        "distinctBtoAValues": 1,
+        "status": "AGGREGATE_STABLE_ACROSS_FIXES",
+        "matchLevel": {
+          "AtoB": {
+            "status": "MATCH_LEVEL_UNAVAILABLE",
+            "difference": null
+          },
+          "BtoA": {
+            "status": "MATCH_LEVEL_UNAVAILABLE",
+            "difference": null
+          }
+        }
+      },
+      {
+        "canonicalPairId": "3:95",
+        "bucket": 2964,
+        "fix13Production": {
+          "AtoB": "454/196",
+          "BtoA": "471/267"
+        },
+        "sources": {
+          "fix9Batch": {
+            "AtoB": {
+              "observations": 1,
+              "distinct": [
+                "454/196"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 1,
+              "distinct": [
+                "471/267"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix9SingleHero": {
+            "AtoB": {
+              "observations": 1,
+              "distinct": [
+                "454/196"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 1,
+              "distinct": [
+                "471/267"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix10Repeatability": {
+            "AtoB": {
+              "observations": 0,
+              "distinct": [],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 0,
+              "distinct": [],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix11QueryComposition": {
+            "AtoB": {
+              "observations": 4,
+              "distinct": [
+                "454/196"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 8,
+              "distinct": [
+                "471/267"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix12ProductionFilter": {
+            "AtoB": {
+              "observations": 1,
+              "distinct": [
+                "454/196"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 1,
+              "distinct": [
+                "471/267"
+              ],
+              "rejectedNonProduction": 0
+            }
+          }
+        },
+        "distinctAtoBValues": 1,
+        "distinctBtoAValues": 1,
+        "status": "AGGREGATE_STABLE_ACROSS_FIXES",
+        "matchLevel": {
+          "AtoB": {
+            "status": "MATCH_LEVEL_UNAVAILABLE",
+            "difference": null
+          },
+          "BtoA": {
+            "status": "MATCH_LEVEL_UNAVAILABLE",
+            "difference": null
+          }
+        }
+      },
+      {
+        "canonicalPairId": "3:95",
+        "bucket": 2965,
+        "fix13Production": {
+          "AtoB": "435/201",
+          "BtoA": "441/238"
+        },
+        "sources": {
+          "fix9Batch": {
+            "AtoB": {
+              "observations": 1,
+              "distinct": [
+                "435/201"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 1,
+              "distinct": [
+                "441/238"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix9SingleHero": {
+            "AtoB": {
+              "observations": 1,
+              "distinct": [
+                "435/201"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 1,
+              "distinct": [
+                "441/238"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix10Repeatability": {
+            "AtoB": {
+              "observations": 0,
+              "distinct": [],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 0,
+              "distinct": [],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix11QueryComposition": {
+            "AtoB": {
+              "observations": 4,
+              "distinct": [
+                "435/201"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 8,
+              "distinct": [
+                "441/238"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix12ProductionFilter": {
+            "AtoB": {
+              "observations": 1,
+              "distinct": [
+                "435/201"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 1,
+              "distinct": [
+                "441/238"
+              ],
+              "rejectedNonProduction": 0
+            }
+          }
+        },
+        "distinctAtoBValues": 1,
+        "distinctBtoAValues": 1,
+        "status": "AGGREGATE_STABLE_ACROSS_FIXES",
+        "matchLevel": {
+          "AtoB": {
+            "status": "MATCH_LEVEL_UNAVAILABLE",
+            "difference": null
+          },
+          "BtoA": {
+            "status": "MATCH_LEVEL_UNAVAILABLE",
+            "difference": null
+          }
+        }
+      },
+      {
+        "canonicalPairId": "3:95",
+        "bucket": 2966,
+        "fix13Production": {
+          "AtoB": "470/229",
+          "BtoA": "474/246"
+        },
+        "sources": {
+          "fix9Batch": {
+            "AtoB": {
+              "observations": 1,
+              "distinct": [
+                "470/229"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 1,
+              "distinct": [
+                "474/246"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix9SingleHero": {
+            "AtoB": {
+              "observations": 1,
+              "distinct": [
+                "470/229"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 1,
+              "distinct": [
+                "474/246"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix10Repeatability": {
+            "AtoB": {
+              "observations": 0,
+              "distinct": [],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 0,
+              "distinct": [],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix11QueryComposition": {
+            "AtoB": {
+              "observations": 4,
+              "distinct": [
+                "470/229"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 8,
+              "distinct": [
+                "474/246"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix12ProductionFilter": {
+            "AtoB": {
+              "observations": 1,
+              "distinct": [
+                "470/229"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 1,
+              "distinct": [
+                "474/246"
+              ],
+              "rejectedNonProduction": 0
+            }
+          }
+        },
+        "distinctAtoBValues": 1,
+        "distinctBtoAValues": 1,
+        "status": "AGGREGATE_STABLE_ACROSS_FIXES",
+        "matchLevel": {
+          "AtoB": {
+            "status": "MATCH_LEVEL_UNAVAILABLE",
+            "difference": null
+          },
+          "BtoA": {
+            "status": "MATCH_LEVEL_UNAVAILABLE",
+            "difference": null
+          }
+        }
+      },
+      {
+        "canonicalPairId": "4:58",
+        "bucket": 2963,
+        "fix13Production": {
+          "AtoB": "530/282",
+          "BtoA": "516/246"
+        },
+        "sources": {
+          "fix9Batch": {
+            "AtoB": {
+              "observations": 1,
+              "distinct": [
+                "530/282"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 1,
+              "distinct": [
+                "516/246"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix9SingleHero": {
+            "AtoB": {
+              "observations": 1,
+              "distinct": [
+                "530/282"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 1,
+              "distinct": [
+                "516/246"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix10Repeatability": {
+            "AtoB": {
+              "observations": 0,
+              "distinct": [],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 2,
+              "distinct": [
+                "516/246"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix11QueryComposition": {
+            "AtoB": {
+              "observations": 4,
+              "distinct": [
+                "530/282"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 12,
+              "distinct": [
+                "516/246"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix12ProductionFilter": {
+            "AtoB": {
+              "observations": 1,
+              "distinct": [
+                "530/282"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 3,
+              "distinct": [
+                "516/246"
+              ],
+              "rejectedNonProduction": 0
+            }
+          }
+        },
+        "distinctAtoBValues": 1,
+        "distinctBtoAValues": 1,
+        "status": "AGGREGATE_STABLE_ACROSS_FIXES",
+        "matchLevel": {
+          "AtoB": {
+            "status": "MATCH_LEVEL_UNAVAILABLE",
+            "difference": null
+          },
+          "BtoA": {
+            "status": "MATCH_LEVEL_UNAVAILABLE",
+            "difference": null
+          }
+        }
+      },
+      {
+        "canonicalPairId": "4:58",
+        "bucket": 2964,
+        "fix13Production": {
+          "AtoB": "595/326",
+          "BtoA": "586/266"
+        },
+        "sources": {
+          "fix9Batch": {
+            "AtoB": {
+              "observations": 1,
+              "distinct": [
+                "595/326"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 1,
+              "distinct": [
+                "586/266"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix9SingleHero": {
+            "AtoB": {
+              "observations": 1,
+              "distinct": [
+                "595/326"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 1,
+              "distinct": [
+                "586/266"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix10Repeatability": {
+            "AtoB": {
+              "observations": 0,
+              "distinct": [],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 2,
+              "distinct": [
+                "586/266"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix11QueryComposition": {
+            "AtoB": {
+              "observations": 4,
+              "distinct": [
+                "595/326"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 12,
+              "distinct": [
+                "586/266"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix12ProductionFilter": {
+            "AtoB": {
+              "observations": 1,
+              "distinct": [
+                "595/326"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 3,
+              "distinct": [
+                "586/266"
+              ],
+              "rejectedNonProduction": 0
+            }
+          }
+        },
+        "distinctAtoBValues": 1,
+        "distinctBtoAValues": 1,
+        "status": "AGGREGATE_STABLE_ACROSS_FIXES",
+        "matchLevel": {
+          "AtoB": {
+            "status": "MATCH_LEVEL_UNAVAILABLE",
+            "difference": null
+          },
+          "BtoA": {
+            "status": "MATCH_LEVEL_UNAVAILABLE",
+            "difference": null
+          }
+        }
+      },
+      {
+        "canonicalPairId": "4:58",
+        "bucket": 2965,
+        "fix13Production": {
+          "AtoB": "678/339",
+          "BtoA": "651/326"
+        },
+        "sources": {
+          "fix9Batch": {
+            "AtoB": {
+              "observations": 1,
+              "distinct": [
+                "678/339"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 1,
+              "distinct": [
+                "651/326"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix9SingleHero": {
+            "AtoB": {
+              "observations": 1,
+              "distinct": [
+                "678/339"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 1,
+              "distinct": [
+                "651/326"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix10Repeatability": {
+            "AtoB": {
+              "observations": 0,
+              "distinct": [],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 2,
+              "distinct": [
+                "651/326"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix11QueryComposition": {
+            "AtoB": {
+              "observations": 4,
+              "distinct": [
+                "678/339"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 12,
+              "distinct": [
+                "651/326"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix12ProductionFilter": {
+            "AtoB": {
+              "observations": 1,
+              "distinct": [
+                "678/339"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 3,
+              "distinct": [
+                "651/326"
+              ],
+              "rejectedNonProduction": 0
+            }
+          }
+        },
+        "distinctAtoBValues": 1,
+        "distinctBtoAValues": 1,
+        "status": "AGGREGATE_STABLE_ACROSS_FIXES",
+        "matchLevel": {
+          "AtoB": {
+            "status": "MATCH_LEVEL_UNAVAILABLE",
+            "difference": null
+          },
+          "BtoA": {
+            "status": "MATCH_LEVEL_UNAVAILABLE",
+            "difference": null
+          }
+        }
+      },
+      {
+        "canonicalPairId": "4:58",
+        "bucket": 2966,
+        "fix13Production": {
+          "AtoB": "671/372",
+          "BtoA": "667/302"
+        },
+        "sources": {
+          "fix9Batch": {
+            "AtoB": {
+              "observations": 1,
+              "distinct": [
+                "671/372"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 1,
+              "distinct": [
+                "667/302"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix9SingleHero": {
+            "AtoB": {
+              "observations": 1,
+              "distinct": [
+                "671/372"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 1,
+              "distinct": [
+                "667/302"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix10Repeatability": {
+            "AtoB": {
+              "observations": 0,
+              "distinct": [],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 2,
+              "distinct": [
+                "667/302"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix11QueryComposition": {
+            "AtoB": {
+              "observations": 4,
+              "distinct": [
+                "671/372"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 12,
+              "distinct": [
+                "667/302"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix12ProductionFilter": {
+            "AtoB": {
+              "observations": 1,
+              "distinct": [
+                "671/372"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 3,
+              "distinct": [
+                "667/302"
+              ],
+              "rejectedNonProduction": 0
+            }
+          }
+        },
+        "distinctAtoBValues": 1,
+        "distinctBtoAValues": 1,
+        "status": "AGGREGATE_STABLE_ACROSS_FIXES",
+        "matchLevel": {
+          "AtoB": {
+            "status": "MATCH_LEVEL_UNAVAILABLE",
+            "difference": null
+          },
+          "BtoA": {
+            "status": "MATCH_LEVEL_UNAVAILABLE",
+            "difference": null
+          }
+        }
+      },
+      {
+        "canonicalPairId": "5:89",
+        "bucket": 2963,
+        "fix13Production": {
+          "AtoB": "1197/699",
+          "BtoA": "1227/525"
+        },
+        "sources": {
+          "fix9Batch": {
+            "AtoB": {
+              "observations": 1,
+              "distinct": [
+                "1197/699"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 1,
+              "distinct": [
+                "1227/525"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix9SingleHero": {
+            "AtoB": {
+              "observations": 1,
+              "distinct": [
+                "1197/699"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 1,
+              "distinct": [
+                "1227/525"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix10Repeatability": {
+            "AtoB": {
+              "observations": 0,
+              "distinct": [],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 0,
+              "distinct": [],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix11QueryComposition": {
+            "AtoB": {
+              "observations": 4,
+              "distinct": [
+                "1197/699"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 14,
+              "distinct": [
+                "1227/525"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix12ProductionFilter": {
+            "AtoB": {
+              "observations": 1,
+              "distinct": [
+                "1197/699"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 3,
+              "distinct": [
+                "1227/525"
+              ],
+              "rejectedNonProduction": 0
+            }
+          }
+        },
+        "distinctAtoBValues": 1,
+        "distinctBtoAValues": 1,
+        "status": "AGGREGATE_STABLE_ACROSS_FIXES",
+        "matchLevel": {
+          "AtoB": {
+            "status": "MATCH_LEVEL_UNAVAILABLE",
+            "difference": null
+          },
+          "BtoA": {
+            "status": "MATCH_LEVEL_UNAVAILABLE",
+            "difference": null
+          }
+        }
+      },
+      {
+        "canonicalPairId": "5:89",
+        "bucket": 2964,
+        "fix13Production": {
+          "AtoB": "1319/758",
+          "BtoA": "1351/580"
+        },
+        "sources": {
+          "fix9Batch": {
+            "AtoB": {
+              "observations": 1,
+              "distinct": [
+                "1319/758"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 1,
+              "distinct": [
+                "1351/580"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix9SingleHero": {
+            "AtoB": {
+              "observations": 1,
+              "distinct": [
+                "1319/758"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 1,
+              "distinct": [
+                "1351/580"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix10Repeatability": {
+            "AtoB": {
+              "observations": 0,
+              "distinct": [],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 0,
+              "distinct": [],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix11QueryComposition": {
+            "AtoB": {
+              "observations": 4,
+              "distinct": [
+                "1319/758"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 14,
+              "distinct": [
+                "1351/580"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix12ProductionFilter": {
+            "AtoB": {
+              "observations": 1,
+              "distinct": [
+                "1319/758"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 3,
+              "distinct": [
+                "1351/580"
+              ],
+              "rejectedNonProduction": 0
+            }
+          }
+        },
+        "distinctAtoBValues": 1,
+        "distinctBtoAValues": 1,
+        "status": "AGGREGATE_STABLE_ACROSS_FIXES",
+        "matchLevel": {
+          "AtoB": {
+            "status": "MATCH_LEVEL_UNAVAILABLE",
+            "difference": null
+          },
+          "BtoA": {
+            "status": "MATCH_LEVEL_UNAVAILABLE",
+            "difference": null
+          }
+        }
+      },
+      {
+        "canonicalPairId": "5:89",
+        "bucket": 2965,
+        "fix13Production": {
+          "AtoB": "1760/931",
+          "BtoA": "1808/858"
+        },
+        "sources": {
+          "fix9Batch": {
+            "AtoB": {
+              "observations": 1,
+              "distinct": [
+                "1760/931"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 1,
+              "distinct": [
+                "1808/858"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix9SingleHero": {
+            "AtoB": {
+              "observations": 1,
+              "distinct": [
+                "1760/931"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 1,
+              "distinct": [
+                "1808/858"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix10Repeatability": {
+            "AtoB": {
+              "observations": 0,
+              "distinct": [],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 0,
+              "distinct": [],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix11QueryComposition": {
+            "AtoB": {
+              "observations": 4,
+              "distinct": [
+                "1760/931"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 14,
+              "distinct": [
+                "1808/858"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix12ProductionFilter": {
+            "AtoB": {
+              "observations": 1,
+              "distinct": [
+                "1760/931"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 3,
+              "distinct": [
+                "1808/858"
+              ],
+              "rejectedNonProduction": 0
+            }
+          }
+        },
+        "distinctAtoBValues": 1,
+        "distinctBtoAValues": 1,
+        "status": "AGGREGATE_STABLE_ACROSS_FIXES",
+        "matchLevel": {
+          "AtoB": {
+            "status": "MATCH_LEVEL_UNAVAILABLE",
+            "difference": null
+          },
+          "BtoA": {
+            "status": "MATCH_LEVEL_UNAVAILABLE",
+            "difference": null
+          }
+        }
+      },
+      {
+        "canonicalPairId": "5:89",
+        "bucket": 2966,
+        "fix13Production": {
+          "AtoB": "1533/843",
+          "BtoA": "1579/716"
+        },
+        "sources": {
+          "fix9Batch": {
+            "AtoB": {
+              "observations": 1,
+              "distinct": [
+                "1533/843"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 1,
+              "distinct": [
+                "1579/716"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix9SingleHero": {
+            "AtoB": {
+              "observations": 1,
+              "distinct": [
+                "1533/843"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 1,
+              "distinct": [
+                "1579/716"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix10Repeatability": {
+            "AtoB": {
+              "observations": 0,
+              "distinct": [],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 0,
+              "distinct": [],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix11QueryComposition": {
+            "AtoB": {
+              "observations": 4,
+              "distinct": [
+                "1533/843"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 14,
+              "distinct": [
+                "1579/716"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix12ProductionFilter": {
+            "AtoB": {
+              "observations": 1,
+              "distinct": [
+                "1533/843"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 3,
+              "distinct": [
+                "1579/716"
+              ],
+              "rejectedNonProduction": 0
+            }
+          }
+        },
+        "distinctAtoBValues": 1,
+        "distinctBtoAValues": 1,
+        "status": "AGGREGATE_STABLE_ACROSS_FIXES",
+        "matchLevel": {
+          "AtoB": {
+            "status": "MATCH_LEVEL_UNAVAILABLE",
+            "difference": null
+          },
+          "BtoA": {
+            "status": "MATCH_LEVEL_UNAVAILABLE",
+            "difference": null
+          }
+        }
+      },
+      {
+        "canonicalPairId": "47:89",
+        "bucket": 2963,
+        "fix13Production": {
+          "AtoB": "712/346",
+          "BtoA": "737/388"
+        },
+        "sources": {
+          "fix9Batch": {
+            "AtoB": {
+              "observations": 1,
+              "distinct": [
+                "712/346"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 1,
+              "distinct": [
+                "737/388"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix9SingleHero": {
+            "AtoB": {
+              "observations": 1,
+              "distinct": [
+                "712/346"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 1,
+              "distinct": [
+                "737/388"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix10Repeatability": {
+            "AtoB": {
+              "observations": 0,
+              "distinct": [],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 0,
+              "distinct": [],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix11QueryComposition": {
+            "AtoB": {
+              "observations": 4,
+              "distinct": [
+                "712/346"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 14,
+              "distinct": [
+                "737/388"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix12ProductionFilter": {
+            "AtoB": {
+              "observations": 1,
+              "distinct": [
+                "712/346"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 3,
+              "distinct": [
+                "737/388"
+              ],
+              "rejectedNonProduction": 0
+            }
+          }
+        },
+        "distinctAtoBValues": 1,
+        "distinctBtoAValues": 1,
+        "status": "AGGREGATE_STABLE_ACROSS_FIXES",
+        "matchLevel": {
+          "AtoB": {
+            "status": "MATCH_LEVEL_UNAVAILABLE",
+            "difference": null
+          },
+          "BtoA": {
+            "status": "MATCH_LEVEL_UNAVAILABLE",
+            "difference": null
+          }
+        }
+      },
+      {
+        "canonicalPairId": "47:89",
+        "bucket": 2964,
+        "fix13Production": {
+          "AtoB": "766/359",
+          "BtoA": "791/424"
+        },
+        "sources": {
+          "fix9Batch": {
+            "AtoB": {
+              "observations": 1,
+              "distinct": [
+                "766/359"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 1,
+              "distinct": [
+                "791/424"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix9SingleHero": {
+            "AtoB": {
+              "observations": 1,
+              "distinct": [
+                "766/359"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 1,
+              "distinct": [
+                "791/424"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix10Repeatability": {
+            "AtoB": {
+              "observations": 0,
+              "distinct": [],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 0,
+              "distinct": [],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix11QueryComposition": {
+            "AtoB": {
+              "observations": 4,
+              "distinct": [
+                "766/359"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 14,
+              "distinct": [
+                "791/424"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix12ProductionFilter": {
+            "AtoB": {
+              "observations": 1,
+              "distinct": [
+                "766/359"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 3,
+              "distinct": [
+                "791/424"
+              ],
+              "rejectedNonProduction": 0
+            }
+          }
+        },
+        "distinctAtoBValues": 1,
+        "distinctBtoAValues": 1,
+        "status": "AGGREGATE_STABLE_ACROSS_FIXES",
+        "matchLevel": {
+          "AtoB": {
+            "status": "MATCH_LEVEL_UNAVAILABLE",
+            "difference": null
+          },
+          "BtoA": {
+            "status": "MATCH_LEVEL_UNAVAILABLE",
+            "difference": null
+          }
+        }
+      },
+      {
+        "canonicalPairId": "47:89",
+        "bucket": 2965,
+        "fix13Production": {
+          "AtoB": "892/388",
+          "BtoA": "911/515"
+        },
+        "sources": {
+          "fix9Batch": {
+            "AtoB": {
+              "observations": 1,
+              "distinct": [
+                "892/388"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 1,
+              "distinct": [
+                "911/515"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix9SingleHero": {
+            "AtoB": {
+              "observations": 1,
+              "distinct": [
+                "892/388"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 1,
+              "distinct": [
+                "911/515"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix10Repeatability": {
+            "AtoB": {
+              "observations": 0,
+              "distinct": [],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 0,
+              "distinct": [],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix11QueryComposition": {
+            "AtoB": {
+              "observations": 4,
+              "distinct": [
+                "892/388"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 14,
+              "distinct": [
+                "911/515"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix12ProductionFilter": {
+            "AtoB": {
+              "observations": 1,
+              "distinct": [
+                "892/388"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 3,
+              "distinct": [
+                "911/515"
+              ],
+              "rejectedNonProduction": 0
+            }
+          }
+        },
+        "distinctAtoBValues": 1,
+        "distinctBtoAValues": 1,
+        "status": "AGGREGATE_STABLE_ACROSS_FIXES",
+        "matchLevel": {
+          "AtoB": {
+            "status": "MATCH_LEVEL_UNAVAILABLE",
+            "difference": null
+          },
+          "BtoA": {
+            "status": "MATCH_LEVEL_UNAVAILABLE",
+            "difference": null
+          }
+        }
+      },
+      {
+        "canonicalPairId": "47:89",
+        "bucket": 2966,
+        "fix13Production": {
+          "AtoB": "845/354",
+          "BtoA": "843/489"
+        },
+        "sources": {
+          "fix9Batch": {
+            "AtoB": {
+              "observations": 1,
+              "distinct": [
+                "845/354"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 1,
+              "distinct": [
+                "843/489"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix9SingleHero": {
+            "AtoB": {
+              "observations": 1,
+              "distinct": [
+                "845/354"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 1,
+              "distinct": [
+                "843/489"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix10Repeatability": {
+            "AtoB": {
+              "observations": 0,
+              "distinct": [],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 0,
+              "distinct": [],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix11QueryComposition": {
+            "AtoB": {
+              "observations": 4,
+              "distinct": [
+                "845/354"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 14,
+              "distinct": [
+                "843/489"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix12ProductionFilter": {
+            "AtoB": {
+              "observations": 1,
+              "distinct": [
+                "845/354"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 3,
+              "distinct": [
+                "843/489"
+              ],
+              "rejectedNonProduction": 0
+            }
+          }
+        },
+        "distinctAtoBValues": 1,
+        "distinctBtoAValues": 1,
+        "status": "AGGREGATE_STABLE_ACROSS_FIXES",
+        "matchLevel": {
+          "AtoB": {
+            "status": "MATCH_LEVEL_UNAVAILABLE",
+            "difference": null
+          },
+          "BtoA": {
+            "status": "MATCH_LEVEL_UNAVAILABLE",
+            "difference": null
+          }
+        }
+      },
+      {
+        "canonicalPairId": "58:61",
+        "bucket": 2963,
+        "fix13Production": {
+          "AtoB": "301/137",
+          "BtoA": "318/179"
+        },
+        "sources": {
+          "fix9Batch": {
+            "AtoB": {
+              "observations": 1,
+              "distinct": [
+                "301/137"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 1,
+              "distinct": [
+                "318/179"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix9SingleHero": {
+            "AtoB": {
+              "observations": 1,
+              "distinct": [
+                "301/137"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 1,
+              "distinct": [
+                "318/179"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix10Repeatability": {
+            "AtoB": {
+              "observations": 2,
+              "distinct": [
+                "301/137"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 2,
+              "distinct": [
+                "318/179"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix11QueryComposition": {
+            "AtoB": {
+              "observations": 12,
+              "distinct": [
+                "301/137"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 10,
+              "distinct": [
+                "318/179"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix12ProductionFilter": {
+            "AtoB": {
+              "observations": 3,
+              "distinct": [
+                "301/137"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 2,
+              "distinct": [
+                "318/179"
+              ],
+              "rejectedNonProduction": 0
+            }
+          }
+        },
+        "distinctAtoBValues": 1,
+        "distinctBtoAValues": 1,
+        "status": "AGGREGATE_STABLE_ACROSS_FIXES",
+        "matchLevel": {
+          "AtoB": {
+            "status": "MATCH_LEVEL_UNAVAILABLE",
+            "difference": null
+          },
+          "BtoA": {
+            "status": "MATCH_LEVEL_UNAVAILABLE",
+            "difference": null
+          }
+        }
+      },
+      {
+        "canonicalPairId": "58:61",
+        "bucket": 2964,
+        "fix13Production": {
+          "AtoB": "282/136",
+          "BtoA": "290/151"
+        },
+        "sources": {
+          "fix9Batch": {
+            "AtoB": {
+              "observations": 1,
+              "distinct": [
+                "282/136"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 1,
+              "distinct": [
+                "290/151"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix9SingleHero": {
+            "AtoB": {
+              "observations": 1,
+              "distinct": [
+                "282/136"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 1,
+              "distinct": [
+                "290/151"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix10Repeatability": {
+            "AtoB": {
+              "observations": 2,
+              "distinct": [
+                "282/136"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 2,
+              "distinct": [
+                "290/151"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix11QueryComposition": {
+            "AtoB": {
+              "observations": 12,
+              "distinct": [
+                "282/136"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 10,
+              "distinct": [
+                "290/151"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix12ProductionFilter": {
+            "AtoB": {
+              "observations": 3,
+              "distinct": [
+                "282/136"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 2,
+              "distinct": [
+                "290/151"
+              ],
+              "rejectedNonProduction": 0
+            }
+          }
+        },
+        "distinctAtoBValues": 1,
+        "distinctBtoAValues": 1,
+        "status": "AGGREGATE_STABLE_ACROSS_FIXES",
+        "matchLevel": {
+          "AtoB": {
+            "status": "MATCH_LEVEL_UNAVAILABLE",
+            "difference": null
+          },
+          "BtoA": {
+            "status": "MATCH_LEVEL_UNAVAILABLE",
+            "difference": null
+          }
+        }
+      },
+      {
+        "canonicalPairId": "58:61",
+        "bucket": 2965,
+        "fix13Production": {
+          "AtoB": "362/171",
+          "BtoA": "375/203"
+        },
+        "sources": {
+          "fix9Batch": {
+            "AtoB": {
+              "observations": 1,
+              "distinct": [
+                "362/171"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 1,
+              "distinct": [
+                "375/203"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix9SingleHero": {
+            "AtoB": {
+              "observations": 1,
+              "distinct": [
+                "362/171"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 1,
+              "distinct": [
+                "375/203"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix10Repeatability": {
+            "AtoB": {
+              "observations": 2,
+              "distinct": [
+                "362/171"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 2,
+              "distinct": [
+                "375/203"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix11QueryComposition": {
+            "AtoB": {
+              "observations": 12,
+              "distinct": [
+                "362/171"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 10,
+              "distinct": [
+                "375/203"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix12ProductionFilter": {
+            "AtoB": {
+              "observations": 3,
+              "distinct": [
+                "362/171"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 2,
+              "distinct": [
+                "375/203"
+              ],
+              "rejectedNonProduction": 0
+            }
+          }
+        },
+        "distinctAtoBValues": 1,
+        "distinctBtoAValues": 1,
+        "status": "AGGREGATE_STABLE_ACROSS_FIXES",
+        "matchLevel": {
+          "AtoB": {
+            "status": "MATCH_LEVEL_UNAVAILABLE",
+            "difference": null
+          },
+          "BtoA": {
+            "status": "MATCH_LEVEL_UNAVAILABLE",
+            "difference": null
+          }
+        }
+      },
+      {
+        "canonicalPairId": "58:61",
+        "bucket": 2966,
+        "fix13Production": {
+          "AtoB": "373/168",
+          "BtoA": "378/207"
+        },
+        "sources": {
+          "fix9Batch": {
+            "AtoB": {
+              "observations": 1,
+              "distinct": [
+                "373/168"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 1,
+              "distinct": [
+                "378/207"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix9SingleHero": {
+            "AtoB": {
+              "observations": 1,
+              "distinct": [
+                "373/168"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 1,
+              "distinct": [
+                "378/207"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix10Repeatability": {
+            "AtoB": {
+              "observations": 2,
+              "distinct": [
+                "373/168"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 2,
+              "distinct": [
+                "378/207"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix11QueryComposition": {
+            "AtoB": {
+              "observations": 12,
+              "distinct": [
+                "373/168"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 10,
+              "distinct": [
+                "378/207"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix12ProductionFilter": {
+            "AtoB": {
+              "observations": 3,
+              "distinct": [
+                "373/168"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 2,
+              "distinct": [
+                "378/207"
+              ],
+              "rejectedNonProduction": 0
+            }
+          }
+        },
+        "distinctAtoBValues": 1,
+        "distinctBtoAValues": 1,
+        "status": "AGGREGATE_STABLE_ACROSS_FIXES",
+        "matchLevel": {
+          "AtoB": {
+            "status": "MATCH_LEVEL_UNAVAILABLE",
+            "difference": null
+          },
+          "BtoA": {
+            "status": "MATCH_LEVEL_UNAVAILABLE",
+            "difference": null
+          }
+        }
+      },
+      {
+        "canonicalPairId": "58:83",
+        "bucket": 2963,
+        "fix13Production": {
+          "AtoB": "343/192",
+          "BtoA": "363/163"
+        },
+        "sources": {
+          "fix9Batch": {
+            "AtoB": {
+              "observations": 1,
+              "distinct": [
+                "343/192"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 1,
+              "distinct": [
+                "363/163"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix9SingleHero": {
+            "AtoB": {
+              "observations": 1,
+              "distinct": [
+                "343/192"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 1,
+              "distinct": [
+                "363/163"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix10Repeatability": {
+            "AtoB": {
+              "observations": 2,
+              "distinct": [
+                "343/192"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 0,
+              "distinct": [],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix11QueryComposition": {
+            "AtoB": {
+              "observations": 12,
+              "distinct": [
+                "343/192"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 10,
+              "distinct": [
+                "363/163"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix12ProductionFilter": {
+            "AtoB": {
+              "observations": 3,
+              "distinct": [
+                "343/192"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 1,
+              "distinct": [
+                "363/163"
+              ],
+              "rejectedNonProduction": 0
+            }
+          }
+        },
+        "distinctAtoBValues": 1,
+        "distinctBtoAValues": 1,
+        "status": "AGGREGATE_STABLE_ACROSS_FIXES",
+        "matchLevel": {
+          "AtoB": {
+            "status": "MATCH_LEVEL_UNAVAILABLE",
+            "difference": null
+          },
+          "BtoA": {
+            "status": "MATCH_LEVEL_UNAVAILABLE",
+            "difference": null
+          }
+        }
+      },
+      {
+        "canonicalPairId": "58:83",
+        "bucket": 2964,
+        "fix13Production": {
+          "AtoB": "310/165",
+          "BtoA": "318/149"
+        },
+        "sources": {
+          "fix9Batch": {
+            "AtoB": {
+              "observations": 1,
+              "distinct": [
+                "310/165"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 1,
+              "distinct": [
+                "318/149"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix9SingleHero": {
+            "AtoB": {
+              "observations": 1,
+              "distinct": [
+                "310/165"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 1,
+              "distinct": [
+                "318/149"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix10Repeatability": {
+            "AtoB": {
+              "observations": 2,
+              "distinct": [
+                "310/165"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 0,
+              "distinct": [],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix11QueryComposition": {
+            "AtoB": {
+              "observations": 12,
+              "distinct": [
+                "310/165"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 10,
+              "distinct": [
+                "318/149"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix12ProductionFilter": {
+            "AtoB": {
+              "observations": 3,
+              "distinct": [
+                "310/165"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 1,
+              "distinct": [
+                "318/149"
+              ],
+              "rejectedNonProduction": 0
+            }
+          }
+        },
+        "distinctAtoBValues": 1,
+        "distinctBtoAValues": 1,
+        "status": "AGGREGATE_STABLE_ACROSS_FIXES",
+        "matchLevel": {
+          "AtoB": {
+            "status": "MATCH_LEVEL_UNAVAILABLE",
+            "difference": null
+          },
+          "BtoA": {
+            "status": "MATCH_LEVEL_UNAVAILABLE",
+            "difference": null
+          }
+        }
+      },
+      {
+        "canonicalPairId": "58:83",
+        "bucket": 2965,
+        "fix13Production": {
+          "AtoB": "357/190",
+          "BtoA": "352/162"
+        },
+        "sources": {
+          "fix9Batch": {
+            "AtoB": {
+              "observations": 1,
+              "distinct": [
+                "357/190"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 1,
+              "distinct": [
+                "352/162"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix9SingleHero": {
+            "AtoB": {
+              "observations": 1,
+              "distinct": [
+                "357/190"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 1,
+              "distinct": [
+                "352/162"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix10Repeatability": {
+            "AtoB": {
+              "observations": 2,
+              "distinct": [
+                "357/190"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 0,
+              "distinct": [],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix11QueryComposition": {
+            "AtoB": {
+              "observations": 12,
+              "distinct": [
+                "357/190"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 10,
+              "distinct": [
+                "352/162"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix12ProductionFilter": {
+            "AtoB": {
+              "observations": 3,
+              "distinct": [
+                "357/190"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 1,
+              "distinct": [
+                "352/162"
+              ],
+              "rejectedNonProduction": 0
+            }
+          }
+        },
+        "distinctAtoBValues": 1,
+        "distinctBtoAValues": 1,
+        "status": "AGGREGATE_STABLE_ACROSS_FIXES",
+        "matchLevel": {
+          "AtoB": {
+            "status": "MATCH_LEVEL_UNAVAILABLE",
+            "difference": null
+          },
+          "BtoA": {
+            "status": "MATCH_LEVEL_UNAVAILABLE",
+            "difference": null
+          }
+        }
+      },
+      {
+        "canonicalPairId": "58:83",
+        "bucket": 2966,
+        "fix13Production": {
+          "AtoB": "308/163",
+          "BtoA": "306/149"
+        },
+        "sources": {
+          "fix9Batch": {
+            "AtoB": {
+              "observations": 1,
+              "distinct": [
+                "308/163"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 1,
+              "distinct": [
+                "306/149"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix9SingleHero": {
+            "AtoB": {
+              "observations": 1,
+              "distinct": [
+                "308/163"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 1,
+              "distinct": [
+                "306/149"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix10Repeatability": {
+            "AtoB": {
+              "observations": 2,
+              "distinct": [
+                "308/163"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 0,
+              "distinct": [],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix11QueryComposition": {
+            "AtoB": {
+              "observations": 12,
+              "distinct": [
+                "308/163"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 10,
+              "distinct": [
+                "306/149"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix12ProductionFilter": {
+            "AtoB": {
+              "observations": 3,
+              "distinct": [
+                "308/163"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 1,
+              "distinct": [
+                "306/149"
+              ],
+              "rejectedNonProduction": 0
+            }
+          }
+        },
+        "distinctAtoBValues": 1,
+        "distinctBtoAValues": 1,
+        "status": "AGGREGATE_STABLE_ACROSS_FIXES",
+        "matchLevel": {
+          "AtoB": {
+            "status": "MATCH_LEVEL_UNAVAILABLE",
+            "difference": null
+          },
+          "BtoA": {
+            "status": "MATCH_LEVEL_UNAVAILABLE",
+            "difference": null
+          }
+        }
+      },
+      {
+        "canonicalPairId": "59:89",
+        "bucket": 2963,
+        "fix13Production": {
+          "AtoB": "374/185",
+          "BtoA": "368/187"
+        },
+        "sources": {
+          "fix9Batch": {
+            "AtoB": {
+              "observations": 1,
+              "distinct": [
+                "374/185"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 1,
+              "distinct": [
+                "368/187"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix9SingleHero": {
+            "AtoB": {
+              "observations": 1,
+              "distinct": [
+                "374/185"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 1,
+              "distinct": [
+                "368/187"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix10Repeatability": {
+            "AtoB": {
+              "observations": 0,
+              "distinct": [],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 0,
+              "distinct": [],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix11QueryComposition": {
+            "AtoB": {
+              "observations": 6,
+              "distinct": [
+                "374/185"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 14,
+              "distinct": [
+                "368/187"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix12ProductionFilter": {
+            "AtoB": {
+              "observations": 1,
+              "distinct": [
+                "374/185"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 3,
+              "distinct": [
+                "368/187"
+              ],
+              "rejectedNonProduction": 0
+            }
+          }
+        },
+        "distinctAtoBValues": 1,
+        "distinctBtoAValues": 1,
+        "status": "AGGREGATE_STABLE_ACROSS_FIXES",
+        "matchLevel": {
+          "AtoB": {
+            "status": "MATCH_LEVEL_UNAVAILABLE",
+            "difference": null
+          },
+          "BtoA": {
+            "status": "MATCH_LEVEL_UNAVAILABLE",
+            "difference": null
+          }
+        }
+      },
+      {
+        "canonicalPairId": "59:89",
+        "bucket": 2964,
+        "fix13Production": {
+          "AtoB": "429/194",
+          "BtoA": "450/249"
+        },
+        "sources": {
+          "fix9Batch": {
+            "AtoB": {
+              "observations": 1,
+              "distinct": [
+                "429/194"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 1,
+              "distinct": [
+                "450/249"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix9SingleHero": {
+            "AtoB": {
+              "observations": 1,
+              "distinct": [
+                "429/194"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 1,
+              "distinct": [
+                "450/249"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix10Repeatability": {
+            "AtoB": {
+              "observations": 0,
+              "distinct": [],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 0,
+              "distinct": [],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix11QueryComposition": {
+            "AtoB": {
+              "observations": 6,
+              "distinct": [
+                "429/194"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 14,
+              "distinct": [
+                "450/249"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix12ProductionFilter": {
+            "AtoB": {
+              "observations": 1,
+              "distinct": [
+                "429/194"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 3,
+              "distinct": [
+                "450/249"
+              ],
+              "rejectedNonProduction": 0
+            }
+          }
+        },
+        "distinctAtoBValues": 1,
+        "distinctBtoAValues": 1,
+        "status": "AGGREGATE_STABLE_ACROSS_FIXES",
+        "matchLevel": {
+          "AtoB": {
+            "status": "MATCH_LEVEL_UNAVAILABLE",
+            "difference": null
+          },
+          "BtoA": {
+            "status": "MATCH_LEVEL_UNAVAILABLE",
+            "difference": null
+          }
+        }
+      },
+      {
+        "canonicalPairId": "59:89",
+        "bucket": 2965,
+        "fix13Production": {
+          "AtoB": "475/207",
+          "BtoA": "505/289"
+        },
+        "sources": {
+          "fix9Batch": {
+            "AtoB": {
+              "observations": 1,
+              "distinct": [
+                "475/207"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 1,
+              "distinct": [
+                "505/289"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix9SingleHero": {
+            "AtoB": {
+              "observations": 1,
+              "distinct": [
+                "475/207"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 1,
+              "distinct": [
+                "505/289"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix10Repeatability": {
+            "AtoB": {
+              "observations": 0,
+              "distinct": [],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 0,
+              "distinct": [],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix11QueryComposition": {
+            "AtoB": {
+              "observations": 6,
+              "distinct": [
+                "475/207"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 14,
+              "distinct": [
+                "505/289"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix12ProductionFilter": {
+            "AtoB": {
+              "observations": 1,
+              "distinct": [
+                "475/207"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 3,
+              "distinct": [
+                "505/289"
+              ],
+              "rejectedNonProduction": 0
+            }
+          }
+        },
+        "distinctAtoBValues": 1,
+        "distinctBtoAValues": 1,
+        "status": "AGGREGATE_STABLE_ACROSS_FIXES",
+        "matchLevel": {
+          "AtoB": {
+            "status": "MATCH_LEVEL_UNAVAILABLE",
+            "difference": null
+          },
+          "BtoA": {
+            "status": "MATCH_LEVEL_UNAVAILABLE",
+            "difference": null
+          }
+        }
+      },
+      {
+        "canonicalPairId": "59:89",
+        "bucket": 2966,
+        "fix13Production": {
+          "AtoB": "455/188",
+          "BtoA": "458/269"
+        },
+        "sources": {
+          "fix9Batch": {
+            "AtoB": {
+              "observations": 1,
+              "distinct": [
+                "455/188"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 1,
+              "distinct": [
+                "458/269"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix9SingleHero": {
+            "AtoB": {
+              "observations": 1,
+              "distinct": [
+                "455/188"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 1,
+              "distinct": [
+                "458/269"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix10Repeatability": {
+            "AtoB": {
+              "observations": 0,
+              "distinct": [],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 0,
+              "distinct": [],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix11QueryComposition": {
+            "AtoB": {
+              "observations": 6,
+              "distinct": [
+                "455/188"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 14,
+              "distinct": [
+                "458/269"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix12ProductionFilter": {
+            "AtoB": {
+              "observations": 1,
+              "distinct": [
+                "455/188"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 3,
+              "distinct": [
+                "458/269"
+              ],
+              "rejectedNonProduction": 0
+            }
+          }
+        },
+        "distinctAtoBValues": 1,
+        "distinctBtoAValues": 1,
+        "status": "AGGREGATE_STABLE_ACROSS_FIXES",
+        "matchLevel": {
+          "AtoB": {
+            "status": "MATCH_LEVEL_UNAVAILABLE",
+            "difference": null
+          },
+          "BtoA": {
+            "status": "MATCH_LEVEL_UNAVAILABLE",
+            "difference": null
+          }
+        }
+      },
+      {
+        "canonicalPairId": "61:79",
+        "bucket": 2963,
+        "fix13Production": {
+          "AtoB": "263/155",
+          "BtoA": "243/107"
+        },
+        "sources": {
+          "fix9Batch": {
+            "AtoB": {
+              "observations": 1,
+              "distinct": [
+                "263/155"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 1,
+              "distinct": [
+                "243/107"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix9SingleHero": {
+            "AtoB": {
+              "observations": 1,
+              "distinct": [
+                "263/155"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 1,
+              "distinct": [
+                "243/107"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix10Repeatability": {
+            "AtoB": {
+              "observations": 2,
+              "distinct": [
+                "263/155"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 2,
+              "distinct": [
+                "243/107"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix11QueryComposition": {
+            "AtoB": {
+              "observations": 10,
+              "distinct": [
+                "263/155"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 4,
+              "distinct": [
+                "243/107"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix12ProductionFilter": {
+            "AtoB": {
+              "observations": 2,
+              "distinct": [
+                "263/155"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 1,
+              "distinct": [
+                "243/107"
+              ],
+              "rejectedNonProduction": 0
+            }
+          }
+        },
+        "distinctAtoBValues": 1,
+        "distinctBtoAValues": 1,
+        "status": "AGGREGATE_STABLE_ACROSS_FIXES",
+        "matchLevel": {
+          "AtoB": {
+            "status": "MATCH_LEVEL_UNAVAILABLE",
+            "difference": null
+          },
+          "BtoA": {
+            "status": "MATCH_LEVEL_UNAVAILABLE",
+            "difference": null
+          }
+        }
+      },
+      {
+        "canonicalPairId": "61:79",
+        "bucket": 2964,
+        "fix13Production": {
+          "AtoB": "249/141",
+          "BtoA": "242/104"
+        },
+        "sources": {
+          "fix9Batch": {
+            "AtoB": {
+              "observations": 1,
+              "distinct": [
+                "249/141"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 1,
+              "distinct": [
+                "242/104"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix9SingleHero": {
+            "AtoB": {
+              "observations": 1,
+              "distinct": [
+                "249/141"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 1,
+              "distinct": [
+                "242/104"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix10Repeatability": {
+            "AtoB": {
+              "observations": 2,
+              "distinct": [
+                "249/141"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 2,
+              "distinct": [
+                "242/104"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix11QueryComposition": {
+            "AtoB": {
+              "observations": 10,
+              "distinct": [
+                "249/141"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 4,
+              "distinct": [
+                "242/104"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix12ProductionFilter": {
+            "AtoB": {
+              "observations": 2,
+              "distinct": [
+                "249/141"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 1,
+              "distinct": [
+                "242/104"
+              ],
+              "rejectedNonProduction": 0
+            }
+          }
+        },
+        "distinctAtoBValues": 1,
+        "distinctBtoAValues": 1,
+        "status": "AGGREGATE_STABLE_ACROSS_FIXES",
+        "matchLevel": {
+          "AtoB": {
+            "status": "MATCH_LEVEL_UNAVAILABLE",
+            "difference": null
+          },
+          "BtoA": {
+            "status": "MATCH_LEVEL_UNAVAILABLE",
+            "difference": null
+          }
+        }
+      },
+      {
+        "canonicalPairId": "61:79",
+        "bucket": 2965,
+        "fix13Production": {
+          "AtoB": "311/164",
+          "BtoA": "301/145"
+        },
+        "sources": {
+          "fix9Batch": {
+            "AtoB": {
+              "observations": 1,
+              "distinct": [
+                "311/164"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 1,
+              "distinct": [
+                "301/145"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix9SingleHero": {
+            "AtoB": {
+              "observations": 1,
+              "distinct": [
+                "311/164"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 1,
+              "distinct": [
+                "301/145"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix10Repeatability": {
+            "AtoB": {
+              "observations": 2,
+              "distinct": [
+                "311/164"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 2,
+              "distinct": [
+                "301/145"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix11QueryComposition": {
+            "AtoB": {
+              "observations": 10,
+              "distinct": [
+                "311/164"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 4,
+              "distinct": [
+                "301/145"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix12ProductionFilter": {
+            "AtoB": {
+              "observations": 2,
+              "distinct": [
+                "311/164"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 1,
+              "distinct": [
+                "301/145"
+              ],
+              "rejectedNonProduction": 0
+            }
+          }
+        },
+        "distinctAtoBValues": 1,
+        "distinctBtoAValues": 1,
+        "status": "AGGREGATE_STABLE_ACROSS_FIXES",
+        "matchLevel": {
+          "AtoB": {
+            "status": "MATCH_LEVEL_UNAVAILABLE",
+            "difference": null
+          },
+          "BtoA": {
+            "status": "MATCH_LEVEL_UNAVAILABLE",
+            "difference": null
+          }
+        }
+      },
+      {
+        "canonicalPairId": "61:79",
+        "bucket": 2966,
+        "fix13Production": {
+          "AtoB": "359/201",
+          "BtoA": "351/151"
+        },
+        "sources": {
+          "fix9Batch": {
+            "AtoB": {
+              "observations": 1,
+              "distinct": [
+                "359/201"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 1,
+              "distinct": [
+                "351/151"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix9SingleHero": {
+            "AtoB": {
+              "observations": 1,
+              "distinct": [
+                "359/201"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 1,
+              "distinct": [
+                "351/151"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix10Repeatability": {
+            "AtoB": {
+              "observations": 2,
+              "distinct": [
+                "359/201"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 2,
+              "distinct": [
+                "351/151"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix11QueryComposition": {
+            "AtoB": {
+              "observations": 10,
+              "distinct": [
+                "359/201"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 4,
+              "distinct": [
+                "351/151"
+              ],
+              "rejectedNonProduction": 0
+            }
+          },
+          "fix12ProductionFilter": {
+            "AtoB": {
+              "observations": 2,
+              "distinct": [
+                "359/201"
+              ],
+              "rejectedNonProduction": 0
+            },
+            "BtoA": {
+              "observations": 1,
+              "distinct": [
+                "351/151"
+              ],
+              "rejectedNonProduction": 0
+            }
+          }
+        },
+        "distinctAtoBValues": 1,
+        "distinctBtoAValues": 1,
+        "status": "AGGREGATE_STABLE_ACROSS_FIXES",
+        "matchLevel": {
+          "AtoB": {
+            "status": "MATCH_LEVEL_UNAVAILABLE",
+            "difference": null
+          },
+          "BtoA": {
+            "status": "MATCH_LEVEL_UNAVAILABLE",
+            "difference": null
+          }
+        }
+      }
+    ]
+  },
+  "winnerOrientation": {
+    "status": "UNVERIFIED",
+    "reason": "Winner/side data exists on individual match records, but the matches that make up matchUp cannot be enumerated, so winCount cannot be reconciled against match outcomes.",
+    "matchTypeSupportsOrientation": true
+  },
+  "rootCauseHypotheses": [
+    {
+      "category": "MATCH_SET_DIFFERENCE_CONFIRMED",
+      "status": "NOT_TESTABLE",
+      "reason": "Requires match identities for the matchUp population, which the API does not expose."
+    },
+    {
+      "category": "MATCH_LEVEL_COUNT_RECONCILIATION",
+      "status": "NOT_TESTABLE",
+      "reason": "Requires match identities for the matchUp population, which the API does not expose."
+    },
+    {
+      "category": "RANK_FILTER_MATCH_SET_DIFFERENCE",
+      "status": "NOT_TESTABLE",
+      "reason": "Requires match identities for the matchUp population, which the API does not expose."
+    },
+    {
+      "category": "BUCKET_ASSIGNMENT_DIFFERENCE",
+      "status": "NOT_TESTABLE",
+      "reason": "Requires match identities for the matchUp population, which the API does not expose."
+    },
+    {
+      "category": "DUPLICATE_OR_MISSING_MATCH_RECORDS",
+      "status": "NOT_TESTABLE",
+      "reason": "Requires match identities for the matchUp population, which the API does not expose."
+    },
+    {
+      "category": "WINNER_ORIENTATION_SEMANTICS",
+      "status": "NOT_TESTABLE",
+      "reason": "Requires match identities for the matchUp population, which the API does not expose."
+    },
+    {
+      "category": "MATCH_LEVEL_EVIDENCE_UNAVAILABLE",
+      "status": "CONFIRMED_BY_SCHEMA",
+      "evidence": {
+        "aggregateEndpoint": "heroStats.matchUp",
+        "aggregateExposesMatchIdentities": false,
+        "populationCandidates": [],
+        "matchListEndpointsInspected": 17
+      }
+    }
+  ],
+  "finalStatus": "MATCH_LEVEL_EVIDENCE_UNAVAILABLE",
+  "rootCause": {
+    "status": "UNRESOLVED",
+    "category": "MATCH_LEVEL_EVIDENCE_UNAVAILABLE",
+    "productionPublishAllowed": false,
+    "explanation": "The STRATZ schema provides only aggregate matchUp counts; no unscoped endpoint returns the match IDs behind them. A→B/B→A match sets, bucket assignment and winner orientation therefore cannot be checked, and the cause of reverse-direction count differences remains unknown."
+  },
+  "evidenceSha256": "08a8081e2906c388ba187cccd14faa062d3c71e43280bb4df4f0684d72c657db"
+}
