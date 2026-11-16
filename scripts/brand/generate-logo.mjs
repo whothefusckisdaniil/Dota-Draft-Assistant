@@ -25,11 +25,11 @@ const diamond = [
   `L${4 + o} ${50 + o}`, `A${r} ${r} 0 0 1 ${4 + o} ${50 - o}`, 'Z',
 ].join(' ');
 // Advantage arrow, drawn pointing +x around the centre, then turned to point up-right.
-// The tip (x=89) passes the NE edge (x≈82.5) and pierces the outline.
-const arrowLocal = 'M23 44.5 L59 44.5 L59 33 L89 50 L59 67 L59 55.5 L23 55.5 Z';
+// Rotated back, the diamond is the square 17.5–82.5: the arrow stays inside with a margin.
+const arrowLocal = 'M27 44 L53 44 L53 31 L75 50 L53 69 L53 56 L27 56 Z';
 const arrowT = 'rotate(-45 50 50)';
-// Small sizes: solid diamond with a short notch in the NE edge.
-const notchLocal = 'M70 46 L89 50 L70 54 Z';
+// Small sizes (favicon, ≤32 px): a bolder arrow, also fully inside.
+const smallArrowLocal = 'M29 42 L49 42 L49 28 L73 50 L49 72 L49 58 L29 58 Z';
 
 const grad = (id) => `<linearGradient id="${id}" x1="0" y1="4" x2="0" y2="96" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FFC857"/><stop offset="1" stop-color="#FF9F1C"/></linearGradient>`;
 
@@ -51,7 +51,7 @@ function write(name, content) {
 {
   const m = markGroup({});
   write('lastpick-mark.svg', svg(100, 100, m.defs, m.body));
-  const s = markGroup({ id: 'lps', cut: notchLocal });
+  const s = markGroup({ id: 'lps', cut: smallArrowLocal });
   write('lastpick-mark-small.svg', svg(100, 100, s.defs, s.body));
 }
 
@@ -119,7 +119,7 @@ write('lastpick-mono-black.svg', horizontal({ mono: '#000000' }));
 
 // favicon: simplified mark (no arrow) — reads at 16px
 {
-  const s = markGroup({ id: 'f', cut: notchLocal });
+  const s = markGroup({ id: 'f', cut: smallArrowLocal });
   write('favicon.svg', svg(100, 100, s.defs, s.body));
 }
 console.log({ upm, capH, cap, gap });

@@ -35,7 +35,7 @@ const DISPLAY = 'Unbounded, Inter, sans-serif';
 const UI = 'Inter, system-ui, sans-serif';
 
 const DIAMOND = new Path2D('M44.48 9.52A7.8 7.8 0 0 1 55.52 9.52L90.48 44.48A7.8 7.8 0 0 1 90.48 55.52L55.52 90.48A7.8 7.8 0 0 1 44.48 90.48L9.52 55.52A7.8 7.8 0 0 1 9.52 44.48Z');
-const ARROW = new Path2D('M23 44.5 L59 44.5 L59 33 L89 50 L59 67 L59 55.5 L23 55.5 Z');
+const ARROW = new Path2D('M27 44 L53 44 L53 31 L75 50 L53 69 L53 56 L27 56 Z');
 
 export function scoreLabel(v: number): string {
   const r = Math.round(v * 100) / 100;

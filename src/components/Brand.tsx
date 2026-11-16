@@ -1,12 +1,12 @@
 import { useId } from 'react';
 
 /* LASTPICK mark: a rounded diamond (the 5th draft slot) with an "advantage"
-   arrow cut out of it; the arrow tip pierces the NE edge. Same geometry as
-   public/brand/*.svg. Below 33 px the arrow is dropped for a notch. */
+   arrow cut out of it, kept fully inside the diamond. Same geometry as
+   public/brand/*.svg. Up to 32 px a bolder arrow keeps it legible. */
 const DIAMOND =
   'M44.48 9.52A7.8 7.8 0 0 1 55.52 9.52L90.48 44.48A7.8 7.8 0 0 1 90.48 55.52L55.52 90.48A7.8 7.8 0 0 1 44.48 90.48L9.52 55.52A7.8 7.8 0 0 1 9.52 44.48Z';
-const ARROW = 'M23 44.5 L59 44.5 L59 33 L89 50 L59 67 L59 55.5 L23 55.5 Z';
-const NOTCH = 'M70 46 L89 50 L70 54 Z';
+const ARROW = 'M27 44 L53 44 L53 31 L75 50 L53 69 L53 56 L27 56 Z';
+const ARROW_BOLD = 'M29 42 L49 42 L49 28 L73 50 L49 72 L49 58 L29 58 Z';
 
 export function LogoMark({ size = 28, className = '', glow = false }: { size?: number; className?: string; glow?: boolean }) {
   const id = useId().replace(/:/g, '');
@@ -27,7 +27,7 @@ export function LogoMark({ size = 28, className = '', glow = false }: { size?: n
         </linearGradient>
         <mask id={`${id}m`} maskUnits="userSpaceOnUse" x="0" y="0" width="100" height="100">
           <rect width="100" height="100" fill="#fff" />
-          <path d={small ? NOTCH : ARROW} transform="rotate(-45 50 50)" fill="#000" />
+          <path d={small ? ARROW_BOLD : ARROW} transform="rotate(-45 50 50)" fill="#000" />
         </mask>
       </defs>
       <path d={DIAMOND} fill={`url(#${id}g)`} mask={`url(#${id}m)`} />
