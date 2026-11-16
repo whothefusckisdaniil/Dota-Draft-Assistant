@@ -25,6 +25,19 @@ const LANES: Exclude<PositionFilter, 'all'>[] = ['1', '2', '3', '4', '5'];
 export type RankFilter = string;
 export const ALL_RANKS = 'ALL';
 const RANK_STORAGE_KEY = 'dda.rank';
+const POS_STORAGE_KEY = 'dda.pos';
+const POSITION_IDS: PositionFilter[] = ['all', '1', '2', '3', '4', '5'];
+
+/** Last role, unless the opened link names one. */
+function initialPosition(fromUrl: PositionFilter): PositionFilter {
+  try {
+    if (new URLSearchParams(window.location.search).has('pos')) return fromUrl;
+    const stored = localStorage.getItem(POS_STORAGE_KEY) as PositionFilter | null;
+    return stored && POSITION_IDS.includes(stored) ? stored : fromUrl;
+  } catch {
+    return fromUrl;
+  }
+}
 
 /** Where a hero picked in the search goes. */
 export type PickTarget = 'enemy' | 'ally' | 'ban';
@@ -67,7 +80,15 @@ export function useDraftData() {
   const [allies, setAllies] = useState<number[]>(urlState.allies);
   const [bans, setBans] = useState<number[]>(urlState.bans);
   const [target, setTarget] = useState<PickTarget>('enemy');
-  const [position, setPosition] = useState<PositionFilter>(urlState.position);
+  const [position, setPositionState] = useState<PositionFilter>(() => initialPosition(urlState.position));
+  const setPosition = useCallback((next: PositionFilter) => {
+    setPositionState(next);
+    try {
+      localStorage.setItem(POS_STORAGE_KEY, next);
+    } catch {
+      /* not remembered */
+    }
+  }, []);
   const [rank, setRankState] = useState<RankFilter>(() => urlState.rank ?? readStoredRank());
   const [bracketTables, setBracketTables] = useState<Map<string, BracketTables> | null>(null);
   /** 'unavailable' (no rank file) | 'failed' (network/parse) — translated in the UI. */

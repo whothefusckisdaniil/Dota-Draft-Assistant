@@ -4,13 +4,13 @@
  * `{name}` placeholders are filled by `t(key, vars)`.
  */
 const en = {
-  'app.tagline': 'Find the best picks against the enemy draft.',
+  'app.tagline': 'Counterpick tool for Dota 2',
   'nav.about': 'About',
   'nav.privacy': 'Privacy',
   'nav.language': 'Language',
 
   'load.loading': 'Loading hero data…',
-  'load.errorTitle': "We're having trouble loading Dota data.",
+  'load.errorTitle': 'Could not load hero data.',
   'load.errorRetry': 'Please try again later.',
 
   'draft.title': 'Enemy draft',
@@ -124,8 +124,8 @@ const en = {
   'results.footnote':
     'Statistically favorable matchup — not a guaranteed win. Scores use the median matchup advantage across the enemy draft (win rate against each enemy compared with both heroes’ usual win rates, like Dotabuff’s “disadvantage”), sample-size confidence and role fit (role tags + curated lane nudges, not per-position winrates). Only matches from the last 30 days of the current patch are counted: the window slides every day and never reaches back before the latest patch (STRATZ rank-bracket data: your selected rank, or Herald through Immortal for “All ranks”). Hero metadata sourced from OpenDota.',
 
-  'empty.title': 'Build your enemy draft',
-  'empty.text': 'Select 1–{max} enemy heroes to see counter recommendations.',
+  'empty.title': 'Pick the enemies to see counterpicks',
+  'empty.text': 'Up to {max} heroes. Your team and bans are optional.',
   'empty.try': 'Try:',
 
   'card.bestPick': '#{rank} best pick',
@@ -167,8 +167,8 @@ const en = {
   'explain.roleOk': 'Reasonable role fit for {lane}.',
   'explain.roleOff': 'Off-role pick for {lane} — counter value outweighs role fit.',
 
-  'about.title': 'About Dota Draft Assistant',
-  'about.p1': 'Dota Draft Assistant analyzes statistical hero matchups to help you evaluate picks against the enemy draft.',
+  'about.title': 'About LASTPICK',
+  'about.p1': 'LASTPICK analyzes statistical hero matchups to help you evaluate picks against the enemy draft.',
   'about.p2':
     'Hero metadata is sourced from OpenDota; matchup statistics are aggregated from STRATZ rank-bracket data. Only the last 30 days are counted, and the window is updated every day: the oldest day drops out and the newest one is added. Matches from before the latest patch are excluded, so two different metas are never mixed; during the first week of a new patch the last 7 days are used, with pre-patch days counting only a quarter.',
   'about.p3':
@@ -199,20 +199,48 @@ const en = {
   'fresh.yesterday': 'Data updated yesterday',
   'fresh.outdated': 'Data may be outdated',
 
-  'title.base': 'Dota Draft Assistant — Counter Picks',
-  'title.draft': 'Counters to {names} — Dota Draft Assistant',
+  'title.base': 'LASTPICK — counterpick tool for Dota 2',
+  'title.draft': 'Counters to {names} — LASTPICK',
+
+  'app.slogan': 'Win the draft before the game starts',
+  'app.notAffiliated': 'Not affiliated with Valve',
+  'load.retry': 'Retry',
+  'picker.open': 'Find a hero…',
+  'picker.title': 'Pick heroes',
+  'picker.done': 'Done',
+  'picker.close': 'Close hero picker',
+  'picker.taken': 'Already in the draft',
+  'attr.any': 'All',
+  'attr.str': 'Strength',
+  'attr.agi': 'Agility',
+  'attr.int': 'Intelligence',
+  'attr.all': 'Universal',
+  'pos.sub.1': 'Carry',
+  'pos.sub.2': 'Mid',
+  'pos.sub.3': 'Off',
+  'pos.sub.4': 'Sup',
+  'pos.sub.5': 'Hard Sup',
+  'results.best': 'Best pick',
+  'results.more': 'Also good',
+  'row.bar': 'Positive against {k} of {n}',
+  'drawer.reliability.1': 'Limited data',
+  'drawer.reliability.2': 'Solid data',
+  'drawer.reliability.3': 'Lots of data',
+  'drawer.vsEach': 'Against each enemy',
+  'drawer.withEach': 'With each teammate',
+  'drawer.games': '{n} games',
 } as const;
 
 export type StringKey = keyof typeof en;
 
 const ru: Record<StringKey, string> = {
-  'app.tagline': 'Подбор лучших контрпиков против вражеского драфта.',
+  'app.tagline': 'Контрпики для Dota 2',
   'nav.about': 'О сайте',
   'nav.privacy': 'Приватность',
   'nav.language': 'Язык',
 
   'load.loading': 'Загружаем данные о героях…',
-  'load.errorTitle': 'Не удалось загрузить данные Dota.',
+  'load.errorTitle': 'Не удалось загрузить данные.',
   'load.errorRetry': 'Попробуйте позже.',
 
   'draft.title': 'Вражеский драфт',
@@ -326,8 +354,8 @@ const ru: Record<StringKey, string> = {
   'results.footnote':
     'Статистически выгодный матчап — не гарантия победы. Оценка — это медианное преимущество против вражеского драфта (винрейт против каждого врага в сравнении с обычными винрейтами обоих героев, как «Невыгодное положение» на Dotabuff), с поправкой на объём выборки и соответствие роли (теги ролей и ручные поправки по линиям, а не винрейт на позиции). Учитываются только матчи за последние 30 дней текущего патча: окно сдвигается каждый день и не заходит раньше выхода последнего патча (данные STRATZ по рангам: выбранный ранг или от Рекрута до Титана для «Все ранги»). Данные о героях — OpenDota.',
 
-  'empty.title': 'Соберите вражеский драфт',
-  'empty.text': 'Выберите 1–{max} вражеских героев, чтобы увидеть контрпики.',
+  'empty.title': 'Выберите врагов, чтобы увидеть контрпики',
+  'empty.text': 'До {max} героев. Свою команду и баны добавлять не обязательно.',
   'empty.try': 'Например:',
 
   'card.bestPick': '#{rank} лучший пик',
@@ -369,8 +397,8 @@ const ru: Record<StringKey, string> = {
   'explain.roleOk': 'Неплохо подходит на роль: {lane}.',
   'explain.roleOff': 'Нетипичная роль ({lane}) — сила контрпика перевешивает.',
 
-  'about.title': 'О Dota Draft Assistant',
-  'about.p1': 'Dota Draft Assistant анализирует статистику матчапов героев и помогает выбрать пик против вражеского драфта.',
+  'about.title': 'О LASTPICK',
+  'about.p1': 'LASTPICK анализирует статистику матчапов героев и помогает выбрать пик против вражеского драфта.',
   'about.p2':
     'Данные о героях берутся из OpenDota, статистика матчапов — из данных STRATZ по рангам. Учитываются только последние 30 дней, окно обновляется каждый день: самый старый день выпадает, новый добавляется. Матчи до выхода последнего патча не учитываются, поэтому две разные меты не смешиваются; в первую неделю нового патча берутся последние 7 дней, а дни до патча учитываются с весом в четверть.',
   'about.p3':
@@ -401,8 +429,36 @@ const ru: Record<StringKey, string> = {
   'fresh.yesterday': 'Данные обновлены вчера',
   'fresh.outdated': 'Данные могут быть устаревшими',
 
-  'title.base': 'Dota Draft Assistant — контрпики для Dota 2',
-  'title.draft': 'Контрпики против {names} — Dota Draft Assistant',
+  'title.base': 'LASTPICK — контрпики для Dota 2',
+  'title.draft': 'Контрпики против {names} — LASTPICK',
+
+  'app.slogan': 'Выиграй драфт до того, как начнётся игра',
+  'app.notAffiliated': 'Не связан с Valve',
+  'load.retry': 'Повторить',
+  'picker.open': 'Найти героя…',
+  'picker.title': 'Выбор героев',
+  'picker.done': 'Готово',
+  'picker.close': 'Закрыть выбор героев',
+  'picker.taken': 'Уже в драфте',
+  'attr.any': 'Все',
+  'attr.str': 'Сила',
+  'attr.agi': 'Ловкость',
+  'attr.int': 'Интеллект',
+  'attr.all': 'Универсал',
+  'pos.sub.1': 'Керри',
+  'pos.sub.2': 'Мид',
+  'pos.sub.3': 'Офф',
+  'pos.sub.4': 'Сап',
+  'pos.sub.5': 'Фулл сап',
+  'results.best': 'Лучший пик',
+  'results.more': 'Тоже подойдут',
+  'row.bar': 'В плюсе против {k} из {n}',
+  'drawer.reliability.1': 'Мало данных',
+  'drawer.reliability.2': 'Достаточно данных',
+  'drawer.reliability.3': 'Много данных',
+  'drawer.vsEach': 'Против каждого врага',
+  'drawer.withEach': 'С каждым союзником',
+  'drawer.games': '{n} игр',
 };
 
 export const STRINGS: Record<'en' | 'ru', Record<StringKey, string>> = { en, ru };

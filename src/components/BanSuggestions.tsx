@@ -20,15 +20,12 @@ export function BanSuggestions({ items, heroById, canBan, onBan }: {
 
   return (
     <section className="mt-6" aria-labelledby="ban-suggestions-title">
-      <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
-        <div className="flex items-center gap-3">
-          <span aria-hidden="true" className="h-2.5 w-2.5 rounded-[3px] bg-[#E06060]" />
-          <h2 id="ban-suggestions-title" className="text-[13px] font-extrabold uppercase tracking-[0.2em] text-ink">{t('bans.title')}</h2>
-        </div>
-        <span className="text-[11px] text-dim">{t('bans.hint')}</span>
+      <div className="mb-2 flex items-baseline justify-between gap-3">
+        <h2 id="ban-suggestions-title" className="label">{t('bans.title')}</h2>
+        <span className="hidden text-[11px] leading-[14px] text-muted sm:block">{t('bans.hint')}</span>
       </div>
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
-        {items.map((b) => {
+      <div className="no-scrollbar -mx-4 flex snap-x gap-2 overflow-x-auto px-4 pb-1 md:mx-0 md:grid md:grid-cols-2 md:px-0 2xl:grid-cols-3">
+        {items.map((b, i) => {
           // the strongest reasons: who it beats on your team, who it fits on theirs
           const threats = [...b.threats].sort((x, y) => y.delta - x.delta).filter((x) => x.delta > 0.5).slice(0, 2);
           const fits = [...b.fits].sort((x, y) => y.delta - x.delta).filter((x) => x.delta > 0.5).slice(0, 2);
@@ -41,21 +38,22 @@ export function BanSuggestions({ items, heroById, canBan, onBan }: {
               onClick={() => onBan(b.hero.id)}
               aria-label={t('bans.ban', { name })}
               title={t('bans.ban', { name })}
-              className="ranking-row !items-start text-left disabled:cursor-not-allowed disabled:opacity-60"
+              className="result-row fade-up w-[240px] flex-none snap-start !items-start md:w-auto"
+              style={{ animationDelay: `${i * 30}ms` }}
             >
-              <span className="h-9 w-11 shrink-0 overflow-hidden rounded-md">
+              <span className="h-12 w-12 shrink-0 overflow-hidden rounded-lg">
                 <HeroPortrait hero={b.hero} fill variant="large" />
               </span>
               <span className="min-w-0 flex-1">
                 <span className="flex items-baseline gap-2">
-                  <span className="truncate text-[12px] font-bold uppercase leading-tight text-ink">{name}</span>
-                  <span className="ml-auto shrink-0 text-[13px] font-extrabold tabular-nums text-[#F0918A]">{scoreText(b.score)}</span>
+                  <span className="truncate text-[15px] font-semibold leading-5 text-ink">{name}</span>
+                  <span className="tnum ml-auto shrink-0 text-[13px] font-semibold text-neg">{scoreText(b.score)}</span>
                 </span>
                 {threats.length > 0 && (
-                  <span className="mt-1 block truncate text-[10px] text-muted">{t('bans.counters', { names: names(threats.map((x) => x.allyId)) })}</span>
+                  <span className="mt-0.5 block truncate text-[11px] leading-[14px] text-muted">{t('bans.counters', { names: names(threats.map((x) => x.allyId)) })}</span>
                 )}
                 {fits.length > 0 && (
-                  <span className="mt-0.5 block truncate text-[10px] text-muted">{t('bans.fits', { names: names(fits.map((x) => x.enemyId)) })}</span>
+                  <span className="mt-0.5 block truncate text-[11px] leading-[14px] text-muted">{t('bans.fits', { names: names(fits.map((x) => x.enemyId)) })}</span>
                 )}
               </span>
             </button>

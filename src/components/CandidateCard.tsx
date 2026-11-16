@@ -2,13 +2,15 @@ import type { CandidateScore, Hero } from '../types';
 import { HeroPortrait } from './HeroPortrait';
 import { bestWorstAgainst, explainCandidate, useI18n } from '../i18n';
 
+/** Signed score, always with + or − (colour is never the only cue). */
 export function scoreText(v: number): string {
-  return `${v > 0 ? '+' : ''}${v.toFixed(2)}`;
+  const r = Math.round(v * 100) / 100;
+  return `${r > 0 ? '+' : r < 0 ? '−' : ''}${Math.abs(r).toFixed(2)}`;
 }
 
-/** Match-count label for the #1 card badge (Top-15 polish): the old
- *  `Math.round(avgGames / 1000) + "k"` printed "0k matches" for thin samples.
- *  <1000 → "<1k"; 1000–999999 → "1k" / "12.4k"; ≥1000000 → "1.2M". */
+export const scoreTone = (v: number) => (v > 0.005 ? 'text-pos' : v < -0.005 ? 'text-neg' : 'text-muted');
+
+/** Match-count label: <1000 → "<1k"; then "1k" / "12.4k"; ≥1M → "1.2M". */
 export function formatMatches(count: number): string {
   if (count < 1000) return '<1k';
   const k = Math.round((count / 1000) * 10) / 10;
@@ -16,141 +18,104 @@ export function formatMatches(count: number): string {
   return `${Math.round((count / 1_000_000) * 10) / 10}M`;
 }
 
-/** ALL mode (FINAL UX PASS, P1): one compact best-pick card per role —
- *  fast overview, not 5 full ranking sections (page was ~4600px desktop). */
-export function BestPickCard({ c, title, heroById, onViewDetails }: {
+/** One segment per enemy: green = favourable, red = unfavourable, grey = no data. */
+export function MatchBar({ c, className = '' }: { c: CandidateScore; className?: string }) {
+  const { t } = useI18n();
+  if (c.matchups.length === 0) return null;
+  const usable = c.matchups.filter((m) => m.usable);
+  const k = usable.filter((m) => m.delta > 0).length;
+  return (
+    <span className={`match-bar ${className}`} role="img" aria-label={t('row.bar', { k, n: c.matchups.length })} title={t('row.bar', { k, n: c.matchups.length })}>
+      {c.matchups.map((m) => (
+        <i key={m.enemyId} className={!m.usable ? '' : m.delta > 0 ? 'pos' : 'neg'} />
+      ))}
+    </span>
+  );
+}
+
+/** #1 recommendation: 96 px portrait, name, the big advantage number. */
+export function BestCard({ c, lane, heroById, onViewDetails }: {
   c: CandidateScore;
-  title: string;
+  lane: string;
   heroById: Map<number, Hero>;
   onViewDetails: (c: CandidateScore) => void;
 }) {
   const i18n = useI18n();
   const { t } = i18n;
-  const name = i18n.heroName(c.hero);
   const coverage = c.matchups.filter((m) => m.usable).length;
-  return (
-    <button
-      type="button"
-      onClick={() => onViewDetails(c)}
-      aria-label={t('card.bestFor', { lane: title, name, score: scoreText(c.finalScore) })}
-      className="rec-best fade-up group text-left"
-    >
-      <div className="flex items-center gap-2">
-        <span className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-accent-2">{title}</span>
-        <span className="badge ml-auto">{coverage}/{c.matchups.length}</span>
-      </div>
-      <div className="mt-3 flex items-center gap-3.5">
-        <div className="h-[76px] w-[60px] shrink-0 overflow-hidden rounded-lg">
-          <HeroPortrait hero={c.hero} fill variant="large" />
-        </div>
-        <div className="min-w-0">
-          <div className="truncate text-[15px] font-extrabold uppercase leading-tight tracking-wide text-ink">{name}</div>
-          <div className="text-[22px] font-extrabold leading-tight tabular-nums text-accent">{scoreText(c.finalScore)}</div>
-        </div>
-      </div>
-      <p className="mt-2.5 line-clamp-2 text-xs leading-snug text-muted">{explainCandidate(c, title, i18n, heroById)[0]}</p>
-      <span className="mt-2.5 inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-wide text-accent-2 transition-all duration-150 group-hover:gap-1.5">
-        {t('card.view')} <span aria-hidden="true">→</span>
-      </span>
-    </button>
-  );
-}
-
-/** #1 recommendation — visually dominant card (§11). */
-export function CandidateCard({ c, rank, lane, heroById, onViewDetails }: {
-  c: CandidateScore; rank: number; lane: string; heroById: Map<number, Hero>;
-  onViewDetails: (c: CandidateScore) => void;
-}) {
-  const i18n = useI18n();
-  const { t } = i18n;
-  const coverage = c.matchups.filter((m) => m.usable).length;
-  const total = c.matchups.length;
   const { best, worst, goodWith } = bestWorstAgainst(c, i18n, heroById);
+  const name = i18n.heroName(c.hero);
   return (
-    <article className="rec-top fade-up grid grid-cols-[96px_minmax(0,1fr)] gap-x-3 gap-y-2.5 p-4 sm:grid-cols-[176px_minmax(0,1fr)] sm:gap-x-5 sm:p-5 lg:grid-cols-[192px_minmax(0,1fr)]">
-      {/* Portrait column: 96×120 on mobile (recognizable, ~90px wide per UX
-          brief), 176/192 — unchanged desktop composition. */}
-      <div className="relative col-start-1 row-start-1 self-start overflow-hidden rounded-xl sm:row-span-2">
-        <div className="aspect-4/5 w-full">
+    <article className="best-card fade-up p-4 sm:p-5">
+      <div className="flex items-start gap-4">
+        <div className="h-24 w-24 shrink-0 overflow-hidden rounded-xl">
           <HeroPortrait hero={c.hero} fill variant="large" />
         </div>
-        <span className="badge badge-accent absolute left-2 top-2 hidden sm:inline-flex">{t('card.bestPick', { rank })}</span>
-      </div>
-      {/* Row 1 (mobile): key info beside the portrait instead of below it. */}
-      <div className="col-start-2 row-start-1 min-w-0">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="badge badge-accent sm:hidden">{t('card.bestPick', { rank })}</span>
-          <span className="badge">{t('card.coverage', { k: coverage, n: total })}</span>
-          <span className="badge">{t('card.matches', { count: formatMatches(c.avgGames) })}</span>
-          {c.synergy.length > 0 && (
-            <span className={`badge ${c.synergyScore >= 0 ? 'badge-pos' : 'badge-warn'}`}>{t('card.synergy', { value: scoreText(c.synergyScore) })}</span>
-          )}
-          {c.lowData && <span className="badge badge-warn">{t('card.limited')}</span>}
+        <div className="min-w-0 flex-1">
+          <div className="label text-accent">{t('results.best')}</div>
+          <h3 className="mt-1 truncate font-display text-[16px] font-bold leading-5 text-ink sm:text-[20px] sm:leading-6">{name}</h3>
+          {i18n.heroAltName(c.hero) && <div className="truncate text-[11px] leading-[14px] text-muted">{i18n.heroAltName(c.hero)}</div>}
+          <div className={`tnum mt-1 font-display text-[32px] font-bold leading-[38px] ${scoreTone(c.finalScore)}`}>{scoreText(c.finalScore)}</div>
         </div>
-        <h4 className="mt-2.5 text-2xl font-extrabold uppercase leading-none tracking-wide text-ink sm:text-3xl">
-          {i18n.heroName(c.hero)}
-        </h4>
-        {i18n.heroAltName(c.hero) && (
-          <div className="mt-1 text-[11px] font-semibold uppercase tracking-wide text-dim">{i18n.heroAltName(c.hero)}</div>
+      </div>
+      <MatchBar c={c} className="mt-3" />
+      <div className="mt-3 flex flex-wrap gap-1.5">
+        {c.matchups.length > 0 && <span className="badge">{t('card.coverage', { k: coverage, n: c.matchups.length })}</span>}
+        <span className="badge">{t('card.matches', { count: formatMatches(c.avgGames) })}</span>
+        {c.synergy.length > 0 && (
+          <span className={`badge ${c.synergyScore >= 0 ? 'badge-pos' : 'badge-neg'}`}>{t('card.synergy', { value: scoreText(c.synergyScore) })}</span>
         )}
-        <div className="mt-2 text-3xl font-extrabold tabular-nums text-accent sm:text-4xl">
-          {scoreText(c.finalScore)}
-        </div>
+        {c.lowData && <span className="badge badge-warn">{t('card.limited')}</span>}
       </div>
-      {/* Row 2: full card width on mobile, right column on sm+ (grid gap keeps
-          the same 10px rhythm the old mt-2.5 stack had on desktop). */}
-      <div className="col-span-2 row-start-2 min-w-0 sm:col-span-1 sm:col-start-2">
-        <p className="max-w-xl text-sm leading-relaxed text-muted">{explainCandidate(c, lane, i18n, heroById)[0]}</p>
-        <div className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-xs">
-          {best.length > 0 && (
-            <span className="text-dim">{t('card.bestVs')} <span className="font-semibold text-pos">{best.join(', ')}</span></span>
-          )}
-          {worst.length > 0 && (
-            <span className="text-dim">{t('card.worstVs')} <span className="font-semibold text-neg">{worst[0]}</span></span>
-          )}
-          {goodWith.length > 0 && (
-            <span className="text-dim">{t('card.goodWith')} <span className="font-semibold text-ally">{goodWith.join(', ')}</span></span>
-          )}
+      <p className="mt-3 text-[13px] leading-[18px] text-muted">{explainCandidate(c, lane, i18n, heroById)[0]}</p>
+      {(best.length > 0 || worst.length > 0 || goodWith.length > 0) && (
+        <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-[13px] leading-[18px]">
+          {best.length > 0 && <span className="text-muted">{t('card.bestVs')} <span className="font-semibold text-ink">{best.join(', ')}</span></span>}
+          {worst.length > 0 && <span className="text-muted">{t('card.worstVs')} <span className="font-semibold text-ink">{worst[0]}</span></span>}
+          {goodWith.length > 0 && <span className="text-muted">{t('card.goodWith')} <span className="font-semibold text-ink">{goodWith.join(', ')}</span></span>}
         </div>
-        <div className="mt-3.5 flex flex-wrap items-center gap-3">
-          <button type="button" onClick={() => onViewDetails(c)} className="btn btn-accent">
-            {t('card.view')} <span aria-hidden="true">→</span>
-          </button>
-        </div>
-        <p className="mt-2.5 text-[10px] leading-relaxed text-dim">
-          {t('card.roleNote')}
-        </p>
-      </div>
+      )}
+      <button type="button" onClick={() => onViewDetails(c)} className="btn btn-accent mt-4 w-full sm:w-auto">
+        {t('card.view')} <span aria-hidden="true">→</span>
+      </button>
     </article>
   );
 }
 
-/** #2–#15 — one line of the ranked-alternatives list (Top-15 redesign):
- *  rank · portrait · name+coverage · score; the whole row opens the drawer. */
-export function RankingRow({ c, rank, onViewDetails }: {
-  c: CandidateScore; rank: number;
+/** A 64 px result line: portrait 48, name, number, per-enemy match bar.
+ *  `tag` replaces the rank number (the role name in the per-role overview). */
+export function ResultRow({ c, rank, tag, onViewDetails, style }: {
+  c: CandidateScore;
+  rank?: number;
+  tag?: string;
   onViewDetails: (c: CandidateScore) => void;
+  style?: React.CSSProperties;
 }) {
   const i18n = useI18n();
-  const coverage = c.matchups.filter((m) => m.usable).length;
+  const name = i18n.heroName(c.hero);
   return (
     <button
       type="button"
       onClick={() => onViewDetails(c)}
-      aria-label={i18n.t('card.viewFor', { name: i18n.heroName(c.hero), rank })}
-      className="ranking-row"
+      aria-label={i18n.t('card.viewFor', { name, rank: rank ?? 1 })}
+      className="result-row"
+      style={style}
     >
-      <span aria-hidden="true" className="w-5 shrink-0 text-[10px] font-bold tabular-nums text-dim">#{rank}</span>
-      <span className="h-8 w-10 shrink-0 overflow-hidden rounded-md sm:h-9 sm:w-11">
+      <span className="h-12 w-12 shrink-0 overflow-hidden rounded-lg">
         <HeroPortrait hero={c.hero} fill variant="large" />
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-[12px] font-bold uppercase leading-tight text-ink">{i18n.heroName(c.hero)}</span>
-        <span className="mt-1 flex items-baseline gap-2">
-          <span className="shrink-0 text-[10px] font-semibold text-muted">{coverage}/{c.matchups.length}</span>
-          <span className="ml-auto shrink-0 text-[13px] font-extrabold leading-none tabular-nums text-accent">{scoreText(c.finalScore)}</span>
+        <span className="flex items-baseline gap-2">
+          {tag ? (
+            <span className="label shrink-0 !text-[11px] text-accent">{tag}</span>
+          ) : rank !== undefined ? (
+            <span aria-hidden="true" className="tnum shrink-0 text-[11px] font-semibold text-muted">#{rank}</span>
+          ) : null}
         </span>
+        <span className="block truncate text-[15px] font-semibold leading-5 text-ink">{name}</span>
+        <MatchBar c={c} className="mt-1.5 max-w-[160px]" />
       </span>
+      <span className={`tnum shrink-0 font-display text-[16px] font-bold ${scoreTone(c.finalScore)}`}>{scoreText(c.finalScore)}</span>
     </button>
   );
 }

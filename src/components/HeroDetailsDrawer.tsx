@@ -1,8 +1,9 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import type { CandidateScore, Hero } from '../types';
-import { fmtDelta } from '../scoring/engine';
 import { explainCandidate, useI18n } from '../i18n';
 import { HeroPortrait } from './HeroPortrait';
+import { scoreText, scoreTone } from './CandidateCard';
+import type { StringKey } from '../i18n/strings';
 import type { Lane } from '../scoring/positionsExtra';
 
 interface Props {
@@ -14,152 +15,137 @@ interface Props {
   onClose: () => void;
 }
 
-/** Matchup breakdown drawer (§15): per-enemy stats + the numbers the score was
- *  built from. Plain statistics, no AI, no guarantees. */
+/** Reliability: 3 dots by sample size (same thresholds as the explanation). */
+function reliability(avgGames: number): 1 | 2 | 3 {
+  return avgGames >= 800 ? 3 : avgGames >= 200 ? 2 : 1;
+}
+
+/** A per-hero line: mini portrait, name, win rate + games, a centred ±bar. */
+function PairRow({ hero, name, delta, usable, winrate, games, wrKey }: {
+  hero?: Hero; name: string; delta: number; usable: boolean; winrate: number; games: number; wrKey: StringKey;
+}) {
+  const i18n = useI18n();
+  const { t } = i18n;
+  // ±6 pp fills half the bar
+  const w = Math.min(50, (Math.abs(delta) / 6) * 50);
+  return (
+    <div className="flex items-center gap-3 py-2.5">
+      <span className="h-10 w-10 shrink-0 overflow-hidden rounded-lg">{hero && <HeroPortrait hero={hero} fill variant="large" />}</span>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-baseline gap-2">
+          <span className="min-w-0 flex-1 truncate text-[15px] font-semibold leading-5 text-ink">{name}</span>
+          <span className={`tnum shrink-0 text-[15px] font-semibold ${usable ? scoreTone(delta) : 'text-muted'}`}>
+            {usable ? scoreText(delta) : t('drawer.na')}
+          </span>
+        </div>
+        <div className="mt-1 flex items-center gap-3">
+          <span className="tnum min-w-0 flex-1 truncate text-[11px] leading-[14px] text-muted">
+            {t(wrKey, { wr: winrate.toFixed(1) })} · {i18n.number(Math.round(games))} {i18n.plural(Math.round(games), 'game')}
+          </span>
+          <span className="delta-bar w-20 shrink-0" aria-hidden="true">
+            {usable && <i className={delta >= 0 ? 'bg-pos' : 'bg-neg'} style={delta >= 0 ? { left: '50%', width: `${w}%` } : { right: '50%', width: `${w}%` }} />}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** Hero analysis: full-screen sheet on phones, 420 px side panel from 768 px. */
 export function HeroDetailsDrawer({ candidate: c, laneName, enemyIds, heroById, onClose }: Props) {
   const i18n = useI18n();
   const { t } = i18n;
+  const closeRef = useRef<HTMLButtonElement>(null);
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
     document.addEventListener('keydown', onKey);
+    closeRef.current?.focus();
     return () => document.removeEventListener('keydown', onKey);
   }, [onClose]);
 
   const usable = c.matchups.filter((m) => m.usable);
+  const level = reliability(c.avgGames);
+  const name = (id: number) => { const h = heroById.get(id); return h ? i18n.heroName(h) : `#${id}`; };
+  const stat = (label: string, value: string, tone = 'text-ink') => (
+    <div className="panel-2 px-2 py-2.5 text-center">
+      <div className="text-[11px] leading-[14px] text-muted">{label}</div>
+      <div className={`tnum mt-1 text-[15px] font-semibold ${tone}`}>{value}</div>
+    </div>
+  );
 
   return (
-    <div className="fade-in fixed inset-0 z-50 flex items-end justify-center bg-black/70 backdrop-blur-[2px] sm:items-center" onClick={onClose} role="dialog" aria-modal="true" aria-label={t('drawer.label', { name: i18n.heroName(c.hero) })}>
-      <div
-        className="drawer-panel nice-scroll h-[92vh] w-full max-h-[92vh] overflow-auto p-5 sm:h-auto sm:max-h-[86vh] sm:max-w-lg sm:p-7"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="mb-5 flex justify-end">
-          <button type="button" onClick={onClose} className="slot-x static" aria-label={t('drawer.close')}>
-            ×
+    <>
+      <div className="scrim hidden md:block" onClick={onClose} aria-hidden="true" />
+      <div className="side-panel" role="dialog" aria-modal="true" aria-label={t('drawer.label', { name: i18n.heroName(c.hero) })}>
+        <div className="flex flex-none items-center justify-between border-b border-line px-4 py-2" style={{ paddingTop: 'max(8px, env(safe-area-inset-top))' }}>
+          <span className="label">{laneName}</span>
+          <button ref={closeRef} type="button" onClick={onClose} className="icon-btn" aria-label={t('drawer.close')}>
+            <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M4 4l10 10M14 4 4 14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
           </button>
         </div>
-
-        <div className="flex flex-col items-center text-center">
-          <div className="h-28 w-28 overflow-hidden rounded-2xl sm:h-32 sm:w-32">
-            <HeroPortrait hero={c.hero} fill variant="large" />
-          </div>
-          <h2 className="mt-4 text-2xl font-extrabold uppercase tracking-wide text-ink sm:text-3xl">{i18n.heroName(c.hero)}</h2>
-          {i18n.heroAltName(c.hero) && <div className="mt-0.5 text-xs font-semibold uppercase tracking-wide text-dim">{i18n.heroAltName(c.hero)}</div>}
-          <div className="mt-1 text-3xl font-extrabold tabular-nums text-accent">
-            {c.draftScore > 0 ? '+' : ''}{c.draftScore.toFixed(2)}
-          </div>
-          <p className="mt-1 text-xs text-muted">{t('drawer.against')}</p>
-        </div>
-
-        {c.matchups.length > 0 && (
-          <>
-        <div className="mb-2 mt-7 flex items-center gap-3">
-          <h3 className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted">{t('drawer.matchups')}</h3>
-          <span className="h-px flex-1 bg-line" />
-        </div>
-        <div className="mb-1.5 flex items-center gap-3 px-3.5 text-[10px] font-semibold uppercase tracking-wide text-dim">
-          <span className="flex-1">{t('drawer.enemy')}</span>
-          <span className="w-20 text-right" title={t('drawer.advantageTitle')}>{t('drawer.advantage')}</span>
-          <span className="w-24 text-right">{t('drawer.winrate')}</span>
-        </div>
-
-        <div className="space-y-2">
-          {c.matchups.map((m) => (
-            <div key={m.enemyId} className="panel-2 flex items-center gap-3 px-3.5 py-3">
-              <span className="min-w-0 flex-1 truncate text-sm font-semibold text-ink">
-                {(() => { const h = heroById.get(m.enemyId); return h ? i18n.heroName(h) : `#${m.enemyId}`; })()}
-              </span>
-              <span className={`w-20 text-right text-sm font-bold tabular-nums ${m.delta >= 0 ? 'text-pos' : 'text-neg'}`}>
-                {m.usable ? fmtDelta(m.delta) : t('drawer.na')}
-              </span>
-              <span className="w-24 text-right text-[11px] leading-tight text-muted">
-                {t('drawer.wr', { wr: m.winrate.toFixed(1) })}
-                <br />
-                {i18n.number(Math.round(m.games))} {i18n.plural(Math.round(m.games), 'game')}
-              </span>
+        <div className="nice-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-8" style={{ paddingBottom: 'calc(32px + var(--safe-bottom))' }}>
+          <div className="flex items-center gap-4 pt-5">
+            <div className="h-24 w-24 shrink-0 overflow-hidden rounded-xl">
+              <HeroPortrait hero={c.hero} fill variant="large" />
             </div>
-          ))}
-        </div>
-          </>
-        )}
-
-        {c.synergy.length > 0 && (
-          <>
-            <div className="mb-2 mt-6 flex items-center gap-3">
-              <h3 className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted">{t('drawer.synergy')}</h3>
-              <span className="h-px flex-1 bg-line" />
-            </div>
-            <div className="mb-1.5 flex items-center gap-3 px-3.5 text-[10px] font-semibold uppercase tracking-wide text-dim">
-              <span className="flex-1">{t('drawer.ally')}</span>
-              <span className="w-20 text-right" title={t('drawer.synergyTitle')}>{t('drawer.synergyCol')}</span>
-              <span className="w-24 text-right">{t('drawer.winrate')}</span>
-            </div>
-            <div className="space-y-2">
-              {c.synergy.map((sy) => (
-                <div key={sy.allyId} className="panel-2 flex items-center gap-3 px-3.5 py-3">
-                  <span className="min-w-0 flex-1 truncate text-sm font-semibold text-ink">
-                    {(() => { const h = heroById.get(sy.allyId); return h ? i18n.heroName(h) : `#${sy.allyId}`; })()}
-                  </span>
-                  <span className={`w-20 text-right text-sm font-bold tabular-nums ${sy.delta >= 0 ? 'text-pos' : 'text-neg'}`}>
-                    {sy.usable ? fmtDelta(sy.delta) : t('drawer.na')}
-                  </span>
-                  <span className="w-24 text-right text-[11px] leading-tight text-muted">
-                    {t('drawer.together', { wr: sy.winrate.toFixed(1) })}
-                    <br />
-                    {i18n.number(sy.games)} {i18n.plural(sy.games, 'game')}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </>
-        )}
-
-        {c.synergy.length > 0 && (
-          <div className="mt-5 grid grid-cols-3 gap-2 text-center">
-            <div className="panel-2 px-2 py-3">
-              <div className="text-[10px] font-semibold uppercase tracking-wide text-dim">{t('drawer.counterScore')}</div>
-              <div className="mt-1 text-sm font-bold tabular-nums text-ink">{(c.teamScoreM ?? c.teamScore).toFixed(2)}</div>
-            </div>
-            <div className="panel-2 px-2 py-3">
-              <div className="text-[10px] font-semibold uppercase tracking-wide text-dim">{t('drawer.synergyScore')}</div>
-              <div className="mt-1 text-sm font-bold tabular-nums text-ink">{c.synergyScore.toFixed(2)}</div>
-            </div>
-            <div className="panel-2 px-2 py-3">
-              <div className="text-[10px] font-semibold uppercase tracking-wide text-dim">{t('drawer.draftScore')}</div>
-              <div className="mt-1 text-sm font-bold tabular-nums text-accent">{c.draftScore.toFixed(2)}</div>
+            <div className="min-w-0">
+              <h2 className="truncate font-display text-[20px] font-bold leading-6 text-ink">{i18n.heroName(c.hero)}</h2>
+              {i18n.heroAltName(c.hero) && <div className="truncate text-[11px] leading-[14px] text-muted">{i18n.heroAltName(c.hero)}</div>}
+              <div className={`tnum mt-1 font-display text-[32px] font-bold leading-[38px] ${scoreTone(c.draftScore)}`}>{scoreText(c.draftScore)}</div>
+              <div className="mt-1 flex items-center gap-2 text-[11px] leading-[14px] text-muted" title={`${Math.round(c.avgGames)}`}>
+                <span className="reliability" aria-hidden="true">
+                  {[1, 2, 3].map((n) => <i key={n} className={n <= level ? 'on' : ''} />)}
+                </span>
+                {t(`drawer.reliability.${level}` as StringKey)}
+              </div>
             </div>
           </div>
-        )}
 
-        <div className="mt-5 grid grid-cols-3 gap-2 text-center">
-          <div className="panel-2 px-2 py-3">
-            <div className="text-[10px] font-semibold uppercase tracking-wide text-dim">{t('drawer.teamScore')}</div>
-            <div className="mt-1 text-sm font-bold tabular-nums text-ink">{(c.teamScoreM ?? c.teamScore).toFixed(2)}</div>
+          {c.matchups.length > 0 && (
+            <section className="mt-6">
+              <h3 className="label">{t('drawer.vsEach')}</h3>
+              <div className="mt-1 divide-y divide-line">
+                {c.matchups.map((m) => (
+                  <PairRow key={m.enemyId} hero={heroById.get(m.enemyId)} name={name(m.enemyId)} delta={m.delta} usable={m.usable} winrate={m.winrate} games={m.games} wrKey="drawer.wr" />
+                ))}
+              </div>
+            </section>
+          )}
+
+          {c.synergy.length > 0 && (
+            <section className="mt-5">
+              <h3 className="label">{t('drawer.withEach')}</h3>
+              <div className="mt-1 divide-y divide-line">
+                {c.synergy.map((sy) => (
+                  <PairRow key={sy.allyId} hero={heroById.get(sy.allyId)} name={name(sy.allyId)} delta={sy.delta} usable={sy.usable} winrate={sy.winrate} games={sy.games} wrKey="drawer.together" />
+                ))}
+              </div>
+            </section>
+          )}
+
+          <div className="mt-5 grid grid-cols-3 gap-2">
+            {stat(t('drawer.teamScore'), scoreText(c.teamScoreM ?? c.teamScore))}
+            {stat(t('drawer.median'), scoreText(c.deltaStats.median))}
+            {stat(t('drawer.coverage'), `${usable.length}/${enemyIds.length || c.matchups.length}`)}
           </div>
-          <div className="panel-2 px-2 py-3">
-            <div className="text-[10px] font-semibold uppercase tracking-wide text-dim">{t('drawer.median')}</div>
-            <div className="mt-1 text-sm font-bold tabular-nums text-ink">{c.deltaStats.median.toFixed(2)}</div>
+          {c.synergy.length > 0 && (
+            <div className="mt-2 grid grid-cols-3 gap-2">
+              {stat(t('drawer.counterScore'), scoreText(c.teamScoreM ?? c.teamScore))}
+              {stat(t('drawer.synergyScore'), scoreText(c.synergyScore))}
+              {stat(t('drawer.draftScore'), scoreText(c.draftScore), scoreTone(c.draftScore))}
+            </div>
+          )}
+
+          <div className="mt-5 space-y-1.5 border-t border-line pt-4 text-[13px] leading-[18px] text-muted">
+            {explainCandidate(c, laneName, i18n, heroById).map((line) => <p key={line}>{line}</p>)}
           </div>
-          <div className="panel-2 px-2 py-3">
-            <div className="text-[10px] font-semibold uppercase tracking-wide text-dim">{t('drawer.coverage')}</div>
-            <div className="mt-1 text-sm font-bold tabular-nums text-ink">{usable.length}/{enemyIds.length || c.matchups.length}</div>
-          </div>
+          <p className="mt-4 text-[11px] leading-[14px] text-muted">
+            {t('drawer.footnote')}
+            {c.synergy.length > 0 && <> {t('drawer.synergyNote')}</>}
+          </p>
         </div>
-
-        <div className="mt-5 space-y-1.5 border-t border-line pt-4 text-xs leading-relaxed text-muted">
-          {explainCandidate(c, laneName, i18n, heroById).map((line) => (
-            <p key={line}>• {line}</p>
-          ))}
-        </div>
-
-        <p className="mt-4 text-[10px] leading-relaxed text-dim">
-          {t('drawer.footnote')}
-          {c.synergy.length > 0 && <> {t('drawer.synergyNote')}</>}
-        </p>
       </div>
-    </div>
+    </>
   );
 }
 

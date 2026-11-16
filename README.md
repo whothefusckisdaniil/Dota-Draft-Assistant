@@ -1,4 +1,6 @@
-# Dota Counterpick Assistant
+# LASTPICK — counterpick tool for Dota 2
+
+*Win the draft before the game starts.* Not affiliated with Valve.
 
 A counterpick tool for Dota 2: pick the enemy heroes and get the heroes that statistically perform best against that draft. Matchup statistics are aggregated from STRATZ rank-bracket data (calibrated ranks: Herald through Immortal), and you can pick your rank bracket — counters differ a lot between Herald and Divine+; hero metadata comes from OpenDota.
 
@@ -12,6 +14,15 @@ A counterpick tool for Dota 2: pick the enemy heroes and get the heroes that sta
 4. Open **View analysis** for a recommended hero: its Counterpick Score against your draft, per-enemy matchup statistics (win rate, games played), Team Score, Median Matchup, Coverage and the explanation of the recommendation.
 
 The app recommends heroes only. It does not recommend items, item builds or purchase orders (removed in ТЗ №77).
+
+## Design and brand
+
+- **Name:** LASTPICK (no "Dota" in the name: it is a Valve trademark; the subtitle says "counterpick tool for Dota 2").
+- **Logo:** `public/brand/` — mark (rounded diamond = the 5th draft slot, with an "advantage" arrow cut out), horizontal and vertical lockups, mono white/black, app icon, maskable icon. The wordmark is outlined (Unbounded Bold), so the files need no font. The mark under 33 px drops the arrow for a notch (`lastpick-mark-small.svg`, favicon). Regenerate: `scripts/brand/generate-logo.mjs`; PNG icons and `og-image.png`: `node scripts/brand/render-brand.mjs`.
+- **Tokens:** `src/index.css` (`--bg #090B0F`, surfaces `#11151C` / `#181E28`, border `#232B38`, text `#E8ECF2` / `#8A94A6`, accent `#FFB43A`, plus `#3DDC97`, minus `#FF5C5C`). Amber is only for the brand and primary actions; green/red only for advantage numbers, always with a `+`/`−` sign.
+- **Type:** Unbounded 700 (headings, numbers), Inter 400/600/700 (UI, tabular numbers).
+- **Layout:** phones — sticky enemy strip, role tabs, results, the hero search in a bottom bar (thumb zone) opening a bottom-sheet picker that stays open until the list is full or "Done"; tablets (768+) — sticky draft panel + results, analysis in a 420 px side panel; desktop (1280+) — the hero grid is always visible on the left, draft in the middle, results on the right (max 1360 px).
+- **Motion:** 150–220 ms ease-out; the loader is five diamonds lighting up in turn; `prefers-reduced-motion` keeps only opacity fades.
 
 ## Run
 
