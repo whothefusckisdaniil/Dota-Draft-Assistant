@@ -16,16 +16,26 @@ describe('generated dataset (public/data)', () => {
     expect(ageDays).toBeGreaterThanOrEqual(0);
     expect(ageDays).toBeLessThan(7); // CI refreshes daily; stale = broken pipeline
 
-    // Only the last 30 days are counted (rolling window, slides every day).
+    // Only the last 30 days of the current patch are counted (rolling window, slides every day).
     const w = meta.matchupWindow as unknown as {
       kind: string; days: number; windowStartUtc: string; windowEndUtc: string;
       weeklyBuckets: number[]; bucketWeights: Record<string, number>; currentBucket: number;
+      effectiveDays: number; patch: { name: string; releasedUtc: string | null; mode: string };
     };
     expect(w.kind).toBe('rolling-days');
     expect(w.days).toBe(30);
     const spanDays = (Date.parse(w.windowEndUtc) - Date.parse(w.windowStartUtc)) / 86_400_000;
-    expect(spanDays).toBeGreaterThanOrEqual(30);
+    expect(spanDays).toBeGreaterThanOrEqual(7); // never shorter than 7 days, even right after a patch
     expect(spanDays).toBeLessThan(31);
+    expect(w.effectiveDays).toBeLessThan(31);
+    expect(w.patch.name).toBe(meta.latestPatch);
+    expect(['FULL_WINDOW_SAME_PATCH', 'CUT_AT_PATCH', 'YOUNG_PATCH_FILLED', 'NO_PATCH_DATE']).toContain(w.patch.mode);
+    if (w.patch.mode === 'FULL_WINDOW_SAME_PATCH') expect(spanDays).toBeGreaterThanOrEqual(30);
+    if (w.patch.mode === 'CUT_AT_PATCH') expect(w.windowStartUtc).toBe(w.patch.releasedUtc);
+    if (w.patch.releasedUtc && w.patch.mode !== 'YOUNG_PATCH_FILLED') {
+      // no pre-patch data at all (up to the weekly-bucket approximation)
+      expect(Date.parse(w.windowStartUtc)).toBeGreaterThanOrEqual(Date.parse(w.patch.releasedUtc));
+    }
     expect(w.weeklyBuckets[w.weeklyBuckets.length - 1]).toBe(w.currentBucket);
     for (let i = 1; i < w.weeklyBuckets.length; i += 1) {
       expect(w.weeklyBuckets[i]).toBe(w.weeklyBuckets[i - 1] + 1);

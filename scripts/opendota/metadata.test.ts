@@ -12,6 +12,7 @@ import {
   fetchJson,
   fetchOpenDotaMetadata,
   latestPatchFrom,
+  latestPatchDateFrom,
   normalizeHero,
   validateHeroMetadata,
   STEAM_CDN,
@@ -105,6 +106,20 @@ describe('normalizeHero — the committed heroes.json contract', () => {
     const h = normalizeHero(src, new Map());
     h.roles.push('Support');
     expect(src.roles).toEqual(['Carry']);
+  });
+});
+
+describe('latestPatchDateFrom — release date that cuts the data window', () => {
+  it('returns the date of the highest patch id (array form, as /constants/patch serves it)', () => {
+    expect(latestPatchDateFrom([
+      { name: '7.40', id: 59, date: '2025-12-16T00:50:40.281Z' },
+      { name: '7.41', id: 60, date: '2026-03-24T00:50:59.580Z' },
+    ])).toBe('2026-03-24T00:50:59.580Z');
+  });
+  it('returns null when the newest patch has no usable date', () => {
+    expect(latestPatchDateFrom([{ name: '7.41', id: 60 }])).toBeNull();
+    expect(latestPatchDateFrom([{ name: '7.41', id: 60, date: 'soon' }])).toBeNull();
+    expect(latestPatchDateFrom(null)).toBeNull();
   });
 });
 

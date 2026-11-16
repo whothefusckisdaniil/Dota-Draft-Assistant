@@ -519,7 +519,7 @@ export async function buildDataset({
 } = {}) {
   // 1. Fresh OpenDota metadata. A throw here means nothing downstream runs.
   log('1/6 Fetching fresh hero metadata from OpenDota...');
-  const { heroes, latestPatch } = await fetchMetadata();
+  const { heroes, latestPatch, latestPatchDate = null } = await fetchMetadata();
   // Re-validated even though the loader already validates: the guard belongs to
   // the pipeline, not to one implementation of the loader, and a patch string
   // must never silently become ''.
@@ -527,14 +527,17 @@ export async function buildDataset({
   const heroIds = heroes.map((h) => h.id).sort((a, b) => a - b);
   log(`    OpenDota returned ${heroIds.length} heroes, latest patch ${latestPatch}`);
 
-  // 2. Rolling window: the last ROLLING_DAYS days, recomputed on every run.
-  const windowInfo = getRollingWindow(now, ROLLING_DAYS);
+  // 2. Rolling window: the last ROLLING_DAYS days of the current patch,
+  //    recomputed on every run (see getRollingWindow).
+  if (!latestPatchDate) log(`    WARNING: OpenDota gave no release date for patch ${latestPatch}; the window is not cut at the patch`);
+  const windowInfo = getRollingWindow(now, ROLLING_DAYS, { patchName: latestPatch, patchReleasedUtc: latestPatchDate });
   log(
     `2/6 Rolling ${windowInfo.days}-day window over weekly buckets: ` +
       windowInfo.buckets.map((b) => `${b}×${windowInfo.weights[b]}`).join(', ') +
       ` (current week ${windowInfo.currentBucket} taken live)`,
   );
-  log(`    Window: ${windowInfo.windowStartUtc} -> ${windowInfo.windowEndUtc}`);
+  log(`    Window: ${windowInfo.windowStartUtc} -> ${windowInfo.windowEndUtc} (${windowInfo.effectiveDays} effective days)`);
+  log(`    Patch ${latestPatch} released ${windowInfo.patch.releasedUtc ?? 'unknown'}: ${windowInfo.patch.mode}`);
 
   // 3+4. STRATZ, queried for exactly the fresh hero ids. Matchups and position
   // stats are two independent queries over the SAME buckets, so the two layers
@@ -576,9 +579,12 @@ export async function buildDataset({
       weeklyBuckets: windowInfo.buckets,
       bucketWeights: windowInfo.weights,
       currentBucket: windowInfo.currentBucket,
+      effectiveDays: windowInfo.effectiveDays,
+      patch: windowInfo.patch,
       method:
-        'STRATZ publishes matchups only per weekly bucket. The current week is taken as-is (filled live up to now); ' +
-        'the oldest week is scaled by the share of its days still inside the window.',
+        'Last 30 days, never before the current patch release (a patch younger than 7 days is filled up to 7 days ' +
+        'with pre-patch days at weight 0.25). STRATZ publishes matchups only per weekly bucket, so each week is ' +
+        'weighted by the share of its covered time that falls inside the window.',
     },
     population: {
       type: 'rank-bracket',

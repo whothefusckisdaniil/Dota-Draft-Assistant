@@ -456,6 +456,21 @@ describe('buildDataset — the published triple describes one snapshot (ТЗ §8
     expect(meta.schema.totalPairGames).toBe(actualGames);
   });
 
+  it('cuts the window at the current patch release date from OpenDota', async () => {
+    const { meta } = await buildDataset({
+      fetchMetadata: async () => ({ ...(await metaFor()()), latestPatchDate: '2026-09-16T00:00:00.000Z' }),
+      fetchMatchups: async (ids: number[]) => matchupFixture(ids),
+      fetchPositions: async (ids: number[]) => positionFixture(ids),
+      now: NOW,
+      log: silent,
+    });
+    // patch 12 days before NOW → previous patch cut off; bucket 2958 (Sep 10–17) keeps 1 of 7 days
+    expect(meta.matchupWindow.windowStartUtc).toBe('2026-09-16T00:00:00.000Z');
+    expect(meta.matchupWindow.weeklyBuckets).toEqual([2958, 2959, 2960]);
+    expect(meta.matchupWindow.patch).toMatchObject({ name: '7.42', mode: 'CUT_AT_PATCH', releasedUtc: '2026-09-16T00:00:00.000Z' });
+    expect(meta.positionData.bucketWeights).toEqual(meta.matchupWindow.bucketWeights);
+  });
+
   it('uses the rolling last-30-days window, including the live current week', async () => {
     const { meta } = await buildDataset({
       fetchMetadata: metaFor(),
@@ -468,7 +483,7 @@ describe('buildDataset — the published triple describes one snapshot (ТЗ §8
     expect(meta.matchupWindow).toMatchObject({
       kind: 'rolling-days',
       days: 30,
-      windowStartUtc: '2026-08-29T00:00:00Z',
+      windowStartUtc: '2026-08-29T00:00:00.000Z',
       windowEndUtc: NOW.toISOString(),
       weeklyBuckets: [2956, 2957, 2958, 2959, 2960],
       currentBucket: 2960,

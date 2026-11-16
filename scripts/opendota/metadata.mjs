@@ -109,6 +109,15 @@ export function latestPatchFrom(patches) {
   return list[0]?.name ?? '';
 }
 
+/** Release time (ISO) of the newest patch, or null when OpenDota gives no usable date. */
+export function latestPatchDateFrom(patches) {
+  const list = Object.values(patches ?? {})
+    .filter((p) => p && typeof p.name === 'string')
+    .sort((a, b) => (b.id ?? 0) - (a.id ?? 0));
+  const ms = Date.parse(list[0]?.date ?? '');
+  return Number.isFinite(ms) ? new Date(ms).toISOString() : null;
+}
+
 /**
  * Integrity gates for a freshly fetched OpenDota metadata payload.
  *
@@ -166,7 +175,7 @@ export function validateHeroMetadata(heroes, latestPatch) {
  * any fetch or validation problem — callers must abort the entire run.
  *
  * @param {{ fetchImpl?: typeof fetch, backoffMs?: number, log?: Function }} [options]
- * @returns {Promise<{ heroes: object[], latestPatch: string, heroCount: number }>}
+ * @returns {Promise<{ heroes: object[], latestPatch: string, latestPatchDate: string|null, heroCount: number }>}
  */
 export async function fetchOpenDotaMetadata({ fetchImpl = fetch, backoffMs, log } = {}) {
   const get = (url) => fetchJson(url, { fetchImpl, backoffMs, log });
@@ -183,5 +192,5 @@ export async function fetchOpenDotaMetadata({ fetchImpl = fetch, backoffMs, log 
   const latestPatch = latestPatchFrom(patches);
   validateHeroMetadata(heroes, latestPatch);
 
-  return { heroes, latestPatch, heroCount: heroes.length };
+  return { heroes, latestPatch, latestPatchDate: latestPatchDateFrom(patches), heroCount: heroes.length };
 }

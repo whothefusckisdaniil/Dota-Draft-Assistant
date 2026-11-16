@@ -17,7 +17,7 @@ export interface PopulationMeta {
 }
 
 /** Static snapshot produced by scripts/update-data-stratz.mjs (see meta.json for freshness).
- *  Matchups cover the last 30 days (STRATZ, refreshed daily), hero metadata from OpenDota.
+ *  Matchups cover the last 30 days of the current patch (STRATZ, refreshed daily), hero metadata from OpenDota.
  *  No runtime third-party calls in production — the app runs fully on this dataset. */
 export interface DatasetMeta {
   source: string;
@@ -34,6 +34,15 @@ export interface DatasetMeta {
     weeklyBuckets: number[];
     bucketWeights: Record<string, number>;
     currentBucket: number;
+    /** Weighted days of data in the window (< days right after a patch). */
+    effectiveDays: number;
+    /** The window never reaches back before this patch (see getRollingWindow). */
+    patch: {
+      name: string | null;
+      releasedUtc: string | null;
+      mode: 'FULL_WINDOW_SAME_PATCH' | 'CUT_AT_PATCH' | 'YOUNG_PATCH_FILLED' | 'NO_PATCH_DATE';
+      prePatchWeight: number | null;
+    };
     method?: string;
   };
   population?: {

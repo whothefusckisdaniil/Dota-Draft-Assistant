@@ -39,8 +39,9 @@ function validatePublishedMeta(meta) {
 
 /**
  * Daily rolling window: a refresh is due whenever the published window does not
- * end today (UTC), i.e. once per day, or when the published format is not the
- * current rolling ROLLING_DAYS window.
+ * end today (UTC), i.e. once per day, when the published format is not the
+ * current rolling ROLLING_DAYS window, or as soon as OpenDota reports a new
+ * patch (the window is cut at the patch release, so it must not wait a day).
  */
 export function decideDataRefresh({ publishedMeta, detectedPatch, now = new Date(), force = false }) {
   const { publishedWindowDay, rollingCurrent } = validatePublishedMeta(publishedMeta);
@@ -49,11 +50,13 @@ export function decideDataRefresh({ publishedMeta, detectedPatch, now = new Date
   }
   if (!(now instanceof Date) || !Number.isFinite(now.getTime())) throw new Error('invalid current time');
   const today = utcDay(now);
-  const windowChanged = !rollingCurrent || publishedWindowDay !== today;
+  const patchChanged = detectedPatch !== publishedMeta.latestPatch;
+  const windowChanged = !rollingCurrent || publishedWindowDay !== today || patchChanged;
 
   let reason;
   if (force) reason = 'FORCE';
   else if (!rollingCurrent) reason = 'WINDOW_FORMAT_CHANGED';
+  else if (patchChanged) reason = 'NEW_PATCH';
   else if (publishedWindowDay !== today) reason = 'NEW_DAY';
   else reason = 'NO_CHANGE';
 

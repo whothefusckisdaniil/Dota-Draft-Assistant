@@ -58,9 +58,9 @@ describe('decideDataRefresh', () => {
     });
   });
 
-  it('a new patch alone does not force a second refresh on the same day', () => {
+  it('a new patch triggers a refresh the same day (the window is cut at the patch)', () => {
     expect(decideDataRefresh({ publishedMeta, detectedPatch: '7.42', now: SAME_DAY }))
-      .toMatchObject({ refreshRequired: false, reason: 'NO_CHANGE', detectedPatch: '7.42', publishedPatch: '7.41' });
+      .toMatchObject({ refreshRequired: true, windowChanged: true, reason: 'NEW_PATCH', detectedPatch: '7.42', publishedPatch: '7.41' });
   });
 
   it('replaces the legacy 4-complete-weeks format on the first run', () => {
@@ -106,7 +106,7 @@ describe('decideDataRefresh', () => {
     await writeGitHubOutputs(outputPath, decision);
     const output = await readFile(outputPath, 'utf8');
     expect(output).toContain('refresh_required=true\n');
-    expect(output).toContain('reason=NEW_DAY\n');
+    expect(output).toContain('reason=NEW_PATCH\n');
     expect(output).toContain('detected_patch=7.42\n');
     expect(output).toContain('window_changed=true\n');
   });

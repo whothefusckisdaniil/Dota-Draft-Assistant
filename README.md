@@ -2,7 +2,7 @@
 
 A counterpick tool for Dota 2: pick the enemy heroes and get the heroes that statistically perform best against that draft. Matchup statistics are aggregated from STRATZ rank-bracket data (calibrated ranks: Herald through Immortal); hero metadata comes from OpenDota.
 
-**Only the last 30 days are counted.** The statistics window slides every day: each daily refresh drops the oldest day and adds the newest one, so counterpicks follow the current patch and meta. Deploys to Vercel as a static Vite app.
+**Only the last 30 days of the current patch are counted.** The statistics window slides every day: each daily refresh drops the oldest day and adds the newest one. Matches from before the latest patch are cut off, so two metas are never mixed after a balance patch (during the first 7 days of a new patch the window is the last 7 days, with pre-patch days at a quarter weight). Deploys to Vercel as a static Vite app.
 
 ## What it does
 
@@ -51,7 +51,8 @@ The frontend loads exactly four static files from `public/data/` — no runtime 
 ## Data refresh
 
 - `scripts/update-data-stratz.mjs` fetches fresh OpenDota hero metadata, then STRATZ matchup tables and position statistics for the last 30 days (calibrated rank brackets), validates the 13-point matchup data contract and the position layer, and publishes the four files as one atomic directory swap; on any error the previous dataset is kept byte-for-byte.
-- **Rolling 30-day window** (`getRollingWindow` in `scripts/stratz/buckets.mjs`): STRATZ publishes matchup and position statistics only per weekly bucket (Thursday 00:00 UTC), so the window `[today − 30 days, now)` is built from weeks: the current week is taken as-is (STRATZ fills it live, so it already holds the days elapsed so far), complete weeks inside the window count fully, and the oldest week that is only partly inside is scaled by the share of its 7 days still in the window (it loses 1/7 per day until it drops out). `meta.json → matchupWindow` records the exact dates, buckets and weights.
+- **Patch cut**: the window never starts before the current patch release (`/constants/patch` date from OpenDota). If the patch is younger than 7 days, the window is the last 7 days and the pre-patch part counts at weight 0.25, so the new meta dominates while the sample stays usable. A new patch triggers a refresh the same day. `meta.json → matchupWindow.patch` records the patch, its release time and which rule applied.
+- **Rolling 30-day window** (`getRollingWindow` in `scripts/stratz/buckets.mjs`): STRATZ publishes matchup and position statistics only per weekly bucket (Thursday 00:00 UTC), so the window `[max(today − 30 days, patch release), now)` is built from weeks: the current week is taken as-is (STRATZ fills it live, so it already holds the days elapsed so far), complete weeks inside the window count fully, and the oldest week that is only partly inside is scaled by the share of its 7 days still in the window (it loses 1/7 per day until it drops out). `meta.json → matchupWindow` records the exact dates, buckets and weights.
 - Reverse-pair asymmetry: STRATZ returns slightly different `matchCount` for A→B and B→A (known, reported to STRATZ). Up to 0.1% of rows may exceed 3% / 15 games and are logged as warnings; any row above 10%, or more rows than that, still blocks the refresh.
 - `scripts/update-data.mjs` is preserved as an OpenDota rollback fallback (it carries the committed `positions.json` forward).
 - `.github/workflows/update-data.yml` refreshes the dataset **every day** via GitHub Actions (daily `cron` at 03:17 UTC and manual `workflow_dispatch`), validates it, runs `npm test`, typecheck and build, and commits the new 30-day window. If the run fails, the old dataset stays committed.
