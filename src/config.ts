@@ -57,10 +57,21 @@ export const APP_CONFIG = {
     // decide eligibility: OpenDota tags Wraith King "Support" and Meepo
     // "Disabler", which is exactly what put them in the wrong lanes before.
     topN: 15,
+    // --- Allies & bans ---
+    // Synergy (advantage of being on the same team) is weighted below counter
+    // value: it is typically smaller in magnitude and noisier, and the main
+    // question stays "who beats the enemy". draft = counter + wSynergy × synergy.
+    wSynergy: 0.5,
+    // Ban suggestions: threat to your team + wSynergy × fit with the enemy team.
+    banSuggestions: 8,
   },
 
   ui: {
     maxEnemies: 5,
+    // you are the 5th player
+    maxAllies: 4,
+    // Captains Mode bans 7 per team; ranked All Pick nominates up to 10
+    maxBans: 14,
     searchLimit: 9,
   },
 } as const;

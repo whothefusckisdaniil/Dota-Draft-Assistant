@@ -6,7 +6,8 @@ import type { StringKey } from './i18n/strings';
 import { APP_CONFIG, type PositionFilter } from './config';
 import type { CandidateScore } from './types';
 import { HeroSearch } from './components/HeroSearch';
-import { EnemySlots, LanguageSwitch, PositionTabs, RankTabs } from './components/Selectors';
+import { BanRow, LanguageSwitch, PositionTabs, RankTabs, ShareLinkButton, TargetSwitch, TeamSlots } from './components/Selectors';
+import { BanSuggestions } from './components/BanSuggestions';
 import { ResultsGrid } from './components/ResultsGrid';
 import { HeroDetailsDrawer } from './components/HeroDetailsDrawer';
 import { ScoringPlayground } from './components/ScoringPlayground';
@@ -30,12 +31,11 @@ export default function App() {
   // otherwise it keeps showing a stale CandidateScore for the previous lineup.
   useEffect(() => {
     setDetails(null);
-  }, [d.enemies]);
+  }, [d.enemies, d.allies, d.bans]);
   useEffect(() => {
     setDetails(null);
   }, [page]);
 
-  const excluded = useMemo(() => new Set(d.enemies), [d.enemies]);
 
   const heroByName = useMemo(() => {
     const m = new Map<string, number>();
@@ -77,6 +77,7 @@ export default function App() {
             <p className="mt-2">{t('about.p2')}</p>
             <p className="mt-2">{t('about.p3')}</p>
             <p className="mt-2">{t('about.p4')}</p>
+            <p className="mt-2">{t('about.p5')}</p>
             <p className="mt-2 text-dim">{t('about.disclaimer')}</p>
             <p className="mt-2 text-dim">
               {t('about.data')} <a href="https://stratz.com" target="_blank" rel="noopener" className="underline hover:text-ink">Powered by STRATZ</a>{' '}
@@ -117,10 +118,47 @@ export default function App() {
             {d.loadState.kind === 'ready' && (
               <section className="panel p-4 sm:p-6">
                 <div className="grid gap-5">
-                  <EnemySlots enemies={d.enemies} heroById={d.heroById} onRemove={d.removeEnemy} onClear={d.clearEnemies} />
+                  <TeamSlots
+                    team="enemy"
+                    ids={d.enemies}
+                    max={d.limits.enemy}
+                    heroById={d.heroById}
+                    active={d.target === 'enemy'}
+                    onRemove={(id) => d.remove(id, 'enemy')}
+                    onPickTarget={d.setTarget}
+                    actions={d.taken.size > 0 ? (
+                      <div className="flex items-center gap-2">
+                        <ShareLinkButton />
+                        <button type="button" onClick={d.clearAll} className="btn btn-ghost btn-sm">{t('draft.clear')}</button>
+                      </div>
+                    ) : undefined}
+                  />
+                  <TeamSlots
+                    team="ally"
+                    ids={d.allies}
+                    max={d.limits.ally}
+                    heroById={d.heroById}
+                    active={d.target === 'ally'}
+                    onRemove={(id) => d.remove(id, 'ally')}
+                    onPickTarget={d.setTarget}
+                  />
+                  <BanRow
+                    ids={d.bans}
+                    max={d.limits.ban}
+                    heroById={d.heroById}
+                    active={d.target === 'ban'}
+                    onRemove={(id) => d.remove(id, 'ban')}
+                    onPickTarget={d.setTarget}
+                  />
                   <div className="min-w-0">
-                    <HeroSearch heroes={d.heroes} excluded={excluded} onPick={(h) => d.addEnemy(h.id)} />
-                    <p className="mt-2 text-xs text-dim">{t('draft.hint', { max: APP_CONFIG.ui.maxEnemies })}</p>
+                    <TargetSwitch
+                      value={d.target}
+                      onChange={d.setTarget}
+                      counts={{ enemy: d.enemies.length, ally: d.allies.length, ban: d.bans.length }}
+                      limits={d.limits}
+                    />
+                    <HeroSearch heroes={d.heroes} excluded={d.taken} onPick={(h) => d.addHero(h.id, d.target)} />
+                    <p className="mt-2 text-xs text-dim">{t('draft.hintAll')}</p>
                   </div>
                   <PositionTabs value={d.position} onChange={d.setPosition} />
                   {d.rankOptions.length > 0 && (
@@ -143,13 +181,34 @@ export default function App() {
             {d.loadState.kind === 'ready' && d.rankError && d.rank !== 'ALL' && (
               <div className="panel mt-6 border-accent/40 px-4 py-3.5 text-sm text-accent-2">{t(`rank.${d.rankError}` as StringKey)}</div>
             )}
+            {d.loadState.kind === 'ready' && d.synergyUnavailable && (
+              <div className="panel mt-6 border-accent/40 px-4 py-3.5 text-sm text-accent-2">{t('synergy.unavailable')}</div>
+            )}
+            {d.loadState.kind === 'ready' && d.allies.length > 0 && d.synergyLoading && (
+              <div className="panel mt-6 flex items-center gap-3 px-5 py-4 text-sm text-muted">
+                <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-line-2 border-t-accent" aria-hidden="true" />
+                {t('synergy.loading')}
+              </div>
+            )}
+            {d.loadState.kind === 'ready' && (
+              <BanSuggestions
+                items={d.banSuggestions}
+                heroById={d.heroById}
+                canBan={d.bans.length < d.limits.ban}
+                onBan={(id) => d.addHero(id, 'ban')}
+              />
+            )}
             {/* RESULTSLOT */}
             {d.loadState.kind === 'ready' && d.results && (
               <div className="mt-8">
                 <div className="mb-5 flex flex-wrap items-baseline justify-between gap-2">
                   <div className="flex items-center gap-3">
                     <span aria-hidden="true" className="h-2.5 w-2.5 rounded-[3px] bg-accent" />
-                    <h2 className="text-[13px] font-extrabold uppercase tracking-[0.2em] text-ink">{t('results.title')}</h2>
+                    <h2 className="text-[13px] font-extrabold uppercase tracking-[0.2em] text-ink">
+                      {d.allies.length > 0 && !d.synergyUnavailable
+                        ? t(d.enemies.length > 0 ? 'results.titleTeam' : 'results.titleAllies')
+                        : t('results.title')}
+                    </h2>
                     <span className="text-xs text-muted">
                       · {d.position === 'all' ? t('results.perRole') : t(`pos.${d.position}.long` as StringKey)}
                       {' · '}{d.rank === 'ALL' || d.rankError ? t('rank.all') : t(`rank.${d.rank}` as StringKey)}
@@ -168,7 +227,7 @@ export default function App() {
                 <p className="mt-7 max-w-3xl text-[11px] leading-relaxed text-dim">{t('results.footnote')}</p>
               </div>
             )}
-            {d.loadState.kind === 'ready' && d.enemies.length === 0 && (
+            {d.loadState.kind === 'ready' && d.enemies.length === 0 && d.allies.length === 0 && (
               <div className="panel mx-auto mt-10 max-w-xl px-6 py-10 text-center">
                 <p className="text-lg font-bold text-ink">{t('empty.title')}</p>
                 <p className="mt-1.5 text-sm text-muted">{t('empty.text', { max: APP_CONFIG.ui.maxEnemies })}</p>

@@ -48,11 +48,13 @@ export function HeroDetailsDrawer({ candidate: c, laneName, enemyIds, heroById, 
           <h2 className="mt-4 text-2xl font-extrabold uppercase tracking-wide text-ink sm:text-3xl">{i18n.heroName(c.hero)}</h2>
           {i18n.heroAltName(c.hero) && <div className="mt-0.5 text-xs font-semibold uppercase tracking-wide text-dim">{i18n.heroAltName(c.hero)}</div>}
           <div className="mt-1 text-3xl font-extrabold tabular-nums text-accent">
-            {(c.teamScoreM ?? c.teamScore) > 0 ? '+' : ''}{(c.teamScoreM ?? c.teamScore).toFixed(2)}
+            {c.draftScore > 0 ? '+' : ''}{c.draftScore.toFixed(2)}
           </div>
           <p className="mt-1 text-xs text-muted">{t('drawer.against')}</p>
         </div>
 
+        {c.matchups.length > 0 && (
+          <>
         <div className="mb-2 mt-7 flex items-center gap-3">
           <h3 className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted">{t('drawer.matchups')}</h3>
           <span className="h-px flex-1 bg-line" />
@@ -80,6 +82,56 @@ export function HeroDetailsDrawer({ candidate: c, laneName, enemyIds, heroById, 
             </div>
           ))}
         </div>
+          </>
+        )}
+
+        {c.synergy.length > 0 && (
+          <>
+            <div className="mb-2 mt-6 flex items-center gap-3">
+              <h3 className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted">{t('drawer.synergy')}</h3>
+              <span className="h-px flex-1 bg-line" />
+            </div>
+            <div className="mb-1.5 flex items-center gap-3 px-3.5 text-[10px] font-semibold uppercase tracking-wide text-dim">
+              <span className="flex-1">{t('drawer.ally')}</span>
+              <span className="w-20 text-right" title={t('drawer.synergyTitle')}>{t('drawer.synergyCol')}</span>
+              <span className="w-24 text-right">{t('drawer.winrate')}</span>
+            </div>
+            <div className="space-y-2">
+              {c.synergy.map((sy) => (
+                <div key={sy.allyId} className="panel-2 flex items-center gap-3 px-3.5 py-3">
+                  <span className="min-w-0 flex-1 truncate text-sm font-semibold text-ink">
+                    {(() => { const h = heroById.get(sy.allyId); return h ? i18n.heroName(h) : `#${sy.allyId}`; })()}
+                  </span>
+                  <span className={`w-20 text-right text-sm font-bold tabular-nums ${sy.delta >= 0 ? 'text-pos' : 'text-neg'}`}>
+                    {sy.usable ? fmtDelta(sy.delta) : t('drawer.na')}
+                  </span>
+                  <span className="w-24 text-right text-[11px] leading-tight text-muted">
+                    {t('drawer.together', { wr: sy.winrate.toFixed(1) })}
+                    <br />
+                    {i18n.number(sy.games)} {i18n.plural(sy.games, 'game')}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+
+        {c.synergy.length > 0 && (
+          <div className="mt-5 grid grid-cols-3 gap-2 text-center">
+            <div className="panel-2 px-2 py-3">
+              <div className="text-[10px] font-semibold uppercase tracking-wide text-dim">{t('drawer.counterScore')}</div>
+              <div className="mt-1 text-sm font-bold tabular-nums text-ink">{(c.teamScoreM ?? c.teamScore).toFixed(2)}</div>
+            </div>
+            <div className="panel-2 px-2 py-3">
+              <div className="text-[10px] font-semibold uppercase tracking-wide text-dim">{t('drawer.synergyScore')}</div>
+              <div className="mt-1 text-sm font-bold tabular-nums text-ink">{c.synergyScore.toFixed(2)}</div>
+            </div>
+            <div className="panel-2 px-2 py-3">
+              <div className="text-[10px] font-semibold uppercase tracking-wide text-dim">{t('drawer.draftScore')}</div>
+              <div className="mt-1 text-sm font-bold tabular-nums text-accent">{c.draftScore.toFixed(2)}</div>
+            </div>
+          </div>
+        )}
 
         <div className="mt-5 grid grid-cols-3 gap-2 text-center">
           <div className="panel-2 px-2 py-3">
@@ -104,6 +156,7 @@ export function HeroDetailsDrawer({ candidate: c, laneName, enemyIds, heroById, 
 
         <p className="mt-4 text-[10px] leading-relaxed text-dim">
           {t('drawer.footnote')}
+          {c.synergy.length > 0 && <> {t('drawer.synergyNote')}</>}
         </p>
       </div>
     </div>

@@ -39,6 +39,13 @@ export function computeBaseWinrates(matchupByEnemy: Map<number, MatchupRow[]>): 
 /** Neutral baseline used when a hero has no baseline: the old "winrate − 50". */
 export const NEUTRAL_WINRATE = 50;
 
+/** Expected team win rate of two teammates: both heroes' edges add up. */
+export function expectedSynergyWinrate(baseWinrates: Map<number, number> | undefined, a: number, b: number): number {
+  const ba = baseWinrates?.get(a) ?? NEUTRAL_WINRATE;
+  const bb = baseWinrates?.get(b) ?? NEUTRAL_WINRATE;
+  return ba + bb - NEUTRAL_WINRATE;
+}
+
 export function expectedWinrate(baseWinrates: Map<number, number> | undefined, candidateId: number, enemyId: number): number {
   const candidate = baseWinrates?.get(candidateId) ?? NEUTRAL_WINRATE;
   const enemy = baseWinrates?.get(enemyId) ?? NEUTRAL_WINRATE;

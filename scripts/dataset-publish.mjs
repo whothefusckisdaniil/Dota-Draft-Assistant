@@ -44,7 +44,7 @@ export const DATASET_FILES = [
  * the OpenDota fallback has no rank split and publishes without them (the UI
  * then hides the rank selector).
  */
-export const OPTIONAL_DATASET_FILES = ['matchups-by-bracket.json'];
+export const OPTIONAL_DATASET_FILES = ['matchups-by-bracket.json', 'synergy.json', 'synergy-by-bracket.json'];
 const ALLOWED_FILES = [...DATASET_FILES, ...OPTIONAL_DATASET_FILES];
 
 /**
@@ -132,30 +132,41 @@ export async function verifyStagedDataset(stagedDir, { heroCount, requireComplet
   for (const id of positionIds) {
     if (!ids.has(id)) throw new Error(`staged positions.json has an entry for unknown hero ${id}`);
   }
-  // Per-rank tables: same roster, one table per hero in every bracket.
-  if (present.has('matchups-by-bracket.json')) {
-    let byBracket;
+  // Optional layers: same roster, one table per hero (per bracket for the
+  // *-by-bracket files). Synergy comes as a pair or not at all.
+  const readOptional = async (name) => {
     try {
-      byBracket = JSON.parse(await readFile(path.join(stagedDir, 'matchups-by-bracket.json'), 'utf8'));
+      return JSON.parse(await readFile(path.join(stagedDir, name), 'utf8'));
     } catch (e) {
-      throw new Error(`staged matchups-by-bracket.json is invalid JSON: ${e.message}`);
+      throw new Error(`staged ${name} is invalid JSON: ${e.message}`);
     }
+  };
+  const checkTables = (label, tables) => {
+    const tableIds = Object.keys(tables ?? {}).map(Number);
+    if (tableIds.length !== heroes.length || tableIds.some((id) => !ids.has(id))) {
+      throw new Error(`staged ${label} does not cover exactly the ${heroes.length} heroes`);
+    }
+    for (const id of tableIds) {
+      const rows = tables[String(id)];
+      if (!Array.isArray(rows)) throw new Error(`staged ${label} table ${id} is not an array`);
+      if (requireCompleteTables && rows.length !== heroes.length - 1) {
+        throw new Error(`staged ${label} table ${id} has ${rows.length} rows, expected ${heroes.length - 1}`);
+      }
+    }
+  };
+  const checkByBracket = (name, byBracket) => {
     if (!byBracket || typeof byBracket !== 'object' || Array.isArray(byBracket) || Object.keys(byBracket).length === 0) {
-      throw new Error('staged matchups-by-bracket.json is not a non-empty object');
+      throw new Error(`staged ${name} is not a non-empty object`);
     }
-    for (const [bracket, tables] of Object.entries(byBracket)) {
-      const bracketIds = Object.keys(tables ?? {}).map(Number);
-      if (bracketIds.length !== heroes.length || bracketIds.some((id) => !ids.has(id))) {
-        throw new Error(`staged bracket ${bracket} does not cover exactly the ${heroes.length} heroes`);
-      }
-      for (const id of bracketIds) {
-        const rows = tables[String(id)];
-        if (!Array.isArray(rows)) throw new Error(`staged bracket ${bracket} table ${id} is not an array`);
-        if (requireCompleteTables && rows.length !== heroes.length - 1) {
-          throw new Error(`staged bracket ${bracket} table ${id} has ${rows.length} rows, expected ${heroes.length - 1}`);
-        }
-      }
-    }
+    for (const [bracket, tables] of Object.entries(byBracket)) checkTables(`bracket ${bracket} (${name})`, tables);
+  };
+  if (present.has('matchups-by-bracket.json')) checkByBracket('matchups-by-bracket.json', await readOptional('matchups-by-bracket.json'));
+  if (present.has('synergy.json') !== present.has('synergy-by-bracket.json')) {
+    throw new Error('staged dataset must contain both synergy.json and synergy-by-bracket.json, or neither');
+  }
+  if (present.has('synergy.json')) {
+    checkTables('synergy.json', await readOptional('synergy.json'));
+    checkByBracket('synergy-by-bracket.json', await readOptional('synergy-by-bracket.json'));
   }
   // Optional external expectation (the caller's in-memory count), when given.
   if (heroCount !== undefined && meta.heroCount !== heroCount) {

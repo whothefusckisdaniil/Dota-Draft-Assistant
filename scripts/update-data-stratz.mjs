@@ -148,11 +148,11 @@ class StratzTransport {
   async close() {}
 }
 
-export function buildChunkQuery(heroIds, buckets, brackets = BRACKETS) {
+export function buildChunkQuery(heroIds, buckets, brackets = BRACKETS, { withSynergy = false } = {}) {
   const nodes = buckets
     .map(
       (b) =>
-        `w${b}: matchUp(heroIds: [${heroIds.join(', ')}], week: ${b * BUCKET_SEC}, bracketBasicIds: [${brackets.join(', ')}], take: 200) { heroId vs { heroId1 heroId2 matchCount winCount } }`,
+        `w${b}: matchUp(heroIds: [${heroIds.join(', ')}], week: ${b * BUCKET_SEC}, bracketBasicIds: [${brackets.join(', ')}], take: 200) { heroId vs { heroId1 heroId2 matchCount winCount }${withSynergy ? ' with { heroId1 heroId2 matchCount winCount }' : ''} }`,
     )
     .join('\n    ');
   return `{ heroStats {\n    ${nodes}\n  } }`;
@@ -452,7 +452,96 @@ export function aggregateStratzMatchupChunks(chunks, windowInfo, validHeroIdsSet
   return matchups;
 }
 
-export async function fetchMatchupsFromStratz(heroIds, windowInfo, { token, log = console.log, brackets = BRACKETS } = {}) {
+/**
+ * Same-team ("with") tables from the same matchUp responses: `enemyId -> rows`
+ * where each row is a teammate and `wins` = wins of the team with both heroes.
+ * Weighted by the rolling-window bucket weights like the matchups.
+ */
+export function aggregateStratzSynergyChunks(chunks, windowInfo, validHeroIdsSet) {
+  const totals = new Map();
+  for (const { response } of chunks) {
+    for (const b of windowInfo.buckets) {
+      const weight = windowInfo.weights?.[b] ?? 1;
+      for (const dryad of response.data?.heroStats?.[`w${b}`] ?? []) {
+        const heroId = Number(dryad.heroId);
+        for (const r of dryad.with ?? []) {
+          const { heroId1, heroId2, matchCount, winCount } = r;
+          if (heroId1 !== heroId && heroId2 !== heroId) {
+            throw new Error(`Synergy orientation error: ${heroId} not in ${heroId1}/${heroId2}`);
+          }
+          const mate = heroId1 === heroId ? heroId2 : heroId1;
+          if (mate === heroId || !validHeroIdsSet.has(mate)) throw new Error(`Invalid synergy teammate ${mate} for ${heroId}`);
+          if (!Number.isInteger(matchCount) || matchCount < 0 || !Number.isInteger(winCount) || winCount < 0 || winCount > matchCount) {
+            throw new Error(`Invalid synergy counts ${winCount}/${matchCount} for ${heroId}+${mate}`);
+          }
+          if (!totals.has(heroId)) totals.set(heroId, new Map());
+          const m = totals.get(heroId);
+          const cur = m.get(mate) ?? { games: 0, wins: 0 };
+          cur.games += weight * matchCount;
+          cur.wins += weight * winCount; // same team: heroId1's wins are the pair's wins
+          m.set(mate, cur);
+        }
+      }
+    }
+  }
+  const out = {};
+  for (const [heroId, m] of totals) {
+    out[String(heroId)] = [...m.entries()].map(([mate, v]) => {
+      const games = Math.round(v.games);
+      return { hero_id: mate, games_played: games, wins: Math.min(games, Math.round(v.wins)) };
+    }).sort((a, b) => b.games_played - a.games_played);
+  }
+  return out;
+}
+
+/**
+ * Average both directions of a same-team table (A with B / B with A). Same
+ * reason as symmetrizeBracketTable: the bracket filter applies to one player,
+ * and a synergy pair must have one answer. `wins` stays the team's wins.
+ */
+export function symmetrizeSynergyTable(table) {
+  const out = {};
+  for (const [hero, rows] of Object.entries(table)) {
+    out[hero] = rows.map((r) => {
+      const rev = table[String(r.hero_id)]?.find((x) => x.hero_id === Number(hero));
+      if (!rev) throw new Error(`symmetrize synergy: missing reverse row ${r.hero_id}+${hero}`);
+      const g = Math.round((r.games_played + rev.games_played) / 2);
+      return { hero_id: r.hero_id, games_played: g, wins: Math.min(g, Math.round((r.wins + rev.wins) / 2)) };
+    }).sort((a, b) => b.games_played - a.games_played);
+  }
+  return out;
+}
+
+/** Contract for a same-team table: full roster, sane counts, plausible team win rates. */
+export function validateSynergyTable(heroes, table, { allowZeroGames = false } = {}) {
+  const ids = heroes.map((h) => h.id);
+  const idSet = new Set(ids);
+  const problems = [];
+  if (Object.keys(table).length !== ids.length) problems.push(`${Object.keys(table).length} tables for ${ids.length} heroes`);
+  for (const id of ids) {
+    const rows = table[String(id)];
+    if (!Array.isArray(rows)) { problems.push(`no table for hero ${id}`); continue; }
+    if (rows.length !== ids.length - 1) problems.push(`hero ${id} has ${rows.length} teammates`);
+    let g = 0;
+    let w = 0;
+    const seen = new Set();
+    for (const r of rows) {
+      if (r.hero_id === id || !idSet.has(r.hero_id) || seen.has(r.hero_id)) problems.push(`bad teammate ${r.hero_id} for ${id}`);
+      seen.add(r.hero_id);
+      if (!Number.isInteger(r.games_played) || (allowZeroGames ? r.games_played < 0 : r.games_played <= 0)) problems.push(`games ${r.games_played} for ${id}+${r.hero_id}`);
+      if (!Number.isInteger(r.wins) || r.wins < 0 || r.wins > r.games_played) problems.push(`wins ${r.wins} for ${id}+${r.hero_id}`);
+      g += r.games_played;
+      w += r.wins;
+    }
+    const wr = g > 0 ? (100 * w) / g : 50;
+    if (wr < 35 || wr > 65) problems.push(`hero ${id} team win rate ${wr.toFixed(1)}% outside 35–65%`);
+    if (problems.length > 20) break;
+  }
+  if (problems.length) throw new Error(`Synergy contract failed: ${problems.slice(0, 5).join('; ')}${problems.length > 5 ? ` (+${problems.length - 5} more)` : ''}`);
+  return { heroes: ids.length };
+}
+
+export async function fetchMatchupsFromStratz(heroIds, windowInfo, { token, log = console.log, brackets = BRACKETS, includeSynergy = false } = {}) {
   if (!brackets.length || brackets.some((b) => !BRACKETS.includes(b))) throw new Error(`Invalid brackets: ${brackets}`);
   log(`    Querying STRATZ GraphQL in ${Math.ceil(heroIds.length / CHUNK_SIZE)} chunk requests (${brackets.length === BRACKETS.length ? 'all brackets' : brackets.join(', ')})…`);
   const transport = new StratzTransport(token);
@@ -471,7 +560,7 @@ export async function fetchMatchupsFromStratz(heroIds, windowInfo, { token, log 
   try {
     for (let ci = 0; ci < chunks.length; ci += 1) {
       const chunk = chunks[ci];
-      const q = buildChunkQuery(chunk, windowInfo.buckets, brackets);
+      const q = buildChunkQuery(chunk, windowInfo.buckets, brackets, { withSynergy: includeSynergy });
       const t0 = Date.now();
       const res = await transport.query(q);
       log(`    Chunk ${ci + 1}/${chunks.length} (${chunk.length} heroes) fetched in ${Date.now() - t0}ms`);
@@ -486,20 +575,22 @@ export async function fetchMatchupsFromStratz(heroIds, windowInfo, { token, log 
     await transport.close();
   }
 
+  const chunksForAggregation = chunkResponses.map((cr) => ({
+    chunkIndex: cr.chunkIndex,
+    chunkHeroIds: cr.chunkHeroIds,
+    response: cr.response,
+  }));
   // Use the same aggregation logic for both production and tests
-  return aggregateStratzMatchupChunks(
-    chunkResponses.map(cr => ({
-      chunkIndex: cr.chunkIndex,
-      chunkHeroIds: cr.chunkHeroIds,
-      response: cr.response,
-    })),
-    windowInfo,
-    validHeroIds
-  );
+  const vs = aggregateStratzMatchupChunks(chunksForAggregation, windowInfo, validHeroIds);
+  if (!includeSynergy) return vs;
+  return { vs, with: aggregateStratzSynergyChunks(chunksForAggregation, windowInfo, validHeroIds) };
 }
 
 /** The only files a refresh publishes (ТЗ №77: Counterpick data only). */
-export const PUBLISHED_FILES = Object.freeze(['heroes.json', 'matchups.json', 'positions.json', 'meta.json', 'matchups-by-bracket.json']);
+export const PUBLISHED_FILES = Object.freeze([
+  'heroes.json', 'matchups.json', 'positions.json', 'meta.json', 'matchups-by-bracket.json',
+  'synergy.json', 'synergy-by-bracket.json',
+]);
 
 /** Rank brackets offered in the UI, each published as its own matchup table. */
 export const BRACKET_LABELS = Object.freeze({
@@ -613,10 +704,17 @@ export async function buildDataset({
   // per lane, which a single bracket does not give for rarer heroes, and a
   // hero's lanes barely change by rank.
   const rawByBracket = {};
+  const rawSynergyByBracket = {};
   for (const bracket of BRACKETS) {
-    rawByBracket[bracket] = await fetchMatchups(heroIds, windowInfo, { log, brackets: [bracket] });
+    const res = await fetchMatchups(heroIds, windowInfo, { log, brackets: [bracket], includeSynergy: true });
+    // A fetcher may return just the matchup table (tests, older callers) or
+    // { vs, with } when it also collected the same-team tables.
+    const hasSynergy = res && typeof res === 'object' && 'vs' in res && 'with' in res;
+    rawByBracket[bracket] = hasSynergy ? res.vs : res;
+    if (hasSynergy) rawSynergyByBracket[bracket] = res.with;
   }
   const matchups = sumBracketTables(rawByBracket);
+  const synergyComplete = BRACKETS.every((b) => rawSynergyByBracket[b]);
   log('4/6 Fetching STRATZ positions...');
   const positions = await fetchPositions(heroIds, windowInfo, { log });
 
@@ -643,6 +741,27 @@ export async function buildDataset({
     } catch (e) {
       throw new Error(`Bracket ${bracket}: ${e.message}`, { cause: e });
     }
+  }
+  // Same-team tables (allies / synergy, ban suggestions). Optional layer: a
+  // fetcher without them publishes the counterpick data alone.
+  let synergy = null;
+  let synergyByBracket = null;
+  if (synergyComplete) {
+    synergy = symmetrizeSynergyTable(sumBracketTables(rawSynergyByBracket));
+    // zero-game pairs allowed: right after a patch a rare pair may not have met yet
+    validateSynergyTable(heroes, synergy, { allowZeroGames: true });
+    synergyByBracket = {};
+    for (const bracket of BRACKETS) {
+      synergyByBracket[bracket] = symmetrizeSynergyTable(rawSynergyByBracket[bracket]);
+      try {
+        validateSynergyTable(heroes, synergyByBracket[bracket], { allowZeroGames: true });
+      } catch (e) {
+        throw new Error(`Bracket ${bracket}: ${e.message}`, { cause: e });
+      }
+    }
+    log(`    Synergy tables passed (all ranks + ${BRACKETS.length} brackets)`);
+  } else {
+    log('    WARNING: no same-team data from the fetcher — publishing without synergy');
   }
   const positionInfo = validatePositionData(positions, { heroes, windowInfo });
   log(`    Position data passed! ${positionInfo.heroCount} heroes across buckets [${positionInfo.buckets.join(', ')}]`);
@@ -679,6 +798,12 @@ export async function buildDataset({
       brackets: BRACKETS,
     },
     matchupPatchFilter: false,
+    synergy: synergy
+      ? {
+          files: ['synergy.json', 'synergy-by-bracket.json'],
+          perspective: 'wins = wins of the team with both heroes (same-team "with" rows, both directions averaged)',
+        }
+      : null,
     brackets: {
       file: 'matchups-by-bracket.json',
       ids: BRACKETS,
@@ -722,11 +847,11 @@ export async function buildDataset({
     },
   };
 
-  return { heroes, matchups, matchupsByBracket, positions, meta, validationResult, positionInfo };
+  return { heroes, matchups, matchupsByBracket, synergy, synergyByBracket, positions, meta, validationResult, positionInfo };
 }
 
 /** The atomic publish payload: exactly PUBLISHED_FILES, nothing else. */
-export function buildPublishPayload({ heroes, matchups, positions, meta, matchupsByBracket }) {
+export function buildPublishPayload({ heroes, matchups, positions, meta, matchupsByBracket, synergy = null, synergyByBracket = null }) {
   const payload = {
     'heroes.json': heroes,
     'matchups.json': matchups,
@@ -734,6 +859,11 @@ export function buildPublishPayload({ heroes, matchups, positions, meta, matchup
     'meta.json': meta,
     'matchups-by-bracket.json': matchupsByBracket,
   };
+  // Synergy is an optional layer: both files or neither.
+  if (synergy && synergyByBracket) {
+    payload['synergy.json'] = synergy;
+    payload['synergy-by-bracket.json'] = synergyByBracket;
+  }
   for (const [name, value] of Object.entries(payload)) {
     if (value === undefined || value === null) throw new Error(`Refusing to publish: ${name} is missing`);
   }

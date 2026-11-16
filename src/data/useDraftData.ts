@@ -1,8 +1,16 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { APP_CONFIG, type PositionFilter } from '../config';
 import type { CandidateScore, Hero, MatchupRow } from '../types';
-import { loadBracketTables, loadDataset, type BracketTables, type Dataset } from './dataset';
+import {
+  loadBracketTables,
+  loadDataset,
+  loadSynergy,
+  loadSynergyByBracket,
+  type BracketTables,
+  type Dataset,
+} from './dataset';
 import { scoreCandidates } from '../scoring/engine';
+import { suggestBans } from '../scoring/bans';
 import { buildDraftSearch, draftTitle, parseDraftUrl } from './draftUrl';
 import { useI18n } from '../i18n';
 
@@ -18,6 +26,15 @@ export type RankFilter = string;
 export const ALL_RANKS = 'ALL';
 const RANK_STORAGE_KEY = 'dda.rank';
 
+/** Where a hero picked in the search goes. */
+export type PickTarget = 'enemy' | 'ally' | 'ban';
+
+const LIMITS: Record<PickTarget, number> = {
+  enemy: APP_CONFIG.ui.maxEnemies,
+  ally: APP_CONFIG.ui.maxAllies,
+  ban: APP_CONFIG.ui.maxBans,
+};
+
 function readStoredRank(): RankFilter {
   try {
     return localStorage.getItem(RANK_STORAGE_KEY) ?? ALL_RANKS;
@@ -26,31 +43,38 @@ function readStoredRank(): RankFilter {
   }
 }
 
-/** Production data flow (§23): one static snapshot → local state → local scoring.
- *  Recommendations recompute automatically on every draft change (§9) — no
- *  Calculate button, no network per pick. */
 /** The draft a shared link opened with (read once, before the first render). */
 function initialUrlState() {
+  const { maxEnemies, maxAllies, maxBans } = APP_CONFIG.ui;
   try {
-    return parseDraftUrl(window.location.search, APP_CONFIG.ui.maxEnemies);
+    return parseDraftUrl(window.location.search, maxEnemies, maxAllies, maxBans);
   } catch {
-    return parseDraftUrl('', APP_CONFIG.ui.maxEnemies);
+    return parseDraftUrl('', maxEnemies, maxAllies, maxBans);
   }
 }
 
+/** Production data flow (§23): one static snapshot → local state → local scoring.
+ *  Recommendations recompute automatically on every draft change (§9) — no
+ *  Calculate button, no network per pick. */
 export function useDraftData() {
   const [urlState] = useState(initialUrlState);
   const [dataset, setDataset] = useState<Dataset | null>(null);
   const [loadState, setLoadState] = useState<LoadState>({ kind: 'loading' });
   const i18n = useI18n();
-  // A shared link (`?enemy=…&pos=…&rank=…`) wins over the stored rank preference,
-  // but does not overwrite it: opening a friend's Divine link keeps your own default.
+  // A shared link wins over the stored rank preference, but does not overwrite
+  // it: opening a friend's Divine link keeps your own default.
   const [enemies, setEnemies] = useState<number[]>(urlState.enemies);
+  const [allies, setAllies] = useState<number[]>(urlState.allies);
+  const [bans, setBans] = useState<number[]>(urlState.bans);
+  const [target, setTarget] = useState<PickTarget>('enemy');
   const [position, setPosition] = useState<PositionFilter>(urlState.position);
   const [rank, setRankState] = useState<RankFilter>(() => urlState.rank ?? readStoredRank());
   const [bracketTables, setBracketTables] = useState<Map<string, BracketTables> | null>(null);
   /** 'unavailable' (no rank file) | 'failed' (network/parse) — translated in the UI. */
   const [rankError, setRankError] = useState<'unavailable' | 'failed' | null>(null);
+  /** undefined = not loaded yet; null = this snapshot has no synergy layer. */
+  const [synergyAll, setSynergyAll] = useState<Map<number, MatchupRow[]> | null | undefined>(undefined);
+  const [synergyByBracket, setSynergyByBracket] = useState<Map<string, Map<number, MatchupRow[]>> | null | undefined>(undefined);
 
   const setRank = useCallback((next: RankFilter) => {
     setRankState(next);
@@ -64,34 +88,19 @@ export function useDraftData() {
   // Ranks offered by this snapshot; a stored rank the snapshot lacks falls back to all ranks.
   const rankOptions = dataset?.meta.brackets?.ids ?? [];
   const activeRank = rank !== ALL_RANKS && rankOptions.includes(rank) ? rank : ALL_RANKS;
-
-  useEffect(() => {
-    if (!dataset || activeRank === ALL_RANKS || bracketTables) return;
-    let alive = true;
-    setRankError(null);
-    loadBracketTables(new Set(dataset.heroes.map((h) => h.id)))
-      .then((tables) => {
-        if (!alive) return;
-        if (tables) setBracketTables(tables);
-        else setRankError('unavailable');
-      })
-      .catch((e) => {
-        if (!alive) return;
-        console.error(e);
-        setRankError('failed');
-      });
-    return () => {
-      alive = false;
-    };
-  }, [dataset, activeRank, bracketTables]);
+  const hasDraft = enemies.length > 0 || allies.length > 0;
+  const heroIdSet = useMemo(() => new Set(dataset?.heroes.map((h) => h.id) ?? []), [dataset]);
 
   useEffect(() => {
     let alive = true;
     loadDataset()
       .then((ds) => {
         if (!alive) return;
-        // Drop enemy ids from the URL that this snapshot does not know.
-        setEnemies((prev) => prev.filter((id) => ds.heroById.has(id)));
+        // Drop ids from the URL that this snapshot does not know.
+        const known = (ids: number[]) => ids.filter((id) => ds.heroById.has(id));
+        setEnemies(known);
+        setAllies(known);
+        setBans(known);
         setDataset(ds);
         setLoadState({ kind: 'ready' });
       })
@@ -105,12 +114,62 @@ export function useDraftData() {
     };
   }, []);
 
+  // Per-rank matchup tables: only when a rank is chosen.
+  useEffect(() => {
+    if (!dataset || activeRank === ALL_RANKS || bracketTables) return;
+    let alive = true;
+    setRankError(null);
+    loadBracketTables(heroIdSet)
+      .then((tables) => {
+        if (!alive) return;
+        if (tables) setBracketTables(tables);
+        else setRankError('unavailable');
+      })
+      .catch((e) => {
+        if (!alive) return;
+        console.error(e);
+        setRankError('failed');
+      });
+    return () => {
+      alive = false;
+    };
+  }, [dataset, activeRank, bracketTables, heroIdSet]);
+
+  // Synergy (allies + ban suggestions): loaded once any hero is in the draft.
+  useEffect(() => {
+    if (!dataset || !hasDraft || synergyAll !== undefined) return;
+    let alive = true;
+    loadSynergy(heroIdSet)
+      .then((t) => alive && setSynergyAll(t))
+      .catch((e) => {
+        console.error(e);
+        if (alive) setSynergyAll(null);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [dataset, hasDraft, synergyAll, heroIdSet]);
+
+  useEffect(() => {
+    if (!dataset || !hasDraft || activeRank === ALL_RANKS || synergyByBracket !== undefined) return;
+    let alive = true;
+    loadSynergyByBracket(heroIdSet)
+      .then((t) => alive && setSynergyByBracket(t))
+      .catch((e) => {
+        console.error(e);
+        if (alive) setSynergyByBracket(null);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [dataset, hasDraft, activeRank, synergyByBracket, heroIdSet]);
+
   // Keep the URL in sync with the draft (replaceState: no history entry per
   // click). Only after the data has loaded, so unknown ids are already gone.
   useEffect(() => {
     if (!dataset) return;
     try {
-      const search = buildDraftSearch(window.location.search, { enemies, position, rank: activeRank, lang: i18n.lang });
+      const search = buildDraftSearch(window.location.search, { enemies, allies, bans, position, rank: activeRank, lang: i18n.lang });
       if (search !== window.location.search) {
         window.history.replaceState(window.history.state, '', `${window.location.pathname}${search}${window.location.hash}`);
       }
@@ -122,7 +181,7 @@ export function useDraftData() {
     } catch {
       /* a sandboxed frame may forbid history access — sharing just won't update */
     }
-  }, [dataset, enemies, position, activeRank, i18n]);
+  }, [dataset, enemies, allies, bans, position, activeRank, i18n]);
 
   const heroes = dataset?.heroes ?? [];
   const heroById = dataset?.heroById ?? new Map<number, Hero>();
@@ -137,6 +196,14 @@ export function useDraftData() {
     : rankTables?.matchups ?? new Map<number, MatchupRow[]>();
   const baseWinrates = useAllRanks ? dataset?.baseWinrates : rankTables?.baseWinrates;
 
+  // Same-team tables for the active rank. A rank without synergy falls back to
+  // all ranks (an optional layer must not hide the counterpick results).
+  const synergyRank = useAllRanks ? undefined : synergyByBracket === undefined ? undefined : synergyByBracket?.get(activeRank) ?? null;
+  const synergyLoading = hasDraft && (synergyAll === undefined || (!useAllRanks && synergyByBracket === undefined));
+  const synergy = useAllRanks ? synergyAll ?? null : synergyRank ?? synergyAll ?? null;
+  /** Allies are picked but this snapshot has no same-team data. */
+  const synergyUnavailable = allies.length > 0 && !synergyLoading && !synergy;
+
   // Strict coverage holds only when every selected enemy has a matchup table.
   const missingTables = useMemo(
     () => (rankLoading ? [] : enemies.filter((id) => !matchups.has(id))),
@@ -145,24 +212,56 @@ export function useDraftData() {
 
   // Auto-recompute (§9): local scoring is fast, no request gate needed.
   const results = useMemo(() => {
-    if (enemies.length === 0 || missingTables.length > 0 || rankLoading) return null;
+    const scoreAllies = allies.length > 0 && !!synergy;
+    if ((enemies.length === 0 && !scoreAllies) || missingTables.length > 0 || rankLoading) return null;
+    if (allies.length > 0 && synergyLoading) return null;
     const lanes = position === 'all' ? LANES : [position];
     const out = new Map<Exclude<PositionFilter, 'all'>, CandidateScore[]>();
     for (const lane of lanes) {
-      out.set(lane, scoreCandidates({ heroes, enemyIds: enemies, matchupByEnemy: matchups, heroById, positions, baseWinrates }, lane));
+      out.set(lane, scoreCandidates({
+        heroes, enemyIds: enemies, matchupByEnemy: matchups, heroById, positions, baseWinrates,
+        allyIds: allies, synergyByAlly: synergy, excludeIds: bans,
+      }, lane));
     }
     return out;
-  }, [enemies, position, heroes, matchups, heroById, positions, baseWinrates, missingTables.length, rankLoading]);
+  }, [enemies, allies, bans, position, heroes, matchups, heroById, positions, baseWinrates, synergy, synergyLoading, missingTables.length, rankLoading]);
 
-  const addEnemy = useCallback((id: number) => {
-    setEnemies((prev) => (prev.includes(id) || prev.length >= APP_CONFIG.ui.maxEnemies ? prev : [...prev, id]));
+  const banSuggestions = useMemo(() => {
+    if (!dataset || !hasDraft || rankLoading || synergyLoading) return [];
+    return suggestBans({
+      heroes, allyIds: allies, enemyIds: enemies, excludeIds: bans,
+      matchupByHero: matchups, synergyByHero: synergy, baseWinrates,
+    });
+  }, [dataset, hasDraft, rankLoading, synergyLoading, heroes, allies, enemies, bans, matchups, synergy, baseWinrates]);
+
+  /** Put a hero into the enemy team, your team or the bans. A hero lives in
+   *  one place only: adding it somewhere moves it out of the others. */
+  const addHero = useCallback((id: number, to: PickTarget) => {
+    const lists: Record<PickTarget, [number[], (f: (p: number[]) => number[]) => void]> = {
+      enemy: [enemies, setEnemies], ally: [allies, setAllies], ban: [bans, setBans],
+    };
+    const [current] = lists[to];
+    if (current.includes(id) || current.length >= LIMITS[to]) return;
+    for (const key of Object.keys(lists) as PickTarget[]) {
+      if (key !== to) lists[key][1]((prev) => prev.filter((x) => x !== id));
+    }
+    lists[to][1]((prev) => (prev.includes(id) || prev.length >= LIMITS[to] ? prev : [...prev, id]));
+  }, [enemies, allies, bans]);
+
+  const remove = useCallback((id: number, from: PickTarget) => {
+    const set = from === 'enemy' ? setEnemies : from === 'ally' ? setAllies : setBans;
+    set((prev) => prev.filter((x) => x !== id));
   }, []);
 
-  const removeEnemy = useCallback((id: number) => {
-    setEnemies((prev) => prev.filter((e) => e !== id));
+  const clearAll = useCallback(() => {
+    setEnemies([]);
+    setAllies([]);
+    setBans([]);
+    setTarget('enemy');
   }, []);
 
-  const clearEnemies = useCallback(() => setEnemies([]), []);
+  /** Ids that cannot be picked again (anywhere in the draft). */
+  const taken = useMemo(() => new Set([...enemies, ...allies, ...bans]), [enemies, allies, bans]);
 
   return {
     heroes,
@@ -170,6 +269,19 @@ export function useDraftData() {
     loadState,
     meta: dataset?.meta ?? null,
     enemies,
+    allies,
+    bans,
+    taken,
+    target,
+    setTarget,
+    limits: LIMITS,
+    addHero,
+    remove,
+    clearAll,
+    // kept for callers that only deal with enemies
+    addEnemy: useCallback((id: number) => addHero(id, 'enemy'), [addHero]),
+    removeEnemy: useCallback((id: number) => remove(id, 'enemy'), [remove]),
+    clearEnemies: clearAll,
     position,
     setPosition,
     /** Rank selector: ids offered by the snapshot (empty → hide the selector). */
@@ -179,10 +291,10 @@ export function useDraftData() {
     setRank,
     rankLoading,
     rankError,
-    addEnemy,
-    removeEnemy,
-    clearEnemies,
+    synergyLoading,
+    synergyUnavailable,
     results,
+    banSuggestions,
     /** Enemies without a matchup table — strict coverage blocks ranking (§21). */
     missingTables,
   };

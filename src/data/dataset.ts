@@ -95,10 +95,8 @@ export async function loadBracketTables(heroIds: Set<number>): Promise<Map<strin
   if (bracketCache) return bracketCache;
   if (bracketInflight) return bracketInflight;
   bracketInflight = (async () => {
-    const res = await fetch(`${import.meta.env.BASE_URL}data/matchups-by-bracket.json`);
-    if (res.status === 404) return null;
-    if (!res.ok) throw new Error(`Failed to load rank data (${res.status}).`);
-    const raw = (await res.json()) as Record<string, Record<string, MatchupRow[]>>;
+    const raw = await fetchOptionalJson<Record<string, Record<string, MatchupRow[]>>>('matchups-by-bracket.json');
+    if (!raw) return null;
     const out = new Map<string, BracketTables>();
     for (const [bracket, tables] of Object.entries(raw)) {
       const matchups = new Map<number, MatchupRow[]>();
@@ -116,6 +114,51 @@ export async function loadBracketTables(heroIds: Set<number>): Promise<Map<strin
   } finally {
     bracketInflight = null;
   }
+}
+
+/**
+ * Same-team (synergy) tables — `heroId -> teammate rows`, `wins` = wins of the
+ * team with both heroes. Optional layer: null when the snapshot has none.
+ * `all` is loaded when any draft exists; `byBracket` only when a rank is chosen.
+ */
+const synergyCache: { all?: Map<number, MatchupRow[]> | null; byBracket?: Map<string, Map<number, MatchupRow[]>> | null } = {};
+const synergyInflight: { all?: Promise<Map<number, MatchupRow[]> | null>; byBracket?: Promise<Map<string, Map<number, MatchupRow[]>> | null> } = {};
+
+function toTables(raw: Record<string, MatchupRow[]>, heroIds: Set<number>): Map<number, MatchupRow[]> {
+  const m = new Map<number, MatchupRow[]>();
+  for (const [id, rows] of Object.entries(raw)) {
+    const n = Number(id);
+    if (heroIds.has(n) && Array.isArray(rows)) m.set(n, rows);
+  }
+  return m;
+}
+
+async function fetchOptionalJson<T>(file: string): Promise<T | null> {
+  const res = await fetch(`${import.meta.env.BASE_URL}data/${file}`);
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(`Failed to load ${file} (${res.status}).`);
+  const type = res.headers.get('content-type') ?? '';
+  // SPA hosting rewrites a missing file to index.html — treat that as "absent".
+  if (type.includes('text/html')) return null;
+  return (await res.json()) as T;
+}
+
+export async function loadSynergy(heroIds: Set<number>): Promise<Map<number, MatchupRow[]> | null> {
+  if (synergyCache.all !== undefined) return synergyCache.all;
+  synergyInflight.all ??= fetchOptionalJson<Record<string, MatchupRow[]>>('synergy.json').then((raw) => {
+    synergyCache.all = raw ? toTables(raw, heroIds) : null;
+    return synergyCache.all;
+  }).finally(() => { synergyInflight.all = undefined; });
+  return synergyInflight.all;
+}
+
+export async function loadSynergyByBracket(heroIds: Set<number>): Promise<Map<string, Map<number, MatchupRow[]>> | null> {
+  if (synergyCache.byBracket !== undefined) return synergyCache.byBracket;
+  synergyInflight.byBracket ??= fetchOptionalJson<Record<string, Record<string, MatchupRow[]>>>('synergy-by-bracket.json').then((raw) => {
+    synergyCache.byBracket = raw ? new Map(Object.entries(raw).map(([b, t]) => [b, toTables(t, heroIds)])) : null;
+    return synergyCache.byBracket;
+  }).finally(() => { synergyInflight.byBracket = undefined; });
+  return synergyInflight.byBracket;
 }
 
 let cache: Dataset | null = null;

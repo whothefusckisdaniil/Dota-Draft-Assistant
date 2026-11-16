@@ -78,6 +78,21 @@ export interface MatchupDetail {
 }
 
 /** Distribution stats over usable matchup deltas (pp). */
+/** One ally of the candidate: how much better the pair does on the same team
+ *  than both heroes' usual win rates predict. */
+export interface SynergyDetail {
+  allyId: number;
+  games: number;
+  /** Team win rate (%) when both heroes play together. */
+  winrate: number;
+  /** base(A) + base(B) − 50: what two such heroes win together on average. */
+  expectedWinrate: number;
+  /** Shrunk synergy advantage (pp). */
+  delta: number;
+  rawDelta: number;
+  usable: boolean;
+}
+
 export interface DeltaStats {
   mean: number; // plain average of usable deltas
   median: number;
@@ -117,6 +132,12 @@ export interface CandidateScore {
   worstAgainst: string[];
   /** Distribution of usable shrunk deltas — makes variance visible. */
   deltaStats: DeltaStats;
+  /** Same-team advantage with each selected ally (empty without allies). */
+  synergy: SynergyDetail[];
+  /** Median synergy advantage over the allies (pp); 0 without allies. */
+  synergyScore: number;
+  /** What the ranking uses: counter median + wSynergy × synergy median (pp). */
+  draftScore: number;
 }
 
 export type DataStatus =

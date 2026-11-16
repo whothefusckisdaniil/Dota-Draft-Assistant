@@ -47,6 +47,7 @@ The frontend loads four static files from `public/data/` (plus the per-rank tabl
 | `matchups.json` | STRATZ hero-vs-hero games and wins over the last 30 days |
 | `positions.json` | STRATZ per-position pick share and games — the hard position eligibility gate |
 | `meta.json` | Provenance, matchup window, rank brackets, data-quality summary, freshness |
+| `synergy.json`, `synergy-by-bracket.json` | Optional pair. Same-team ("with") tables: for every hero pair, games and wins **of the team with both heroes**, all ranks and per rank. Used for your-team synergy and ban suggestions; loaded only once a draft exists. Absent → allies are only excluded and ban suggestions use matchups only. |
 | `matchups-by-bracket.json` | Optional. Matchup tables per rank bracket (Herald–Guardian, Crusader–Archon, Legend–Ancient, Divine–Immortal) for the rank selector; loaded only when a rank is chosen. Absent in the OpenDota fallback (the selector is then hidden). |
 
 ## Languages (EN / RU)
@@ -61,12 +62,14 @@ The frontend loads four static files from `public/data/` (plus the per-rank tabl
 The draft lives in the URL, so a link can be pasted into Discord / Telegram and opens the same draft:
 
 ```
-/?enemy=13,29,8&pos=3&rank=divine
+/?enemy=13,29,8&ally=26,2&ban=14&pos=3&rank=divine
 ```
 
 | Param | Meaning |
 |---|---|
 | `enemy` | enemy hero ids (Valve/OpenDota ids), comma-separated, pick order, up to 5 |
+| `ally` | your team's hero ids, up to 4 |
+| `ban` | banned hero ids, up to 14 |
 | `pos` | `1`–`5`; absent = all positions |
 | `rank` | `herald` \| `crusader` \| `legend` \| `divine`; absent = all ranks |
 | `lang` | `ru` for Russian; absent = English / the viewer's choice |
@@ -90,6 +93,15 @@ The URL updates as you edit the draft (`history.replaceState`, no history spam) 
 Frontend loads `public/data/*.json` once, scores locally, and shows `Data updated …` freshness from `meta.generatedAt`.
 
 Details and measured impact of the OpenDota → STRATZ switch: [`docs/stratz-migration.md`](docs/stratz-migration.md). The research spike behind it (schema, direction proof, the former Cloudflare workaround — no longer used) is in [`docs/stratz-research.md`](docs/stratz-research.md).
+
+## Allies, synergy and bans
+
+The draft has three lists: **enemies** (up to 5), **your team** (up to 4 — you are the 5th) and **bans** (up to 14). The search adds to whichever is selected ("Add to: Enemies / My team / Bans"); a hero lives in one list only.
+
+- **Synergy** comes from STRATZ `matchUp … with { … }` rows — the same requests as the matchups, no extra calls. For a candidate C and ally A: `synergy = team win rate of C+A − (base(C) + base(A) − 50)`, shrunk like matchups. Per rank, both directions are averaged (the bracket filter applies to one player, as with matchups).
+- **Ranking with allies**: `draft = median counter advantage + 0.5 × median synergy` (`APP_CONFIG.scoring.wSynergy`) — synergy is usually smaller and noisier, the main question stays "who beats the enemy". Strict coverage applies to allies too. Without allies the ranking is exactly the counterpick ranking. With allies but no enemies, heroes are ranked by synergy alone.
+- **Ban suggestions** (`src/scoring/bans.ts`): `ban = median advantage of the hero against your heroes + 0.5 × median synergy with the enemy heroes`; top 8, not role-specific, never a picked or banned hero. Click one to ban it.
+- Bans are excluded from recommendations and from ban suggestions. All three lists are in the shareable link (`ally=`, `ban=`).
 
 ## How scoring works (MVP model, see `src/scoring/engine.ts` + `src/config.ts`)
 

@@ -156,6 +156,16 @@ export function explainCandidate(c: CandidateScore, laneName: string, i18n: I18n
       ? t('explain.positiveAll', { n: usable.length })
       : t('explain.positiveSome', { k: positive, n: usable.length }));
   }
+  // Synergy with your team. With no enemies picked it leads the explanation.
+  const syn = (c.synergy ?? []).filter((x) => x.usable).sort((a, b) => b.delta - a.delta);
+  const synLines: string[] = [];
+  const synBest = syn.slice(0, 2).filter((x) => x.delta > 0.5);
+  const synWorst = [...syn].reverse().find((x) => x.delta < -2);
+  if (syn.length > 1 && syn.every((x) => x.delta > 0)) synLines.push(t('explain.synergyAll', { n: syn.length }));
+  else if (synBest.length > 0) synLines.push(t('explain.synergyGood', { names: synBest.map((x) => name(x.allyId)).join(t('explain.and')) }));
+  if (synWorst) synLines.push(t('explain.synergyBad', { name: name(synWorst.allyId), delta: fmtSigned(synWorst.delta) }));
+  if (usable.length === 0) out.unshift(...synLines);
+  else out.splice(Math.min(out.length, 1), 0, ...synLines);
   if (c.avgGames >= 800) out.push(t('explain.sampleLarge'));
   else if (c.avgGames >= 200) out.push(t('explain.sampleSolid'));
   else out.push(t('explain.sampleLimited'));
@@ -172,9 +182,11 @@ export function bestWorstAgainst(c: CandidateScore, i18n: I18n, heroById: Map<nu
     const h = heroById.get(id);
     return h ? i18n.heroName(h) : `#${id}`;
   };
+  const syn = (c.synergy ?? []).filter((x) => x.usable).sort((a, b) => b.delta - a.delta);
   return {
     best: usable.filter((m) => m.delta > 0.5).slice(0, 2).map((m) => name(m.enemyId)),
     worst: usable.filter((m) => m.delta < -2).slice(-1).map((m) => name(m.enemyId)),
+    goodWith: syn.filter((x) => x.delta > 0.5).slice(0, 2).map((x) => name(x.allyId)),
   };
 }
 

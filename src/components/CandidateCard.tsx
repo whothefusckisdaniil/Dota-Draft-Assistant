@@ -65,7 +65,7 @@ export function CandidateCard({ c, rank, lane, heroById, onViewDetails }: {
   const { t } = i18n;
   const coverage = c.matchups.filter((m) => m.usable).length;
   const total = c.matchups.length;
-  const { best, worst } = bestWorstAgainst(c, i18n, heroById);
+  const { best, worst, goodWith } = bestWorstAgainst(c, i18n, heroById);
   return (
     <article className="rec-top fade-up grid grid-cols-[96px_minmax(0,1fr)] gap-x-3 gap-y-2.5 p-4 sm:grid-cols-[176px_minmax(0,1fr)] sm:gap-x-5 sm:p-5 lg:grid-cols-[192px_minmax(0,1fr)]">
       {/* Portrait column: 96×120 on mobile (recognizable, ~90px wide per UX
@@ -82,6 +82,9 @@ export function CandidateCard({ c, rank, lane, heroById, onViewDetails }: {
           <span className="badge badge-accent sm:hidden">{t('card.bestPick', { rank })}</span>
           <span className="badge">{t('card.coverage', { k: coverage, n: total })}</span>
           <span className="badge">{t('card.matches', { count: formatMatches(c.avgGames) })}</span>
+          {c.synergy.length > 0 && (
+            <span className={`badge ${c.synergyScore >= 0 ? 'badge-pos' : 'badge-warn'}`}>{t('card.synergy', { value: scoreText(c.synergyScore) })}</span>
+          )}
           {c.lowData && <span className="badge badge-warn">{t('card.limited')}</span>}
         </div>
         <h4 className="mt-2.5 text-2xl font-extrabold uppercase leading-none tracking-wide text-ink sm:text-3xl">
@@ -104,6 +107,9 @@ export function CandidateCard({ c, rank, lane, heroById, onViewDetails }: {
           )}
           {worst.length > 0 && (
             <span className="text-dim">{t('card.worstVs')} <span className="font-semibold text-neg">{worst[0]}</span></span>
+          )}
+          {goodWith.length > 0 && (
+            <span className="text-dim">{t('card.goodWith')} <span className="font-semibold text-ally">{goodWith.join(', ')}</span></span>
           )}
         </div>
         <div className="mt-3.5 flex flex-wrap items-center gap-3">

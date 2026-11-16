@@ -159,6 +159,43 @@ body {
     box-shadow: 0 2px 12px rgba(199, 138, 66, 0.35);
   }
 
+  /* your team / bans (allies & synergy) */
+  .slot-ally.slot-empty { border-style: dashed; border-color: rgba(88, 196, 140, 0.35); }
+  .slot-ally:not(.slot-empty) { box-shadow: inset 0 0 0 1.5px rgba(88, 196, 140, 0.55); }
+  .slot-you {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px dashed var(--color-line);
+    color: var(--color-dim);
+    background: transparent;
+  }
+  .text-ally { color: #7fd4a4; }
+  .ban-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    max-width: 180px;
+    padding: 3px 4px 3px 3px;
+    border: 1px solid rgba(224, 96, 96, 0.35);
+    background: rgba(224, 96, 96, 0.08);
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-ink);
+  }
+  .ban-chip img { filter: grayscale(0.85); }
+  .ban-chip-x {
+    flex: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 6px;
+    color: var(--color-muted);
+  }
+  .ban-chip-x:hover { color: var(--color-ink); background: rgba(255, 255, 255, 0.06); }
+  .seg-sm .seg-btn { padding: 5px 10px; font-size: 11px; }
+  .seg-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
   /* rank selector: medal pairs instead of text */
   .rank-btn {
     display: flex;
@@ -366,6 +403,7 @@ body {
     background: rgba(220, 164, 94, 0.1);
     color: var(--color-accent-2);
   }
+  .badge-pos { background: rgba(88, 196, 140, 0.12); color: #7fd4a4; }
 
   /* ---- details drawer (§14): full-screen on mobile, modal on desktop ---- */
   .drawer-panel {

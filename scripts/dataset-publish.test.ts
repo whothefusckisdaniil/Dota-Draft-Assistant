@@ -297,3 +297,31 @@ describe('publishDatasetAtomically — Counterpick files only (ТЗ №77)', () 
     }
   });
 });
+
+describe('publishDatasetAtomically — optional synergy layer', () => {
+  const tables = () => dataset()['matchups.json'];
+  it('publishes synergy.json + synergy-by-bracket.json together', async () => {
+    const root = await tmpRoot();
+    const dir = path.join(root, 'data');
+    await publishDatasetAtomically(dir, {
+      ...dataset(),
+      'synergy.json': tables(),
+      'synergy-by-bracket.json': { LEGEND_ANCIENT: tables() },
+    });
+    expect((await readdir(dir)).sort()).toEqual(['heroes.json', 'matchups.json', 'meta.json', 'positions.json', 'synergy-by-bracket.json', 'synergy.json']);
+    await rm(root, { recursive: true, force: true });
+  });
+
+  it('refuses half a synergy layer or one with a different roster, keeping the old dataset', async () => {
+    const root = await tmpRoot();
+    const dir = path.join(root, 'data');
+    await publishDatasetAtomically(dir, dataset());
+    const before = await readAll(dir);
+    await expect(publishDatasetAtomically(dir, { ...dataset(), 'synergy.json': tables() })).rejects.toThrow(/both synergy/);
+    const short = { 1: [{ hero_id: 2 }] };
+    await expect(publishDatasetAtomically(dir, { ...dataset(), 'synergy.json': short, 'synergy-by-bracket.json': { X: tables() } }))
+      .rejects.toThrow(/synergy\.json does not cover/);
+    expect(await readAll(dir)).toEqual(before);
+    await rm(root, { recursive: true, force: true });
+  });
+});

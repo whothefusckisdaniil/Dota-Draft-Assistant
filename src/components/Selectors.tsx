@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { Hero } from '../types';
 import { APP_CONFIG, POSITIONS, type PositionFilter } from '../config';
 import { HeroPortrait } from './HeroPortrait';
@@ -11,66 +11,178 @@ function focusSearch() {
   document.getElementById('hero-search')?.focus();
 }
 
+type Target = 'enemy' | 'ally' | 'ban';
+
+/** Enemy team (5 slots) or your team (4 slots + "you"). Clicking an empty slot
+ *  switches the search to that team. */
+export function TeamSlots({ team, ids, max, heroById, active, onRemove, onPickTarget, actions }: {
+  team: 'enemy' | 'ally';
+  ids: number[];
+  max: number;
+  heroById: Map<number, Hero>;
+  active: boolean;
+  onRemove: (id: number) => void;
+  onPickTarget: (t: Target) => void;
+  actions?: ReactNode;
+}) {
+  const i18n = useI18n();
+  const { t } = i18n;
+  const slots = Array.from({ length: max }, (_, i) => ids[i]);
+  return (
+    <div className="min-w-0">
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <div className="flex items-baseline gap-3">
+          <h2 className={`text-[11px] font-bold uppercase tracking-[0.18em] ${active ? 'text-accent-2' : 'text-muted'}`}>
+            {t(team === 'enemy' ? 'draft.title' : 'draft.allies')}
+          </h2>
+          <span className="text-xs font-semibold tabular-nums text-dim">{ids.length} / {max}</span>
+        </div>
+        {actions}
+      </div>
+      <div className={`grid gap-2.5 sm:gap-3 ${team === 'enemy' ? 'grid-cols-3 sm:grid-cols-5' : 'grid-cols-3 sm:grid-cols-5'}`}>
+        {slots.map((id, i) => {
+          const h = id !== undefined ? heroById.get(id) : undefined;
+          if (!h) {
+            return (
+              <button
+                key={`${team}${i}`}
+                type="button"
+                onClick={() => { onPickTarget(team); focusSearch(); }}
+                className={`slot slot-empty ${team === 'ally' ? 'slot-ally' : ''}`}
+                aria-label={t(team === 'enemy' ? 'draft.addHero' : 'draft.addAlly')}
+              >
+                <span aria-hidden="true" className="text-2xl font-light leading-none">+</span>
+                <span className="text-[10px] font-bold uppercase tracking-widest">{t(team === 'enemy' ? 'draft.addHero' : 'draft.addAlly')}</span>
+              </button>
+            );
+          }
+          return (
+            <div key={id} className={`slot fade-up ${team === 'ally' ? 'slot-ally' : ''}`}>
+              <HeroPortrait hero={h} fill variant="large" />
+              <div className="slot-overlay">
+                <div className="truncate text-[13px] font-bold leading-tight text-ink sm:text-sm">{i18n.heroName(h)}</div>
+                <div className="truncate text-[10px] text-muted">{h.roles.slice(0, 2).map(i18n.role).join(' · ')}</div>
+              </div>
+              <button type="button" onClick={() => onRemove(id)} aria-label={t('draft.remove', { name: i18n.heroName(h) })} className="slot-x">
+                ×
+              </button>
+            </div>
+          );
+        })}
+        {team === 'ally' && (
+          <div className="slot slot-you" aria-hidden="true">
+            <span className="text-[10px] font-bold uppercase tracking-widest">{t('draft.you')}</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/** Banned heroes: excluded from recommendations and ban suggestions. */
+export function BanRow({ ids, max, heroById, active, onRemove, onPickTarget }: {
+  ids: number[];
+  max: number;
+  heroById: Map<number, Hero>;
+  active: boolean;
+  onRemove: (id: number) => void;
+  onPickTarget: (t: Target) => void;
+}) {
+  const i18n = useI18n();
+  const { t } = i18n;
+  return (
+    <div className="min-w-0">
+      <div className="mb-2 flex items-baseline gap-3">
+        <h2 className={`text-[11px] font-bold uppercase tracking-[0.18em] ${active ? 'text-accent-2' : 'text-muted'}`}>{t('draft.bans')}</h2>
+        <span className="text-xs font-semibold tabular-nums text-dim">{ids.length} / {max}</span>
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
+        {ids.map((id) => {
+          const h = heroById.get(id);
+          if (!h) return null;
+          return (
+            <span key={id} className="ban-chip fade-up">
+              <span className="h-6 w-6 shrink-0 overflow-hidden rounded"><HeroPortrait hero={h} fill variant="small" /></span>
+              <span className="truncate">{i18n.heroName(h)}</span>
+              <button type="button" onClick={() => onRemove(id)} aria-label={t('draft.unban', { name: i18n.heroName(h) })} className="ban-chip-x">×</button>
+            </span>
+          );
+        })}
+        {ids.length < max && (
+          <button type="button" onClick={() => { onPickTarget('ban'); focusSearch(); }} className="btn btn-ghost btn-sm">
+            + {t('draft.addBan')}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/** Which list the search adds to. */
+export function TargetSwitch({ value, onChange, counts, limits }: {
+  value: Target;
+  onChange: (t: Target) => void;
+  counts: Record<Target, number>;
+  limits: Record<Target, number>;
+}) {
+  const { t } = useI18n();
+  const items: { id: Target; label: string }[] = [
+    { id: 'enemy', label: t('target.enemy') },
+    { id: 'ally', label: t('target.ally') },
+    { id: 'ban', label: t('target.ban') },
+  ];
+  return (
+    <div className="mb-2 flex flex-wrap items-center gap-2">
+      <span className="text-[11px] font-semibold text-dim">{t('target.title')}</span>
+      <div className="seg seg-sm" role="radiogroup" aria-label={t('target.title')}>
+        {items.map((it) => (
+          <button
+            key={it.id}
+            type="button"
+            role="radio"
+            aria-checked={value === it.id}
+            disabled={counts[it.id] >= limits[it.id] && value !== it.id}
+            onClick={() => onChange(it.id)}
+            className={`seg-btn ${value === it.id ? 'is-active' : ''}`}
+          >
+            {it.label} <span className="tabular-nums opacity-70">{counts[it.id]}/{limits[it.id]}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** Kept for older callers: the enemy team only. */
 export function EnemySlots({ enemies, heroById, onRemove, onClear }: {
   enemies: number[];
   heroById: Map<number, Hero>;
   onRemove: (id: number) => void;
   onClear: () => void;
 }) {
-  const slots = Array.from({ length: APP_CONFIG.ui.maxEnemies }, (_, i) => enemies[i]);
-  const i18n = useI18n();
-  const { t } = i18n;
+  const { t } = useI18n();
   return (
-    <div className="min-w-0">
-      <div className="mb-3 flex items-center justify-between">
-        <div className="flex items-baseline gap-3">
-          <h2 className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted">{t('draft.title')}</h2>
-          <span className="text-xs font-semibold tabular-nums text-dim">{enemies.length} / {APP_CONFIG.ui.maxEnemies}</span>
+    <TeamSlots
+      team="enemy"
+      ids={enemies}
+      max={APP_CONFIG.ui.maxEnemies}
+      heroById={heroById}
+      active
+      onRemove={onRemove}
+      onPickTarget={() => {}}
+      actions={enemies.length > 0 ? (
+        <div className="flex items-center gap-2">
+          <ShareLinkButton />
+          <button type="button" onClick={onClear} className="btn btn-ghost btn-sm">{t('draft.clear')}</button>
         </div>
-        {enemies.length > 0 && (
-          <div className="flex items-center gap-2">
-            <ShareLinkButton />
-            <button type="button" onClick={onClear} className="btn btn-ghost btn-sm">{t('draft.clear')}</button>
-          </div>
-        )}
-      </div>
-      <div className="grid grid-cols-3 gap-2.5 sm:grid-cols-5 sm:gap-3">
-        {slots.map((id, i) => {
-          const h = id !== undefined ? heroById.get(id) : undefined;
-          if (!h) {
-            return (
-              <button key={`e${i}`} type="button" onClick={focusSearch} className="slot slot-empty" aria-label={t('draft.addHero')}>
-                <span aria-hidden="true" className="text-2xl font-light leading-none">+</span>
-                <span className="text-[10px] font-bold uppercase tracking-widest">{t('draft.addHero')}</span>
-              </button>
-            );
-          }
-          return (
-            <div key={id} className="slot fade-up">
-              <HeroPortrait hero={h} fill variant="large" />
-              <div className="slot-overlay">
-                <div className="truncate text-[13px] font-bold leading-tight text-ink sm:text-sm">{i18n.heroName(h)}</div>
-                <div className="truncate text-[10px] text-muted">{h.roles.slice(0, 2).map(i18n.role).join(' · ')}</div>
-              </div>
-              <button
-                type="button"
-                onClick={() => onRemove(id)}
-                aria-label={t('draft.remove', { name: i18n.heroName(h) })}
-                className="slot-x"
-              >
-                ×
-              </button>
-            </div>
-          );
-        })}
-      </div>
-    </div>
+      ) : undefined}
+    />
   );
 }
 
 /** Copies the current draft link (the URL already encodes enemies, role and
  *  rank) so it can be pasted into Discord / Telegram. */
-function ShareLinkButton() {
+export function ShareLinkButton() {
   const { t } = useI18n();
   const [state, setState] = useState<'idle' | 'copied' | 'failed'>('idle');
   useEffect(() => {

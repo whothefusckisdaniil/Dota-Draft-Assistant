@@ -5,6 +5,9 @@ import positionsRaw from '../../public/data/positions.json';
 import meta from '../../public/data/meta.json';
 import bracketsRaw from '../../public/data/matchups-by-bracket.json';
 import { computeBaseWinrates } from './baseline';
+import { suggestBans } from './bans';
+import synergyRaw from '../../public/data/synergy.json';
+import synergyByBracketRaw from '../../public/data/synergy-by-bracket.json';
 import type { Hero, MatchupRow, PositionDataset } from '../types';
 import { scoreCandidates } from './engine';
 import type { Lane } from './positionsExtra';
@@ -15,6 +18,7 @@ const heroes = heroesRaw as unknown as Hero[];
 const effectiveDays = (meta.matchupWindow as unknown as { effectiveDays?: number }).effectiveDays ?? 30;
 const fullWindow = effectiveDays >= 21;
 const tables = matchupsRaw as unknown as Record<string, MatchupRow[]>;
+const tables_ = tables;
 // The real production position layer, so this suite gates on real pick rates.
 const positions = positionsRaw as unknown as Record<string, PositionDataset[number]>;
 const positionById: PositionDataset = Object.fromEntries(
@@ -108,5 +112,42 @@ describe('per-rank tables (rank selector)', () => {
       expect(ranked.length, b).toBeGreaterThan(0);
       for (const c of ranked) expect(Number.isFinite(c.finalScore), b).toBe(true);
     }
+  });
+});
+
+describe('synergy tables (allies, ban suggestions)', () => {
+  const syn = synergyRaw as unknown as Record<string, MatchupRow[]>;
+  const synByBracket = synergyByBracketRaw as unknown as Record<string, Record<string, MatchupRow[]>>;
+
+  it('cover every hero with every teammate, symmetric, in all ranks and per rank', () => {
+    for (const table of [syn, ...Object.values(synByBracket)]) {
+      for (const h of heroes) expect(table[String(h.id)]?.length, h.name).toBe(heroes.length - 1);
+      const [a, b] = [heroes[0].id, heroes[1].id];
+      const ab = table[String(a)].find((r) => r.hero_id === b)!;
+      const ba = table[String(b)].find((r) => r.hero_id === a)!;
+      expect(ab).toMatchObject({ games_played: ba.games_played, wins: ba.wins });
+    }
+    expect(Object.keys(synByBracket)).toEqual(['HERALD_GUARDIAN', 'CRUSADER_ARCHON', 'LEGEND_ANCIENT', 'DIVINE_IMMORTAL']);
+  });
+
+  it('scores a draft with allies and suggests bans on the real snapshot', () => {
+    const synergyByAlly = new Map(Object.entries(syn).map(([k, v]) => [Number(k), v]));
+    const tables = new Map(Object.entries(tables_ as Record<string, MatchupRow[]>).map(([k, v]) => [Number(k), v]));
+    const base = computeBaseWinrates(tables);
+    const input = {
+      heroes, enemyIds: [13, 7], matchupByEnemy: tables, positions: positionById,
+      heroById: new Map(heroes.map((h) => [h.id, h])), baseWinrates: base,
+      allyIds: [8, 26], synergyByAlly,
+    };
+    const ranked = scoreCandidates(input, '2');
+    expect(ranked.length).toBeGreaterThan(0);
+    for (const c of ranked) {
+      expect(c.synergy.map((s) => s.allyId)).toEqual([8, 26]);
+      expect(Number.isFinite(c.draftScore)).toBe(true);
+      expect([8, 26, 13, 7]).not.toContain(c.hero.id);
+    }
+    const bans = suggestBans({ heroes, allyIds: [8, 26], enemyIds: [13, 7], excludeIds: [], matchupByHero: tables, synergyByHero: synergyByAlly, baseWinrates: base });
+    expect(bans.length).toBe(8);
+    for (const b of bans) expect([8, 26, 13, 7]).not.toContain(b.hero.id);
   });
 });

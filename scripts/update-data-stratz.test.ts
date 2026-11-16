@@ -19,6 +19,9 @@ import {
   buildChunkQuery,
   buildDataset,
   symmetrizeBracketTable,
+  aggregateStratzSynergyChunks,
+  symmetrizeSynergyTable,
+  validateSynergyTable,
   buildPublishPayload,
   validateProductionContract,
 } from './update-data-stratz.mjs';
@@ -873,6 +876,70 @@ describe('validateProductionContract — zero-game rows', () => {
   });
 });
 
+describe('synergy (same-team "with" rows)', () => {
+  const resp = (bucket: number, dryads: unknown[]) => ({ data: { heroStats: { [`w${bucket}`]: dryads } } });
+
+  it('aggregates with-rows per teammate, weighted by bucket, wins = team wins', () => {
+    const chunks = [{ chunkIndex: 0, chunkHeroIds: [1, 2], response: {
+      data: { heroStats: {
+        w2957: [{ heroId: 1, vs: [], with: [{ heroId1: 1, heroId2: 2, matchCount: 700, winCount: 400 }] }],
+        w2958: [{ heroId: 1, vs: [], with: [{ heroId1: 1, heroId2: 2, matchCount: 100, winCount: 60 }] }],
+      } },
+    } }];
+    const t = aggregateStratzSynergyChunks(chunks, { buckets: [2957, 2958], weights: { 2957: 3 / 7, 2958: 1 } }, new Set([1, 2]));
+    expect(t).toEqual({ '1': [{ hero_id: 2, games_played: 400, wins: 231 }] }); // 300+100, round(171.43+60)
+  });
+
+  it('rejects a row that does not involve the dryad hero', () => {
+    const chunks = [{ chunkIndex: 0, chunkHeroIds: [1], response: resp(2957, [{ heroId: 1, with: [{ heroId1: 2, heroId2: 3, matchCount: 1, winCount: 1 }] }]) }];
+    expect(() => aggregateStratzSynergyChunks(chunks, { buckets: [2957] }, new Set([1, 2, 3]))).toThrow(/orientation/);
+  });
+
+  it('symmetrizes both directions', () => {
+    const t = symmetrizeSynergyTable({
+      1: [{ hero_id: 2, games_played: 100, wins: 50 }],
+      2: [{ hero_id: 1, games_played: 120, wins: 64 }],
+    });
+    expect(t['1']).toEqual([{ hero_id: 2, games_played: 110, wins: 57 }]);
+    expect(t['2']).toEqual(t['1'].map((r) => ({ ...r, hero_id: 1 })));
+  });
+
+  it('validates roster, counts and team win rates', () => {
+    const ok: Record<string, { hero_id: number; games_played: number; wins: number }[]> = {};
+    for (const i of IDS) ok[String(i)] = IDS.filter((j) => j !== i).map((j) => ({ hero_id: j, games_played: 100, wins: 50 }));
+    expect(() => validateSynergyTable(HEROES, ok)).not.toThrow();
+    const bad = structuredClone(ok);
+    bad['1'][0].wins = 101;
+    expect(() => validateSynergyTable(HEROES, bad)).toThrow(/wins 101/);
+    const zero = structuredClone(ok);
+    zero['1'][0].games_played = 0; zero['1'][0].wins = 0;
+    expect(() => validateSynergyTable(HEROES, zero)).toThrow(/games 0/);
+    expect(() => validateSynergyTable(HEROES, zero, { allowZeroGames: true })).not.toThrow();
+    const missing = structuredClone(ok);
+    delete missing['5'];
+    expect(() => validateSynergyTable(HEROES, missing)).toThrow(/no table for hero 5/);
+  });
+
+  it('buildDataset publishes synergy when the fetcher returns { vs, with }', async () => {
+    const result = await buildDataset({
+      fetchMetadata: metaFor(),
+      fetchMatchups: async (ids: number[]) => ({ vs: matchupFixture(ids), with: matchupFixture(ids) }),
+      fetchPositions: async (ids: number[]) => positionFixture(ids),
+      now: NOW,
+      log: silent,
+    } as never);
+    expect(result.synergy['1'][0]).toMatchObject({ games_played: 4000, wins: 2000 }); // 4 brackets summed
+    expect(Object.keys(result.synergyByBracket)).toEqual(['HERALD_GUARDIAN', 'CRUSADER_ARCHON', 'LEGEND_ANCIENT', 'DIVINE_IMMORTAL']);
+    expect(result.meta.synergy.files).toEqual(['synergy.json', 'synergy-by-bracket.json']);
+    expect(Object.keys(buildPublishPayload(result))).toEqual([...PUBLISHED_FILES]);
+  });
+
+  it('the query asks for with-rows only when synergy is requested', () => {
+    expect(buildChunkQuery([1], [2960], ['LEGEND_ANCIENT'], { withSynergy: true })).toContain('with { heroId1 heroId2 matchCount winCount }');
+    expect(buildChunkQuery([1], [2960])).not.toContain('with {');
+  });
+});
+
 describe('symmetrizeBracketTable', () => {
   it('averages both directions and keeps the enemy-perspective wins convention', () => {
     // 1→2: 100 games, hero 1 wins 40; 2→1: 140 games, hero 2 wins 84 (hero 1 wins 56)
@@ -969,7 +1036,7 @@ describe('buildDataset — no item data (ТЗ №77)', () => {
 
   it('returns no item layers and no meta.itemData', async () => {
     const { result } = await run();
-    expect(Object.keys(result).sort()).toEqual(['heroes', 'matchups', 'matchupsByBracket', 'meta', 'positionInfo', 'positions', 'validationResult']);
+    expect(Object.keys(result).sort()).toEqual(['heroes', 'matchups', 'matchupsByBracket', 'meta', 'positionInfo', 'positions', 'synergy', 'synergyByBracket', 'validationResult']);
     expect(result.meta).not.toHaveProperty('itemData');
     expect(JSON.stringify(result.meta)).not.toMatch(/item/i);
   });
@@ -990,8 +1057,9 @@ describe('buildDataset — no item data (ТЗ №77)', () => {
 
   it('publishes exactly heroes, matchups, positions, meta and the per-rank tables', async () => {
     const { result } = await run();
-    expect([...PUBLISHED_FILES]).toEqual(['heroes.json', 'matchups.json', 'positions.json', 'meta.json', 'matchups-by-bracket.json']);
-    expect(Object.keys(buildPublishPayload(result))).toEqual([...PUBLISHED_FILES]);
+    expect([...PUBLISHED_FILES]).toEqual(['heroes.json', 'matchups.json', 'positions.json', 'meta.json', 'matchups-by-bracket.json', 'synergy.json', 'synergy-by-bracket.json']);
+    // a fetcher without same-team data publishes without the optional synergy layer
+    expect(Object.keys(buildPublishPayload(result))).toEqual(PUBLISHED_FILES.slice(0, 5));
     expect([...DATASET_FILES, ...OPTIONAL_DATASET_FILES].sort()).toEqual([...PUBLISHED_FILES].sort());
     expect(() => buildPublishPayload({ ...result, positions: undefined } as never)).toThrow(/positions\.json/);
   });

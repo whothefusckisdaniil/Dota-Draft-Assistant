@@ -4,7 +4,7 @@ import { buildDraftSearch, draftTitle, parseDraftUrl, shareableUrl } from './dra
 describe('parseDraftUrl', () => {
   it('reads enemies in pick order, position and rank', () => {
     expect(parseDraftUrl('?enemy=13,29,8&pos=3&rank=divine')).toEqual({
-      enemies: [13, 29, 8], position: '3', rank: 'DIVINE_IMMORTAL', hasDraft: true,
+      enemies: [13, 29, 8], allies: [], bans: [], position: '3', rank: 'DIVINE_IMMORTAL', hasDraft: true,
     });
   });
 
@@ -28,12 +28,32 @@ describe('parseDraftUrl', () => {
   });
 
   it('a link without draft parameters leaves the rank to the stored preference', () => {
-    expect(parseDraftUrl('')).toEqual({ enemies: [], position: 'all', rank: null, hasDraft: false });
+    expect(parseDraftUrl('')).toEqual({ enemies: [], allies: [], bans: [], position: 'all', rank: null, hasDraft: false });
     expect(parseDraftUrl('?utm_source=discord').rank).toBeNull();
   });
 
   it('a shared draft without a rank means all ranks (the sender looked at all ranks)', () => {
     expect(parseDraftUrl('?enemy=1,2').rank).toBe('ALL');
+  });
+});
+
+describe('allies and bans', () => {
+  it('reads allies (max 4) and bans (max 14); a hero lives in one place only', () => {
+    const s = parseDraftUrl('?enemy=13,8&ally=1,13,2,3,4,5&ban=8,9,10');
+    expect(s.enemies).toEqual([13, 8]);
+    expect(s.allies).toEqual([1, 2, 3, 4]); // 13 is an enemy already, 5th ally dropped
+    expect(s.bans).toEqual([9, 10]); // 8 is an enemy already
+    expect(s.hasDraft).toBe(true);
+  });
+
+  it('round-trips allies and bans', () => {
+    const state = { enemies: [13], allies: [8, 14], bans: [74], position: 'all' as const, rank: 'ALL' };
+    expect(buildDraftSearch('', state)).toBe('?enemy=13&ally=8,14&ban=74');
+    expect(parseDraftUrl(buildDraftSearch('', state))).toMatchObject({ enemies: [13], allies: [8, 14], bans: [74] });
+  });
+
+  it('allies alone are a draft too', () => {
+    expect(parseDraftUrl('?ally=8').rank).toBe('ALL');
   });
 });
 

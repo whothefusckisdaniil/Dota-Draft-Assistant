@@ -1,9 +1,9 @@
 import { APP_CONFIG } from '../config';
-import type { AggOptions, CandidateScore, DeltaStats, Hero, MatchupDetail, MatchupRow, PositionDataset } from '../types';
+import type { AggOptions, CandidateScore, DeltaStats, Hero, MatchupDetail, MatchupRow, PositionDataset, SynergyDetail } from '../types';
 import { LANE_AFFINITY } from './positions';
 import { EXTRA_AFFINITY, positionScoreBase, type Lane } from './positionsExtra';
 import { isEligibleAt } from './positionEligibility';
-import { expectedWinrate } from './baseline';
+import { expectedSynergyWinrate, expectedWinrate } from './baseline';
 
 export function positionScore(hero: Hero, pos: Lane): number {
   const a = LANE_AFFINITY[hero.name] ?? {};
@@ -73,10 +73,48 @@ export interface ScoreInput {
    * them (synthetic lab presets) the baseline is the neutral 50%.
    */
   baseWinrates?: Map<number, number>;
+  /** Your team (up to 4 heroes). Candidates are also scored by synergy with them. */
+  allyIds?: number[];
+  /**
+   * Same-team tables keyed by ally: `rows` for that ally, `wins` = wins of the
+   * team with both heroes. Null/undefined = no synergy data (allies are then
+   * only excluded from the candidates, not scored).
+   */
+  synergyByAlly?: Map<number, MatchupRow[]> | null;
+  /** Heroes that cannot be picked (bans, already picked elsewhere). */
+  excludeIds?: number[];
+}
+
+/** Same-team advantage of `heroId` with each ally (shrunk like matchups). */
+export function synergyDetails(
+  heroId: number,
+  allyIds: number[],
+  synergyByAlly: Map<number, MatchupRow[]>,
+  baseWinrates: Map<number, number> | undefined,
+): SynergyDetail[] {
+  const cfg = APP_CONFIG.scoring;
+  const out: SynergyDetail[] = [];
+  for (const allyId of allyIds) {
+    const row = synergyByAlly.get(allyId)?.find((r) => r.hero_id === heroId);
+    if (!row || row.games_played <= 0) continue;
+    const games = row.games_played;
+    const winrate = (row.wins / games) * 100;
+    const expected = expectedSynergyWinrate(baseWinrates, heroId, allyId);
+    const rawDelta = winrate - expected;
+    const delta = (rawDelta * games) / (games + cfg.shrinkageK);
+    out.push({ allyId, games, winrate, expectedWinrate: expected, delta, rawDelta, usable: games >= cfg.minMatchesPerPair });
+  }
+  return out;
 }
 
 export function scoreCandidates(input: ScoreInput, pos: Lane, opts: AggOptions = {}): CandidateScore[] {
   const { heroes, enemyIds, matchupByEnemy, heroById, positions, failedEnemyIds, baseWinrates } = input;
+  const allyIds = input.allyIds ?? [];
+  const synergyByAlly = input.synergyByAlly ?? null;
+  const scoreAllies = allyIds.length > 0 && !!synergyByAlly;
+  const excluded = new Set([...(input.excludeIds ?? []), ...allyIds]);
+  if (enemyIds.length === 0 && !scoreAllies) return [];
+  if (scoreAllies && allyIds.some((id) => !synergyByAlly!.has(id))) return [];
   const cfg = APP_CONFIG.scoring;
   // Production default is M (median teamScore) — validated against A on the
   // evaluation set in V9/V10 (see liveValidate.ts). A/W stay available in the
@@ -97,7 +135,7 @@ export function scoreCandidates(input: ScoreInput, pos: Lane, opts: AggOptions =
   const results: CandidateScore[] = [];
 
   for (const hero of heroes) {
-    if (enemySet.has(hero.id)) continue;
+    if (enemySet.has(hero.id) || excluded.has(hero.id)) continue;
     const matchups: MatchupDetail[] = [];
     for (const enemyId of enemyIds) {
       const rows = matchupByEnemy.get(enemyId);
@@ -120,6 +158,10 @@ export function scoreCandidates(input: ScoreInput, pos: Lane, opts: AggOptions =
     const fullCoverage = opts.requireFullCoverage ?? cfg.requireFullCoverage;
     const required = fullCoverage ? enemyIds.length : Math.min(cfg.minUsableEnemies, enemyIds.length);
     if (usable.length < required) continue;
+    // Synergy: same strict coverage — usable same-team data with EVERY ally.
+    const synergy = scoreAllies ? synergyDetails(hero.id, allyIds, synergyByAlly!, baseWinrates) : [];
+    const usableSynergy = synergy.filter((s) => s.usable);
+    if (scoreAllies && usableSynergy.length < allyIds.length) continue;
     let num = 0;
     let den = 0;
     let gamesSum = 0;
@@ -130,7 +172,8 @@ export function scoreCandidates(input: ScoreInput, pos: Lane, opts: AggOptions =
       gamesSum += m.games;
     }
     const teamScore = den > 0 ? num / den : 0;
-    const avgGames = gamesSum / usable.length;
+    const synergyGames = usableSynergy.reduce((sum, s) => sum + s.games, 0);
+    const avgGames = (gamesSum + synergyGames) / Math.max(1, usable.length + usableSynergy.length);
     if (avgGames < cfg.minimumSampleAvg) continue;
     const confidence = Math.min(1, Math.sqrt(avgGames / cfg.confidenceDenominator));
     // ТЗ №9 §11 — HARD GATE, evaluated before any role score or bonus exists.
@@ -154,11 +197,14 @@ export function scoreCandidates(input: ScoreInput, pos: Lane, opts: AggOptions =
     //       Diagnostic: measures "hero without a critical bad matchup".
     const badCount = deltas.filter((d) => d < cfg.weakLinkThreshold).length;
     const raw = teamScore * cfg.wCounter + positionBonus * cfg.wPosition;
+    const synergyScore = usableSynergy.length > 0 ? computeDeltaStats(usableSynergy.map((s) => s.delta)).median : 0;
     let teamScoreM: number | undefined;
     let finalScore: number;
+    let draftScore = teamScore + cfg.wSynergy * synergyScore;
     if (model === 'M') {
       teamScoreM = deltaStats.median;
-      const rawM = teamScoreM * cfg.wCounter + positionBonus * cfg.wPosition;
+      draftScore = teamScoreM + cfg.wSynergy * synergyScore;
+      const rawM = draftScore * cfg.wCounter + positionBonus * cfg.wPosition;
       finalScore = rawM * (0.3 + 0.7 * confidence);
     } else if (model === 'W') {
       const rawW = raw - badCount * cfg.weakLinkPenalty;
@@ -176,6 +222,9 @@ export function scoreCandidates(input: ScoreInput, pos: Lane, opts: AggOptions =
       bestAgainst: sortedUsable.filter((m) => m.delta > 0.5).slice(0, 2).map((m) => enemyNames.get(m.enemyId)!),
       worstAgainst: sortedUsable.filter((m) => m.delta < -2).slice(-1).map((m) => enemyNames.get(m.enemyId)!),
       deltaStats,
+      synergy,
+      synergyScore,
+      draftScore,
     });
   }
   results.sort((a, b) => b.finalScore - a.finalScore);
