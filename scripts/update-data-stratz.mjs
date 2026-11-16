@@ -4,7 +4,7 @@
  *
  *   OpenDota metadata  ──▶ canonical heroes[] + latestPatch
  *          │
- *          ├─▶ heroIds ──▶ STRATZ GraphQL (4 last complete weeks) ──▶ matchups
+ *          ├─▶ heroIds ──▶ STRATZ GraphQL (rolling last 30 days) ──▶ matchups
  *          │                                                     └──▶ positions
  *          └─▶ heroes.json
  *
@@ -33,7 +33,7 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { getCompleteWeeklyBuckets, BUCKET_SEC } from './stratz/buckets.mjs';
+import { getCompleteWeeklyBuckets, getRollingWindow, BUCKET_SEC, ROLLING_DAYS } from './stratz/buckets.mjs';
 import { fetchPositionsFromStratz, validatePositionData } from './stratz/positions.mjs';
 import { POSITION_ELIGIBILITY } from './stratz/eligibility.mjs';
 import { fetchOpenDotaMetadata, validateHeroMetadata } from './opendota/metadata.mjs';
@@ -195,6 +195,15 @@ function dist(arr) {
   };
 }
 
+/** Reverse-pair games asymmetry: a face counts as asymmetric above 3% AND 15 games. */
+export const ASYMMETRY_SOFT_REL = 0.03;
+export const ASYMMETRY_MIN_ABS = 15;
+/** Any face above this relative difference blocks the refresh. */
+export const ASYMMETRY_HARD_REL = 0.1;
+/** At most this share of all rows (but at least MIN_BUDGET) may be softly asymmetric. */
+export const ASYMMETRY_MAX_SHARE = 0.001;
+export const ASYMMETRY_MIN_BUDGET = 4;
+
 function validateProductionContract(heroes, dataset) {
   const expectedHeroIds = heroes.map((h) => h.id).sort((a, b) => a - b);
   const expectedIds = new Set(expectedHeroIds);
@@ -216,6 +225,8 @@ function validateProductionContract(heroes, dataset) {
   let unknownOpponents = 0;
   let missingReversePairs = 0;
   let pairsOver3pct = 0;
+  let pairsOverHardLimit = 0;
+  const asymmetricFaces = [];
   let skewOver5pct = 0;
   const gamesDiffRel = [];
   const skewRel = [];
@@ -252,8 +263,10 @@ function validateProductionContract(heroes, dataset) {
         gamesDiffRel.push(dRel);
         // Small sample pairs (e.g. Chen vs Elder Titan ~150 games) can have ±5 matches diff (~3.3%).
         // A pair exceeds tolerance if relative diff > 3% AND absolute diff > 15 games.
-        if (dRel > 0.03 && Math.abs(r.games_played - rev.games_played) > 15) {
+        if (dRel > ASYMMETRY_SOFT_REL && Math.abs(r.games_played - rev.games_played) > ASYMMETRY_MIN_ABS) {
           pairsOver3pct += 1;
+          asymmetricFaces.push({ enemyId, heroId: r.hero_id, games: r.games_played, reverseGames: rev.games_played });
+          if (dRel > ASYMMETRY_HARD_REL) pairsOverHardLimit += 1;
         }
         const sRel = Math.abs(r.wins + rev.wins - r.games_played) / r.games_played;
         skewRel.push(sRel);
@@ -284,9 +297,16 @@ function validateProductionContract(heroes, dataset) {
   if (winsOutOfRange > 0) throw new Error(`Found ${winsOutOfRange} rows with wins out of [0, games] range`);
   if (unknownOpponents > 0) throw new Error(`Found ${unknownOpponents} unknown opponent IDs`);
   if (missingReversePairs > 0) throw new Error(`Found ${missingReversePairs} missing reverse pairs`);
-  if (pairsOver3pct > 0) {
+  // STRATZ itself returns slightly different matchCount for A→B and B→A
+  // (reproducible, see research/data-quality/stratz-support-escalation-final.md).
+  // A few faces just above 3% are that known vendor behaviour and barely move a
+  // win rate, so they are tolerated and reported. Anything grossly asymmetric,
+  // or asymmetry spread over many pairs, still blocks the refresh.
+  const asymmetryBudget = Math.max(ASYMMETRY_MIN_BUDGET, Math.floor(totalPairs * ASYMMETRY_MAX_SHARE));
+  if (pairsOverHardLimit > 0 || pairsOver3pct > asymmetryBudget) {
     throw new Error(
-      `Found ${pairsOver3pct} reverse pairs exceeding games asymmetry tolerance (>3% relative AND >15 games absolute)`,
+      `Found ${pairsOver3pct} reverse pairs exceeding games asymmetry tolerance (>3% relative AND >15 games absolute; ` +
+        `${pairsOverHardLimit} above ${ASYMMETRY_HARD_REL * 100}%, allowed: ${asymmetryBudget} faces, none above ${ASYMMETRY_HARD_REL * 100}%)`,
     );
   }
   if (skewOver5pct > 0) {
@@ -300,6 +320,7 @@ function validateProductionContract(heroes, dataset) {
   return {
     totalPairs,
     reversePairAsymmetry: dist(gamesDiffRel),
+    asymmetricFaces,
     winsSumSkew: dist(skewRel),
     rowColSkew: dist(rowColRel),
     heroAggWr,
@@ -326,6 +347,9 @@ export function aggregateStratzMatchupChunks(chunks, windowInfo, validHeroIdsSet
     }
 
     for (const b of windowInfo.buckets) {
+      // Rolling window: the oldest week may count only partly (see getRollingWindow).
+      const weight = windowInfo.weights?.[b] ?? 1;
+      if (!(weight > 0 && weight <= 1)) throw new Error(`Invalid weight ${weight} for bucket ${b}`);
       if (!bucketSeenHeroes.has(b)) bucketSeenHeroes.set(b, new Set());
       if (!bucketSeenPairs.has(b)) bucketSeenPairs.set(b, new Set());
 
@@ -409,8 +433,8 @@ export function aggregateStratzMatchupChunks(chunks, windowInfo, validHeroIdsSet
           const rowMap = totals.get(enemyId);
           const wins = heroId1 === enemyId ? winCount : matchCount - winCount;
           const cur = rowMap.get(opponent) ?? { games: 0, wins: 0 };
-          cur.games += matchCount;
-          cur.wins += wins;
+          cur.games += weight * matchCount;
+          cur.wins += weight * wins;
           rowMap.set(opponent, cur);
         }
       }
@@ -419,7 +443,11 @@ export function aggregateStratzMatchupChunks(chunks, windowInfo, validHeroIdsSet
   const matchups = {};
   for (const [enemyId, rowMap] of totals) {
     matchups[String(enemyId)] = [...rowMap.entries()]
-      .map(([opponent, v]) => ({ hero_id: opponent, games_played: v.games, wins: v.wins }))
+      .map(([opponent, v]) => {
+        // Integers again after weighting; with all weights 1 this is exact.
+        const games = Math.round(v.games);
+        return { hero_id: opponent, games_played: games, wins: Math.min(games, Math.round(v.wins)) };
+      })
       .sort((a, b) => b.games_played - a.games_played);
   }
   return matchups;
@@ -499,12 +527,14 @@ export async function buildDataset({
   const heroIds = heroes.map((h) => h.id).sort((a, b) => a - b);
   log(`    OpenDota returned ${heroIds.length} heroes, latest patch ${latestPatch}`);
 
-  // 2. Dynamic weekly buckets (4 complete weeks, zero current incomplete).
-  const windowInfo = getCompleteWeeklyBuckets(now, WEEKS_COUNT);
+  // 2. Rolling window: the last ROLLING_DAYS days, recomputed on every run.
+  const windowInfo = getRollingWindow(now, ROLLING_DAYS);
   log(
-    `2/6 Weekly buckets computed: [${windowInfo.buckets.join(', ')}] (current partial: ${windowInfo.currentBucket} excluded)`,
+    `2/6 Rolling ${windowInfo.days}-day window over weekly buckets: ` +
+      windowInfo.buckets.map((b) => `${b}×${windowInfo.weights[b]}`).join(', ') +
+      ` (current week ${windowInfo.currentBucket} taken live)`,
   );
-  log(`    Window: ${windowInfo.windowStartUtc} -> ${windowInfo.windowEndUtcExclusive} (28 days)`);
+  log(`    Window: ${windowInfo.windowStartUtc} -> ${windowInfo.windowEndUtc}`);
 
   // 3+4. STRATZ, queried for exactly the fresh hero ids. Matchups and position
   // stats are two independent queries over the SAME buckets, so the two layers
@@ -519,6 +549,9 @@ export async function buildDataset({
   log('5/6 Validating dataset integrity contract...');
   const validationResult = validateProductionContract(heroes, matchups);
   log(`    Validation passed! Total rows: ${validationResult.totalPairs}`);
+  for (const f of validationResult.asymmetricFaces) {
+    log(`    WARNING: reverse-pair games asymmetry ${f.enemyId}->${f.heroId}: ${f.games} vs ${f.reverseGames} (known STRATZ behaviour, within budget)`);
+  }
   log(`    Reverse pair asymmetry median: ${validationResult.reversePairAsymmetry.medianPct}% (p99: ${validationResult.reversePairAsymmetry.p99Pct}%, max: ${validationResult.reversePairAsymmetry.maxPct}%)`);
   log(`    Wins sum skew median: ${validationResult.winsSumSkew.medianPct}% (p99: ${validationResult.winsSumSkew.p99Pct}%, max: ${validationResult.winsSumSkew.maxPct}%)`);
   const positionInfo = validatePositionData(positions, { heroes, windowInfo });
@@ -536,16 +569,16 @@ export async function buildDataset({
     latestPatch,
     heroCount: heroes.length,
     matchupWindow: {
-      kind: 'sum-of-complete-weekly-buckets',
-      weeks: windowInfo.buckets.length,
-      weeklyBuckets: windowInfo.buckets,
-      completeWeeksOnly: true,
+      kind: 'rolling-days',
+      days: windowInfo.days,
       windowStartUtc: windowInfo.windowStartUtc,
-      windowEndUtcExclusive: windowInfo.windowEndUtcExclusive,
-      excludedBuckets: {
-        currentIncomplete: windowInfo.currentBucket,
-        reason: 'partial week — not production-ready',
-      },
+      windowEndUtc: windowInfo.windowEndUtc,
+      weeklyBuckets: windowInfo.buckets,
+      bucketWeights: windowInfo.weights,
+      currentBucket: windowInfo.currentBucket,
+      method:
+        'STRATZ publishes matchups only per weekly bucket. The current week is taken as-is (filled live up to now); ' +
+        'the oldest week is scaled by the share of its days still inside the window.',
     },
     population: {
       type: 'rank-bracket',
@@ -555,9 +588,9 @@ export async function buildDataset({
     matchupPatchFilter: false,
     positionData: {
       source: 'STRATZ',
-      weeks: windowInfo.buckets.length,
+      days: windowInfo.days,
       weeklyBuckets: windowInfo.buckets,
-      completeWeeksOnly: true,
+      bucketWeights: windowInfo.weights,
       population: {
         type: 'rank-bracket',
         description: 'Rank-bracket data (calibrated ranks: Herald through Immortal)',

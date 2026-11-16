@@ -40,6 +40,7 @@ export async function fetchPositionsFromStratz(heroIds, windowInfo, { token, log
   const totals = new Map(); // heroId -> { 1..5: games }
   try {
     for (const bucket of windowInfo.buckets) {
+      const weight = windowInfo.weights?.[bucket] ?? 1;
       const t0 = Date.now();
       const res = await transport.query(buildPositionQuery(heroIds, bucket));
       const rows = res.data?.heroStats?.stats ?? [];
@@ -51,7 +52,7 @@ export async function fetchPositionsFromStratz(heroIds, windowInfo, { token, log
         if (!Number.isInteger(heroId) || !Number.isInteger(pos)) continue;
         if (!totals.has(heroId)) totals.set(heroId, {});
         const m = totals.get(heroId);
-        m[pos] = (m[pos] ?? 0) + Number(row.matchCount ?? 0);
+        m[pos] = (m[pos] ?? 0) + weight * Number(row.matchCount ?? 0);
       }
     }
   } finally {
@@ -60,7 +61,8 @@ export async function fetchPositionsFromStratz(heroIds, windowInfo, { token, log
 
   const out = {};
   for (const [heroId, m] of totals) {
-    const totalGames = [1, 2, 3, 4, 5].reduce((s, n) => s + (m[n] ?? 0), 0);
+    for (const n of [1, 2, 3, 4, 5]) m[n] = Math.round(m[n] ?? 0); // integers after weighting
+    const totalGames = [1, 2, 3, 4, 5].reduce((s, n) => s + m[n], 0);
     if (totalGames <= 0) continue;
     out[String(heroId)] = {
       totalGames,

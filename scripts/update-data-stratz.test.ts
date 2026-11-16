@@ -141,6 +141,28 @@ describe('validateProductionContract — symmetry gates', () => {
     expect(() => validateProductionContract(HEROES, ds)).not.toThrow();
   });
 
+  it('tolerates a few ~4% asymmetric pairs (known STRATZ behaviour) and reports them', () => {
+    const ds = baseline();
+    row(ds, 1, 2).games_played = 1040; // like Broodmother / Shadow Demon: 1182 vs 1137
+    row(ds, 3, 4).games_played = 1035;
+    const result = validateProductionContract(HEROES, ds);
+    expect(result.asymmetricFaces).toHaveLength(4); // each pair is seen from both sides
+    expect(result.asymmetricFaces).toContainEqual({ enemyId: 1, heroId: 2, games: 1040, reverseGames: 1000 });
+  });
+
+  it('rejects soft asymmetry once it spreads over more pairs than the budget', () => {
+    const ds = baseline();
+    for (const [a, b] of [[1, 2], [3, 4], [5, 6], [7, 8], [9, 10]]) row(ds, a, b).games_played = 1040;
+    expect(() => validateProductionContract(HEROES, ds)).toThrow(/games asymmetry tolerance/);
+  });
+
+  it('rejects a single pair above the 10% hard limit', () => {
+    const ds = baseline();
+    row(ds, 1, 2).games_played = 1110;
+    row(ds, 1, 2).wins = 555;
+    expect(() => validateProductionContract(HEROES, ds)).toThrow(/1 above 10%|2 above 10%/);
+  });
+
   it('accepts a large relative difference on a tiny pair (the rounding-noise case)', () => {
     const ds = baseline();
     const a = row(ds, 1, 2);
@@ -434,7 +456,7 @@ describe('buildDataset — the published triple describes one snapshot (ТЗ §8
     expect(meta.schema.totalPairGames).toBe(actualGames);
   });
 
-  it('uses four complete weeks and excludes the current partial one', async () => {
+  it('uses the rolling last-30-days window, including the live current week', async () => {
     const { meta } = await buildDataset({
       fetchMetadata: metaFor(),
       fetchMatchups: async (ids: number[]) => matchupFixture(ids),
@@ -442,12 +464,19 @@ describe('buildDataset — the published triple describes one snapshot (ТЗ §8
       now: NOW,
       log: silent,
     });
-    expect(meta.matchupWindow.weeklyBuckets).toHaveLength(4);
-    expect(meta.matchupWindow.completeWeeksOnly).toBe(true);
-    expect(meta.matchupWindow.excludedBuckets.currentIncomplete).not.toBe(
-      meta.matchupWindow.weeklyBuckets.at(-1),
-    );
-    expect(meta.matchupWindow.windowStartUtc < meta.matchupWindow.windowEndUtcExclusive).toBe(true);
+    // NOW = 2026-09-28T12:00Z → window 2026-08-29 .. now; bucket 2956 (Aug 27–Sep 3) is 5/7 inside.
+    expect(meta.matchupWindow).toMatchObject({
+      kind: 'rolling-days',
+      days: 30,
+      windowStartUtc: '2026-08-29T00:00:00Z',
+      windowEndUtc: NOW.toISOString(),
+      weeklyBuckets: [2956, 2957, 2958, 2959, 2960],
+      currentBucket: 2960,
+    });
+    expect(meta.matchupWindow.bucketWeights[2956]).toBeCloseTo(5 / 7, 6);
+    expect(meta.matchupWindow.bucketWeights[2960]).toBe(1);
+    expect(meta.positionData.weeklyBuckets).toEqual(meta.matchupWindow.weeklyBuckets);
+    expect(meta.positionData.bucketWeights).toEqual(meta.matchupWindow.bucketWeights);
   });
 });
 
@@ -493,8 +522,8 @@ describe('buildDataset — no stale latestPatch (ТЗ §8C)', () => {
     expect(meta.heroCount).toBe(100);
     expect(meta.generatedAt).toBe(NOW.toISOString());
     // STRATZ fields from ТЗ №6 must survive.
-    expect(meta.matchupWindow.completeWeeksOnly).toBe(true);
-    expect(meta.matchupWindow.weeklyBuckets).toHaveLength(4);
+    expect(meta.matchupWindow.kind).toBe('rolling-days');
+    expect(meta.matchupWindow.days).toBe(30);
     expect(meta.population.brackets).toHaveLength(4);
   });
 });
@@ -707,7 +736,7 @@ describe('buildDataset — latestPatch is always fresh (ТЗ §8C)', () => {
     expect(meta.heroCount).toBe(101);
     expect(meta.schema.heroCount).toBe(101);
     expect(meta.generatedAt).toBe(NOW.toISOString());
-    expect(meta.matchupWindow.weeklyBuckets).toHaveLength(4);
+    expect(meta.matchupWindow.days).toBe(30);
   });
 });
 
@@ -793,7 +822,7 @@ describe('buildDataset — one consistent snapshot (ТЗ §8E)', () => {
     }
   });
 
-  it('keeps the four buckets contiguous and excludes only the current partial one', async () => {
+  it('keeps the window buckets contiguous and ending at the current week', async () => {
     const { meta } = await buildDataset({
       fetchMetadata: metaFor(),
       fetchMatchups: async (ids: number[]) => matchupFixture(ids),
@@ -802,14 +831,12 @@ describe('buildDataset — one consistent snapshot (ТЗ §8E)', () => {
       log: silent,
     });
     const w = meta.matchupWindow;
-    expect(w.weeks).toBe(4);
-    expect(w.weeklyBuckets).toHaveLength(4);
     for (let i = 1; i < w.weeklyBuckets.length; i += 1) {
       expect(w.weeklyBuckets[i]).toBe(w.weeklyBuckets[i - 1] + 1);
     }
-    expect(w.completeWeeksOnly).toBe(true);
-    expect(w.excludedBuckets.currentIncomplete).not.toBe(w.weeklyBuckets[0]);
-    expect(Date.parse(w.windowEndUtcExclusive)).toBeGreaterThan(Date.parse(w.windowStartUtc));
+    expect(w.weeklyBuckets.at(-1)).toBe(w.currentBucket);
+    expect(Date.parse(w.windowEndUtc) - Date.parse(w.windowStartUtc)).toBeGreaterThanOrEqual(30 * 86_400_000);
+    expect(Date.parse(w.windowEndUtc) - Date.parse(w.windowStartUtc)).toBeLessThan(31 * 86_400_000);
   });
 });
 
@@ -947,6 +974,21 @@ describe('aggregateStratzMatchupChunks — production GraphQL contract', () => {
     }))], [2957, 2958])).toEqual({
       '1': [{ hero_id: 2, games_played: 150, wins: 60 }],
     });
+  });
+
+  it('scales a partly-included oldest week by its weight (rolling window)', () => {
+    const chunks = [chunk(0, [1], response({
+      2957: [dryad(1, [vsRow(1, 2, 700, 350)])], // weight 3/7 → 300 games, 150 wins
+      2958: [dryad(1, [vsRow(1, 2, 100, 40)])],
+    }))];
+    const rows = aggregateStratzMatchupChunks(chunks, { buckets: [2957, 2958], weights: { 2957: 3 / 7, 2958: 1 } }, new Set([1, 2]));
+    expect(rows).toEqual({ '1': [{ hero_id: 2, games_played: 400, wins: 190 }] });
+  });
+
+  it('rejects an out-of-range bucket weight', () => {
+    const chunks = [one(1, [vsRow(1, 2)])];
+    expect(() => aggregateStratzMatchupChunks(chunks, { buckets: [2957], weights: { 2957: 1.5 } }, new Set([1, 2])))
+      .toThrow(/Invalid weight/);
   });
 
   it('aggregates disjoint chunks', () => {

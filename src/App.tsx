@@ -69,7 +69,7 @@ export default function App() {
           <section className="panel p-6 text-sm leading-relaxed text-muted sm:p-8">
             <h2 className="mb-3 text-lg font-bold text-ink">About Dota Draft Assistant</h2>
             <p>Dota Draft Assistant analyzes statistical hero matchups to help you evaluate picks against the enemy draft.</p>
-            <p className="mt-2">Hero metadata is sourced from OpenDota; matchup statistics are aggregated from STRATZ rank-bracket data over the latest four complete weeks.</p>
+            <p className="mt-2">Hero metadata is sourced from OpenDota; matchup statistics are aggregated from STRATZ rank-bracket data. Only the last 30 days are counted, and the window is updated every day: the oldest day drops out and the newest one is added.</p>
             <p className="mt-2">Counterpicks are ranked by matchup advantage: how much better a hero does against each enemy than both heroes' usual win rates predict. A hero that is simply strong in the current patch is not treated as a counter to everyone.</p>
             <p className="mt-2 text-dim">Recommendations are statistical suggestions, not guarantees of match outcomes.</p>
           </section>
@@ -147,7 +147,7 @@ export default function App() {
                   Statistically favorable matchup — not a guaranteed win. Scores use the median matchup advantage across the enemy draft
                   (win rate against each enemy compared with both heroes' usual win rates, like Dotabuff's “disadvantage”),
                   sample-size confidence and role fit (role tags + curated lane nudges, not per-position winrates).
-                  Matchup statistics aggregated from STRATZ rank-bracket data (calibrated ranks: Herald through Immortal, 4 complete weeks). Hero metadata sourced from OpenDota.
+                  Only matches from the last 30 days are counted: the window slides every day (STRATZ rank-bracket data, Herald through Immortal). Hero metadata sourced from OpenDota.
                 </p>
               </div>
             )}
@@ -179,7 +179,7 @@ export default function App() {
         <footer className="mt-12 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-5 text-[11px] leading-relaxed text-dim">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
             <span className="font-semibold text-muted">Dota Draft Assistant</span>
-            <span>Matchups: STRATZ · Heroes: OpenDota</span>
+            <span>Matchups: STRATZ, last 30 days · Heroes: OpenDota</span>
             {d.loadState.kind === 'ready' && d.meta && (
               <>
                 <span aria-hidden="true">·</span>

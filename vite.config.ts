@@ -1,6 +1,7 @@
 import { configDefaults, defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
+import { RESEARCH_TESTS } from './vitest.research.config';
 
 export default defineConfig({
   plugins: [tailwindcss(), react()],
@@ -13,6 +14,10 @@ export default defineConfig({
   test: {
     // Retired item/build research (ТЗ №77) is kept for reference only and is
     // never part of the active test suite.
-    exclude: [...configDefaults.exclude, 'archive/**'],
+    // Frozen STRATZ research suites (FIX9–FIX17) pin the hashes of the
+    // FIX-era public/data snapshot and generator, so every scheduled data
+    // refresh would fail them and never be published. They run separately:
+    // `npm run test:research`.
+    exclude: [...configDefaults.exclude, 'archive/**', ...RESEARCH_TESTS],
   },
 });

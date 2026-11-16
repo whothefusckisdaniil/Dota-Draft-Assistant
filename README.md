@@ -1,6 +1,8 @@
 # Dota Counterpick Assistant
 
-A counterpick tool for Dota 2: pick the enemy heroes and get the heroes that statistically perform best against that draft. Matchup statistics are aggregated from STRATZ rank-bracket data (calibrated ranks: Herald through Immortal, 4 complete weeks); hero metadata comes from OpenDota. Deploys to Vercel as a static Vite app.
+A counterpick tool for Dota 2: pick the enemy heroes and get the heroes that statistically perform best against that draft. Matchup statistics are aggregated from STRATZ rank-bracket data (calibrated ranks: Herald through Immortal); hero metadata comes from OpenDota.
+
+**Only the last 30 days are counted.** The statistics window slides every day: each daily refresh drops the oldest day and adds the newest one, so counterpicks follow the current patch and meta. Deploys to Vercel as a static Vite app.
 
 ## What it does
 
@@ -42,15 +44,18 @@ The frontend loads exactly four static files from `public/data/` — no runtime 
 | File | Content |
 |---|---|
 | `heroes.json` | OpenDota hero metadata (id, `npc_dota_hero_*` key, name, portrait, roles) |
-| `matchups.json` | STRATZ hero-vs-hero games and wins, 4 complete weekly buckets |
+| `matchups.json` | STRATZ hero-vs-hero games and wins over the last 30 days |
 | `positions.json` | STRATZ per-position pick share and games — the hard position eligibility gate |
 | `meta.json` | Provenance, matchup window, rank brackets, data-quality summary, freshness |
 
 ## Data refresh
 
-- `scripts/update-data-stratz.mjs` fetches fresh OpenDota hero metadata, then STRATZ matchup tables and position statistics across 4 complete weekly buckets (calibrated rank brackets), validates the 13-point matchup data contract and the position layer, and publishes the four files as one atomic directory swap; on any error the previous dataset is kept byte-for-byte.
+- `scripts/update-data-stratz.mjs` fetches fresh OpenDota hero metadata, then STRATZ matchup tables and position statistics for the last 30 days (calibrated rank brackets), validates the 13-point matchup data contract and the position layer, and publishes the four files as one atomic directory swap; on any error the previous dataset is kept byte-for-byte.
+- **Rolling 30-day window** (`getRollingWindow` in `scripts/stratz/buckets.mjs`): STRATZ publishes matchup and position statistics only per weekly bucket (Thursday 00:00 UTC), so the window `[today − 30 days, now)` is built from weeks: the current week is taken as-is (STRATZ fills it live, so it already holds the days elapsed so far), complete weeks inside the window count fully, and the oldest week that is only partly inside is scaled by the share of its 7 days still in the window (it loses 1/7 per day until it drops out). `meta.json → matchupWindow` records the exact dates, buckets and weights.
+- Reverse-pair asymmetry: STRATZ returns slightly different `matchCount` for A→B and B→A (known, reported to STRATZ). Up to 0.1% of rows may exceed 3% / 15 games and are logged as warnings; any row above 10%, or more rows than that, still blocks the refresh.
 - `scripts/update-data.mjs` is preserved as an OpenDota rollback fallback (it carries the committed `positions.json` forward).
-- `.github/workflows/update-data.yml` runs dataset refresh via GitHub Actions (`cron` and `workflow_dispatch`), validates the result, and commits only when the dataset changed. If the run fails, the old dataset stays committed.
+- `.github/workflows/update-data.yml` refreshes the dataset **every day** via GitHub Actions (daily `cron` at 03:17 UTC and manual `workflow_dispatch`), validates it, runs `npm test`, typecheck and build, and commits the new 30-day window. If the run fails, the old dataset stays committed.
+- `npm test` covers the app and the production pipeline. The frozen STRATZ research suites (FIX9–FIX17) pin the hashes of the snapshot they were recorded with, so they run separately via `npm run test:research` and are expected to fail once the data has been refreshed.
 - Local manual run: `node scripts/update-data-stratz.mjs` (Node 20+, requires `STRATZ_API_TOKEN`).
 
 Frontend loads `public/data/*.json` once, scores locally, and shows `Data updated …` freshness from `meta.generatedAt`.
@@ -66,7 +71,7 @@ For each candidate vs each selected enemy (1–5):
 - **Shrinkage**: `advantage × games/(games + 60)` so rare matchups cannot dominate.
 - **Team score**: median advantage across the selected enemies (model M; the `√games`-weighted mean is kept for the dev lab) — stable-against-whole-lineup beats one spiky matchup.
 - **Confidence**: `min(1, √(avgGames/400))`, final score blended toward 0 when data is thin.
-- **Position — hard gate**: a hero is ranked on a lane only where it is actually picked. `positions.json` (STRATZ, same 4-week window and rank brackets as the matchups) must show `share ≥ 8%` and `≥ 500` games. OpenDota `roles` are *not* used for eligibility. See `docs/position-model.md`.
+- **Position — hard gate**: a hero is ranked on a lane only where it is actually picked. `positions.json` (STRATZ, same 30-day window and rank brackets as the matchups) must show `share ≥ 8%` and `≥ 500` games. OpenDota `roles` are *not* used for eligibility. See `docs/position-model.md`.
 - **Position — secondary**: heuristic role fit 0–10 (role tags + curated lane nudges, NOT measured per-position winrates) → bonus ±4 pts, weighted `0.8 counter / 0.2 role`. It can nudge the order by at most 0.8 points, but can no longer remove a candidate.
 - **Strict full coverage (V2)**: candidate must have usable data vs EVERY selected enemy; a failed matchup table blocks ranking instead of silently ranking partial heroes.
 - Filters: pair needs ≥20 games, candidate avg ≥40 games, enemies can't be recommended against themselves.

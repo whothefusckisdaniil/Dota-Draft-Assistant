@@ -9,6 +9,7 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "test:research": "vitest run --config vitest.research.config.ts",
     "update:data": "node scripts/update-data-stratz.mjs",
     "update:data:opendota-fallback": "node scripts/update-data.mjs",
     "stratz:diagnostic:fetch": "node scripts/stratz-matchup-asymmetry-diagnostic.mjs fetch",

@@ -2,15 +2,20 @@
 import { appendFile, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { getCompleteWeeklyBuckets } from './stratz/buckets.mjs';
+import { ROLLING_DAYS } from './stratz/buckets.mjs';
 import { fetchOpenDotaMetadata } from './opendota/metadata.mjs';
-
-export const REFRESH_WEEKS = 4;
 
 function validPatch(value) {
   return typeof value === 'string' && /^\d+\.\d+/.test(value);
 }
 
+const utcDay = (date) => date.toISOString().slice(0, 10);
+
+/**
+ * Returns the UTC day the published window ends on, and whether it is already
+ * the rolling ROLLING_DAYS format. The legacy "4 complete weeks" format is
+ * still accepted so the first run after the switch can replace it.
+ */
 function validatePublishedMeta(meta) {
   if (!meta || typeof meta !== 'object' || Array.isArray(meta)) {
     throw new Error('published meta.json must be an object');
@@ -21,85 +26,43 @@ function validatePublishedMeta(meta) {
   if (!validPatch(meta.latestPatch)) {
     throw new Error(`published meta.json has invalid latestPatch: ${JSON.stringify(meta.latestPatch)}`);
   }
-
-  const buckets = meta.matchupWindow?.weeklyBuckets;
-  if (
-    !Array.isArray(buckets) ||
-    buckets.length !== REFRESH_WEEKS ||
-    buckets.some((bucket) => !Number.isInteger(bucket)) ||
-    buckets.some((bucket, index) => index > 0 && bucket !== buckets[index - 1] + 1) ||
-    meta.matchupWindow.weeks !== REFRESH_WEEKS ||
-    meta.matchupWindow.completeWeeksOnly !== true
-  ) {
-    throw new Error('published meta.json does not describe four consecutive complete STRATZ weekly buckets');
+  const window = meta.matchupWindow;
+  const rolling = window?.kind === 'rolling-days';
+  const end = Date.parse(rolling ? window.windowEndUtc : window?.windowEndUtcExclusive);
+  if (!Number.isFinite(end)) {
+    throw new Error('published meta.json does not describe a valid STRATZ matchup window');
   }
-
-  for (const [name, layer] of [
-    ['positionData', meta.positionData],
-  ]) {
-    if (
-      layer?.completeWeeksOnly !== true ||
-      layer.weeks !== REFRESH_WEEKS ||
-      JSON.stringify(layer.weeklyBuckets) !== JSON.stringify(buckets)
-    ) {
-      throw new Error(`published meta.json ${name} window does not match matchupWindow`);
-    }
-  }
-  return buckets;
+  const rollingCurrent = rolling && window.days === ROLLING_DAYS && meta.positionData?.days === ROLLING_DAYS
+    && JSON.stringify(meta.positionData?.weeklyBuckets) === JSON.stringify(window.weeklyBuckets);
+  return { publishedWindowDay: utcDay(new Date(end)), rollingCurrent };
 }
 
-export function decideDataRefresh({
-  publishedMeta,
-  detectedPatch,
-  currentWindow,
-  force = false,
-}) {
-  const publishedWeeklyBuckets = validatePublishedMeta(publishedMeta);
+/**
+ * Daily rolling window: a refresh is due whenever the published window does not
+ * end today (UTC), i.e. once per day, or when the published format is not the
+ * current rolling ROLLING_DAYS window.
+ */
+export function decideDataRefresh({ publishedMeta, detectedPatch, now = new Date(), force = false }) {
+  const { publishedWindowDay, rollingCurrent } = validatePublishedMeta(publishedMeta);
   if (!validPatch(detectedPatch)) {
     throw new Error(`detected OpenDota patch is invalid: ${JSON.stringify(detectedPatch)}`);
   }
-  if (
-    !currentWindow ||
-    !Array.isArray(currentWindow.buckets) ||
-    currentWindow.buckets.length !== REFRESH_WEEKS ||
-    currentWindow.buckets.some((bucket, index, buckets) =>
-      !Number.isInteger(bucket) || (index > 0 && bucket !== buckets[index - 1] + 1),
-    ) ||
-    !Number.isInteger(currentWindow.latestCompleteWeek) ||
-    currentWindow.latestCompleteWeek !== currentWindow.buckets.at(-1)
-  ) {
-    throw new Error('current STRATZ window is invalid; expected four consecutive complete buckets');
-  }
-
-  const currentWeeklyBuckets = [...currentWindow.buckets];
-  const currentLatestCompleteWeek = currentWindow.latestCompleteWeek;
-  const publishedLatestCompleteWeek = publishedWeeklyBuckets.at(-1);
-  const windowChanged = JSON.stringify(currentWeeklyBuckets) !== JSON.stringify(publishedWeeklyBuckets);
+  if (!(now instanceof Date) || !Number.isFinite(now.getTime())) throw new Error('invalid current time');
+  const today = utcDay(now);
+  const windowChanged = !rollingCurrent || publishedWindowDay !== today;
 
   let reason;
-  let refreshRequired;
-  if (force) {
-    reason = 'FORCE';
-    refreshRequired = true;
-  } else if (windowChanged) {
-    reason = 'NEW_COMPLETE_WEEK';
-    refreshRequired = true;
-  } else if (detectedPatch !== publishedMeta.latestPatch) {
-    reason = 'PATCH_CHANGED_BUT_NO_NEW_WEEK';
-    refreshRequired = false;
-  } else {
-    reason = 'NO_CHANGE';
-    refreshRequired = false;
-  }
+  if (force) reason = 'FORCE';
+  else if (!rollingCurrent) reason = 'WINDOW_FORMAT_CHANGED';
+  else if (publishedWindowDay !== today) reason = 'NEW_DAY';
+  else reason = 'NO_CHANGE';
 
   return {
     detectedPatch,
     publishedPatch: publishedMeta.latestPatch,
-    currentLatestCompleteWeek,
-    publishedLatestCompleteWeek,
-    publishedWeeklyBuckets: [...publishedWeeklyBuckets],
-    currentWeeklyBuckets,
-    refreshRequired,
+    today,
+    publishedWindowDay,
+    refreshRequired: reason !== 'NO_CHANGE',
     windowChanged,
     reason,
   };
@@ -112,10 +75,8 @@ export async function writeGitHubOutputs(outputPath, decision) {
     `reason=${decision.reason}`,
     `detected_patch=${decision.detectedPatch}`,
     `window_changed=${decision.windowChanged}`,
-    `current_latest_complete_week=${decision.currentLatestCompleteWeek}`,
-    `published_latest_complete_week=${decision.publishedLatestCompleteWeek}`,
-    `published_weekly_buckets=${decision.publishedWeeklyBuckets.join(',')}`,
-    `current_weekly_buckets=${decision.currentWeeklyBuckets.join(',')}`,
+    `today=${decision.today}`,
+    `published_window_day=${decision.publishedWindowDay}`,
   ];
   await appendFile(outputPath, `${lines.join('\n')}\n`, 'utf8');
 }
@@ -130,19 +91,14 @@ export async function runPreflight({
 } = {}) {
   const publishedMeta = JSON.parse(await readFile(metaPath, 'utf8'));
   const { latestPatch: detectedPatch } = await fetchMetadata();
-  const currentWindow = getCompleteWeeklyBuckets(now, REFRESH_WEEKS);
-  const decision = decideDataRefresh({ publishedMeta, detectedPatch, currentWindow, force });
+  const decision = decideDataRefresh({ publishedMeta, detectedPatch, now, force });
 
-  if (decision.reason === 'PATCH_CHANGED_BUT_NO_NEW_WEEK') {
-    log(`New patch detected: ${decision.detectedPatch}`);
-    log('Production STRATZ window is unchanged.');
-    log('Refresh deferred until a new complete weekly bucket is available.');
-  } else if (decision.reason === 'NEW_COMPLETE_WEEK') {
-    log(`New complete STRATZ window available: ${decision.currentWeeklyBuckets.join(',')}`);
+  if (decision.reason === 'NO_CHANGE') {
+    log(`Published ${ROLLING_DAYS}-day window already ends today (${decision.today}); no refresh required.`);
   } else if (decision.reason === 'FORCE') {
     log('Manual force_refresh requested; starting a full dataset refresh.');
   } else {
-    log('Patch and complete STRATZ window unchanged; no dataset refresh required.');
+    log(`Refreshing the rolling ${ROLLING_DAYS}-day window (${decision.reason}: published ${decision.publishedWindowDay}, today ${decision.today}).`);
   }
   await writeGitHubOutputs(outputPath, decision);
   log(JSON.stringify(decision));

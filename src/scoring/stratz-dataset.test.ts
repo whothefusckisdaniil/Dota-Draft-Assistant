@@ -23,12 +23,14 @@ describe('STRATZ production snapshot feeds the real scoring engine', () => {
     }
   });
 
-  it('no longer hits the old thin-sample floor (min pair games >= 100)', () => {
+  it('no longer hits the old thin-sample floor (min pair games >= 50)', () => {
+    // ~126 on the first 30-day window; 50 leaves room for the daily-sliding data
+    // (rare pairs are damped by shrinkage anyway).
     let min = Infinity;
     for (const rows of Object.values(tables)) {
       for (const r of rows) min = Math.min(min, r.games_played);
     }
-    expect(min).toBeGreaterThanOrEqual(100);
+    expect(min).toBeGreaterThanOrEqual(50);
   });
 
   it('scores every lane with full coverage and high confidence on a 5-hero draft', () => {

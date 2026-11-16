@@ -17,7 +17,7 @@ export interface PopulationMeta {
 }
 
 /** Static snapshot produced by scripts/update-data-stratz.mjs (see meta.json for freshness).
- *  Matchups come from STRATZ weekly buckets, hero metadata from OpenDota.
+ *  Matchups cover the last 30 days (STRATZ, refreshed daily), hero metadata from OpenDota.
  *  No runtime third-party calls in production — the app runs fully on this dataset. */
 export interface DatasetMeta {
   source: string;
@@ -25,17 +25,16 @@ export interface DatasetMeta {
   generatedAt: string;
   latestPatch: string;
   heroCount: number;
+  /** Rolling window: the last `days` days, recomputed daily (see scripts/stratz/buckets.mjs). */
   matchupWindow?: {
-    kind?: string;
-    weeks: number;
-    weeklyBuckets: number[];
-    completeWeeksOnly: boolean;
+    kind: 'rolling-days';
+    days: number;
     windowStartUtc: string;
-    windowEndUtcExclusive: string;
-    excludedBuckets?: {
-      currentIncomplete: number;
-      reason: string;
-    };
+    windowEndUtc: string;
+    weeklyBuckets: number[];
+    bucketWeights: Record<string, number>;
+    currentBucket: number;
+    method?: string;
   };
   population?: {
     type: string;
@@ -45,9 +44,9 @@ export interface DatasetMeta {
   matchupPatchFilter?: boolean;
   positionData?: {
     source: string;
-    weeks: number;
+    days: number;
     weeklyBuckets: number[];
-    completeWeeksOnly: boolean;
+    bucketWeights: Record<string, number>;
     population: PopulationMeta;
     eligibility?: { minShare: number; minGames: number; rule: string };
   };

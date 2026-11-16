@@ -6,24 +6,34 @@ import { decideDataRefresh, runPreflight, writeGitHubOutputs } from './check-dat
 import { datasetFingerprint } from './dataset-fingerprint.mjs';
 import { DATASET_FILES } from './dataset-publish.mjs';
 
-const publishedBuckets = [2957, 2958, 2959, 2960];
+const buckets = [2963, 2964, 2965, 2966, 2967];
 const publishedMeta = {
   source: 'STRATZ',
   latestPatch: '7.41',
   matchupWindow: {
-    weeks: 4,
-    weeklyBuckets: publishedBuckets,
-    completeWeeksOnly: true,
+    kind: 'rolling-days',
+    days: 30,
+    windowStartUtc: '2026-10-17T00:00:00Z',
+    windowEndUtc: '2026-11-16T03:20:00.000Z',
+    weeklyBuckets: buckets,
   },
-  positionData: {
-    weeks: 4,
-    weeklyBuckets: publishedBuckets,
-    completeWeeksOnly: true,
-  },
+  positionData: { days: 30, weeklyBuckets: buckets },
 };
-
-const sameWindow = { buckets: publishedBuckets, latestCompleteWeek: 2960 };
-const newWindow = { buckets: [2958, 2959, 2960, 2961], latestCompleteWeek: 2961 };
+/** The pre-rolling format (4 complete weeks) that is still on main before the first rolling run. */
+const legacyMeta = {
+  source: 'STRATZ',
+  latestPatch: '7.41',
+  matchupWindow: {
+    weeks: 4,
+    weeklyBuckets: [2957, 2958, 2959, 2960],
+    completeWeeksOnly: true,
+    windowStartUtc: '2026-09-03T00:00:00Z',
+    windowEndUtcExclusive: '2026-10-01T00:00:00Z',
+  },
+  positionData: { weeks: 4, weeklyBuckets: [2957, 2958, 2959, 2960], completeWeeksOnly: true },
+};
+const SAME_DAY = new Date('2026-11-16T18:00:00Z');
+const NEXT_DAY = new Date('2026-11-17T03:17:00Z');
 const dirs: string[] = [];
 
 async function tempDir() {
@@ -37,69 +47,42 @@ afterEach(async () => {
 });
 
 describe('decideDataRefresh', () => {
-  it('returns NO_CHANGE for the same patch and weekly window', () => {
-    expect(decideDataRefresh({
-      publishedMeta,
-      detectedPatch: '7.41',
-      currentWindow: sameWindow,
-    })).toMatchObject({ refreshRequired: false, windowChanged: false, reason: 'NO_CHANGE' });
+  it('returns NO_CHANGE when the published window already ends today', () => {
+    expect(decideDataRefresh({ publishedMeta, detectedPatch: '7.41', now: SAME_DAY }))
+      .toMatchObject({ refreshRequired: false, windowChanged: false, reason: 'NO_CHANGE' });
   });
 
-  it('defers a patch-only change until a complete week is available', () => {
-    expect(decideDataRefresh({
-      publishedMeta,
-      detectedPatch: '7.42',
-      currentWindow: sameWindow,
-    })).toMatchObject({
-      refreshRequired: false,
-      windowChanged: false,
-      reason: 'PATCH_CHANGED_BUT_NO_NEW_WEEK',
-      detectedPatch: '7.42',
-      publishedPatch: '7.41',
+  it('refreshes once a new UTC day starts (the window slides by a day)', () => {
+    expect(decideDataRefresh({ publishedMeta, detectedPatch: '7.41', now: NEXT_DAY })).toMatchObject({
+      refreshRequired: true, windowChanged: true, reason: 'NEW_DAY', today: '2026-11-17', publishedWindowDay: '2026-11-16',
     });
   });
 
-  it('refreshes when a new complete bucket enters the window', () => {
-    expect(decideDataRefresh({
-      publishedMeta,
-      detectedPatch: '7.41',
-      currentWindow: newWindow,
-    })).toMatchObject({ refreshRequired: true, windowChanged: true, reason: 'NEW_COMPLETE_WEEK' });
+  it('a new patch alone does not force a second refresh on the same day', () => {
+    expect(decideDataRefresh({ publishedMeta, detectedPatch: '7.42', now: SAME_DAY }))
+      .toMatchObject({ refreshRequired: false, reason: 'NO_CHANGE', detectedPatch: '7.42', publishedPatch: '7.41' });
   });
 
-  it('refreshes when the patch and complete weekly window both change', () => {
-    expect(decideDataRefresh({
-      publishedMeta,
-      detectedPatch: '7.42',
-      currentWindow: newWindow,
-    })).toMatchObject({ refreshRequired: true, windowChanged: true, reason: 'NEW_COMPLETE_WEEK' });
+  it('replaces the legacy 4-complete-weeks format on the first run', () => {
+    expect(decideDataRefresh({ publishedMeta: legacyMeta, detectedPatch: '7.41', now: SAME_DAY }))
+      .toMatchObject({ refreshRequired: true, windowChanged: true, reason: 'WINDOW_FORMAT_CHANGED' });
   });
 
-  it('refreshes on an explicit force regardless of the unchanged window', () => {
-    expect(decideDataRefresh({
-      publishedMeta,
-      detectedPatch: '7.41',
-      currentWindow: sameWindow,
-      force: true,
-    })).toMatchObject({ refreshRequired: true, windowChanged: false, reason: 'FORCE' });
+  it('refreshes on an explicit force even on the same day', () => {
+    expect(decideDataRefresh({ publishedMeta, detectedPatch: '7.41', now: SAME_DAY, force: true }))
+      .toMatchObject({ refreshRequired: true, windowChanged: false, reason: 'FORCE' });
   });
 
   it('fails closed for invalid detected patches and malformed published metadata', () => {
+    expect(() => decideDataRefresh({ publishedMeta, detectedPatch: '', now: SAME_DAY }))
+      .toThrow(/detected OpenDota patch is invalid/);
     expect(() => decideDataRefresh({
-      publishedMeta,
-      detectedPatch: '',
-      currentWindow: sameWindow,
-    })).toThrow(/detected OpenDota patch is invalid/);
-    expect(() => decideDataRefresh({
-      publishedMeta: { ...publishedMeta, matchupWindow: { weeklyBuckets: [1] } },
+      publishedMeta: { ...publishedMeta, matchupWindow: { kind: 'rolling-days', days: 30 } },
       detectedPatch: '7.42',
-      currentWindow: sameWindow,
-    })).toThrow(/four consecutive complete STRATZ weekly buckets/);
-    expect(() => decideDataRefresh({
-      publishedMeta,
-      detectedPatch: '7.42',
-      currentWindow: { ...sameWindow, latestCompleteWeek: 2959 },
-    })).toThrow(/current STRATZ window is invalid/);
+      now: SAME_DAY,
+    })).toThrow(/valid STRATZ matchup window/);
+    expect(() => decideDataRefresh({ publishedMeta: { ...publishedMeta, source: 'OpenDota' }, detectedPatch: '7.41', now: SAME_DAY }))
+      .toThrow(/source must be STRATZ/);
   });
 
   it('fails preflight when OpenDota metadata fetch fails and writes no job outputs', async () => {
@@ -119,15 +102,11 @@ describe('decideDataRefresh', () => {
 
   it('writes the required GitHub job outputs for successful preflight', async () => {
     const outputPath = path.join(await tempDir(), 'github-output');
-    const decision = decideDataRefresh({
-      publishedMeta,
-      detectedPatch: '7.42',
-      currentWindow: newWindow,
-    });
+    const decision = decideDataRefresh({ publishedMeta, detectedPatch: '7.42', now: NEXT_DAY });
     await writeGitHubOutputs(outputPath, decision);
     const output = await readFile(outputPath, 'utf8');
     expect(output).toContain('refresh_required=true\n');
-    expect(output).toContain('reason=NEW_COMPLETE_WEEK\n');
+    expect(output).toContain('reason=NEW_DAY\n');
     expect(output).toContain('detected_patch=7.42\n');
     expect(output).toContain('window_changed=true\n');
   });

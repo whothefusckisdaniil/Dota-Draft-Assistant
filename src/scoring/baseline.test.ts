@@ -108,15 +108,34 @@ describe('the committed snapshot', () => {
     expect(weighted / games).toBeLessThan(51);
   });
 
-  it('vs Puck: Tiny is a real counter, Visage is mostly just strong', () => {
-    const id = (name: string) => heroes.find((h) => h.name === name)!.id;
-    const puck = id('Puck');
-    const vs = (name: string) => {
-      const r = raw[String(puck)].find((x) => x.hero_id === id(name))!;
+  it('advantage removes general hero strength: it averages ~0 where raw win rate does not', () => {
+    // Data-independent invariants (the snapshot refreshes daily). Over every
+    // row, the game-weighted mean advantage is ~0 by construction, while the
+    // strongest hero's raw win rate is above 50 against most opponents.
+    let games = 0;
+    let weightedAdv = 0;
+    for (const [enemy, rows] of matchups) {
+      for (const r of rows) {
+        const wr = (100 * (r.games_played - r.wins)) / r.games_played;
+        games += r.games_played;
+        weightedAdv += r.games_played * (wr - expectedWinrate(base, r.hero_id, enemy));
+      }
+    }
+    expect(Math.abs(weightedAdv / games)).toBeLessThan(0.5);
+
+    const strongest = [...base.entries()].sort((a, b) => b[1] - a[1])[0][0];
+    let rawAbove = 0;
+    let advAbove = 0;
+    let n = 0;
+    for (const [enemy, rows] of matchups) {
+      const r = rows.find((x) => x.hero_id === strongest);
+      if (!r) continue;
       const wr = (100 * (r.games_played - r.wins)) / r.games_played;
-      return { wr, adv: wr - expectedWinrate(base, id(name), puck) };
-    };
-    expect(vs('Visage').wr).toBeGreaterThan(vs('Tiny').wr); // raw win rate says Visage
-    expect(vs('Tiny').adv).toBeGreaterThan(vs('Visage').adv + 2); // advantage says Tiny
+      n += 1;
+      if (wr > 50) rawAbove += 1;
+      if (wr - expectedWinrate(base, strongest, enemy) > 0) advAbove += 1;
+    }
+    expect(rawAbove / n).toBeGreaterThan(0.7); // raw WR calls it a "counter" to most heroes
+    expect(advAbove / n).toBeLessThan(rawAbove / n); // the advantage does not
   });
 });

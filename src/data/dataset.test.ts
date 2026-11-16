@@ -14,17 +14,26 @@ describe('generated dataset (public/data)', () => {
     expect(meta.latestPatch).toMatch(/^\d+\.\d+/);
     const ageDays = (Date.now() - new Date(meta.generatedAt).getTime()) / 86_400_000;
     expect(ageDays).toBeGreaterThanOrEqual(0);
-    expect(ageDays).toBeLessThan(30); // CI refreshes weekly; stale = broken pipeline
+    expect(ageDays).toBeLessThan(7); // CI refreshes daily; stale = broken pipeline
 
-    expect(meta.matchupWindow.weeks).toBe(4);
-    expect(meta.matchupWindow.completeWeeksOnly).toBe(true);
-    expect(meta.matchupWindow.weeklyBuckets).toHaveLength(4);
-    for (let i = 1; i < meta.matchupWindow.weeklyBuckets.length; i += 1) {
-      expect(meta.matchupWindow.weeklyBuckets[i]).toBe(meta.matchupWindow.weeklyBuckets[i - 1] + 1);
+    // Only the last 30 days are counted (rolling window, slides every day).
+    const w = meta.matchupWindow as unknown as {
+      kind: string; days: number; windowStartUtc: string; windowEndUtc: string;
+      weeklyBuckets: number[]; bucketWeights: Record<string, number>; currentBucket: number;
+    };
+    expect(w.kind).toBe('rolling-days');
+    expect(w.days).toBe(30);
+    const spanDays = (Date.parse(w.windowEndUtc) - Date.parse(w.windowStartUtc)) / 86_400_000;
+    expect(spanDays).toBeGreaterThanOrEqual(30);
+    expect(spanDays).toBeLessThan(31);
+    expect(w.weeklyBuckets[w.weeklyBuckets.length - 1]).toBe(w.currentBucket);
+    for (let i = 1; i < w.weeklyBuckets.length; i += 1) {
+      expect(w.weeklyBuckets[i]).toBe(w.weeklyBuckets[i - 1] + 1);
     }
-    expect(Date.parse(meta.matchupWindow.windowStartUtc)).toBeLessThan(
-      Date.parse(meta.matchupWindow.windowEndUtcExclusive),
-    );
+    for (const b of w.weeklyBuckets) {
+      expect(w.bucketWeights[b]).toBeGreaterThan(0);
+      expect(w.bucketWeights[b]).toBeLessThanOrEqual(1);
+    }
     expect(meta.population.type).toBe('rank-bracket');
     expect(meta.population.brackets).toEqual([
       'HERALD_GUARDIAN',
