@@ -229,6 +229,14 @@ const en = {
   'drawer.vsEach': 'Against each enemy',
   'drawer.withEach': 'With each teammate',
   'drawer.games': '{n} games',
+  'share.button': 'Share',
+  'share.link': 'Copy link',
+  'share.story': 'Image for stories · 1080×1920',
+  'share.post': 'Image for a post · 1200×630',
+  'share.making': 'Making the image…',
+  'share.saved': 'Image saved',
+  'share.failed': 'Could not make the image',
+  'share.context': '{role} · {rank}',
 } as const;
 
 export type StringKey = keyof typeof en;
@@ -459,6 +467,14 @@ const ru: Record<StringKey, string> = {
   'drawer.vsEach': 'Против каждого врага',
   'drawer.withEach': 'С каждым союзником',
   'drawer.games': '{n} игр',
+  'share.button': 'Поделиться',
+  'share.link': 'Скопировать ссылку',
+  'share.story': 'Картинка для сторис · 1080×1920',
+  'share.post': 'Картинка для поста · 1200×630',
+  'share.making': 'Готовим картинку…',
+  'share.saved': 'Картинка сохранена',
+  'share.failed': 'Не удалось сделать картинку',
+  'share.context': '{role} · {rank}',
 };
 
 export const STRINGS: Record<'en' | 'ru', Record<StringKey, string>> = { en, ru };

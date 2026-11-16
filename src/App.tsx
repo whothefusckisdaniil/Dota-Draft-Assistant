@@ -5,7 +5,9 @@ import { freshnessText, useI18n } from './i18n';
 import type { StringKey } from './i18n/strings';
 import { APP_CONFIG, type PositionFilter } from './config';
 import type { CandidateScore, Hero } from './types';
-import { BanRow, LanguageSwitch, PositionTabs, RankChip, ShareLinkButton, TargetSwitch, TeamSlots, type Target } from './components/Selectors';
+import { BanRow, LanguageSwitch, PositionTabs, RankChip, TargetSwitch, TeamSlots, type Target } from './components/Selectors';
+import { ShareMenu } from './components/ShareMenu';
+import { cardPicks, type CardData } from './share/shareCard';
 import { BanSuggestions } from './components/BanSuggestions';
 import { ResultsGrid, ResultsSkeleton } from './components/ResultsGrid';
 import { HeroDetailsDrawer } from './components/HeroDetailsDrawer';
@@ -87,6 +89,17 @@ export default function App() {
   const resultsKey = [d.enemies.join(), d.allies.join(), d.bans.join(), d.position, d.rank].join('|');
   const name = (id: number) => { const h = d.heroById.get(id); return h ? i18n.heroName(h) : `#${id}`; };
   const showMain = page === 'main' && !(SHOW_PLAYGROUND && view !== 'draft');
+  const rankName = d.rank === 'ALL' || d.rankError ? t('rank.all') : t(`rank.${d.rank}` as StringKey);
+  const roleName = d.position === 'all' ? t('results.perRole') : t(`pos.${d.position}.long` as StringKey);
+
+  /** Data for the share image, read when the user asks for it. */
+  const shareCard = (): CardData => ({
+    enemies: d.enemies.flatMap((id) => { const h = d.heroById.get(id); return h ? [{ hero: h, name: i18n.heroName(h) }] : []; }),
+    picks: cardPicks(d.results, d.position === 'all', (lane) => t(`lane.${lane}` as StringKey), i18n.heroName),
+    context: t('share.context', { role: roleName, rank: rankName }),
+    labels: { enemies: t('draft.title'), counters: t('results.title'), slogan: t('app.slogan'), notAffiliated: t('app.notAffiliated') },
+    site: window.location.host,
+  });
 
   return (
     <div className="min-h-screen bg-bg text-ink">
@@ -217,7 +230,7 @@ export default function App() {
                 </div>
                 {d.taken.size > 0 && (
                   <div className="hidden gap-2 md:flex">
-                    <ShareLinkButton />
+                    <ShareMenu card={shareCard} align="left" />
                     <button type="button" onClick={d.clearAll} className="btn btn-ghost btn-sm">{t('draft.clear')}</button>
                   </div>
                 )}
@@ -260,11 +273,10 @@ export default function App() {
                           : t('results.title')}
                       </h2>
                       <p className="mt-0.5 text-[13px] leading-4 text-muted">
-                        {d.position === 'all' ? t('results.perRole') : t(`pos.${d.position}.long` as StringKey)}
-                        {' · '}{d.rank === 'ALL' || d.rankError ? t('rank.all') : t(`rank.${d.rank}` as StringKey)}
+                        {roleName} · {rankName}
                       </p>
                     </div>
-                    <div className="md:hidden"><ShareLinkButton /></div>
+                    <div className="md:hidden"><ShareMenu card={shareCard} /></div>
                   </div>
 
                   {(d.rankLoading || (d.allies.length > 0 && d.synergyLoading)) && !d.results ? (

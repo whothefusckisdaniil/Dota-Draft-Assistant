@@ -27,6 +27,8 @@ The app recommends heroes only. It does not recommend items, item builds or purc
 - **PWA / offline:** `public/manifest.webmanifest` + `public/sw.js` (registered in production only). Pages and `/data/*.json` are network-first with an offline fallback; hashed assets, portraits, medals and fonts are cache-first. Installable to the home screen; works without a connection once opened. Bump `VERSION` in `sw.js` to drop old caches.
 - **Portraits:** WebP from our own origin (`public/heroes/<key>.webp`, ~8 KB each, 1.1 MB total, explicit `width`/`height`, lazy in the grid). `node scripts/fetch-portraits.mjs` downloads new heroes (needs Playwright; `--force` re-encodes all). A hero without a local file falls back to the Steam CDN image, so a new hero never breaks the page.
 
+- **Share:** the Share menu copies the draft link or makes a draft card image — enemies + top counterpicks, LASTPICK branding, site address — as 1080×1920 (stories / TikTok, content kept out of the top/bottom 250 px) or 1200×630 (post). Drawn on a canvas in the browser (`src/share/shareCard.ts`); phones get the system share sheet with the file, desktops download it.
+
 ## Run
 
 ```bash
