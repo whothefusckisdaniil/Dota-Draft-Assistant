@@ -24,6 +24,9 @@ The app recommends heroes only. It does not recommend items, item builds or purc
 - **Layout:** phones — sticky enemy strip, role tabs, results, the hero search in a bottom bar (thumb zone) opening a bottom-sheet picker that stays open until the list is full or "Done"; tablets (768+) — sticky draft panel + results, analysis in a 420 px side panel; desktop (1280+) — the hero grid is always visible on the left, draft in the middle, results on the right (max 1360 px).
 - **Motion:** 150–220 ms ease-out; the loader is five diamonds lighting up in turn; `prefers-reduced-motion` keeps only opacity fades.
 
+- **PWA / offline:** `public/manifest.webmanifest` + `public/sw.js` (registered in production only). Pages and `/data/*.json` are network-first with an offline fallback; hashed assets, portraits, medals and fonts are cache-first. Installable to the home screen; works without a connection once opened. Bump `VERSION` in `sw.js` to drop old caches.
+- **Portraits:** WebP from our own origin (`public/heroes/<key>.webp`, ~8 KB each, 1.1 MB total, explicit `width`/`height`, lazy in the grid). `node scripts/fetch-portraits.mjs` downloads new heroes (needs Playwright; `--force` re-encodes all). A hero without a local file falls back to the Steam CDN image, so a new hero never breaks the page.
+
 ## Run
 
 ```bash
