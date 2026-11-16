@@ -236,7 +236,6 @@ const en = {
   'share.making': 'Making the image…',
   'share.saved': 'Image saved',
   'share.failed': 'Could not make the image',
-  'share.context': '{role} · {rank}',
 } as const;
 
 export type StringKey = keyof typeof en;
@@ -474,7 +473,6 @@ const ru: Record<StringKey, string> = {
   'share.making': 'Готовим картинку…',
   'share.saved': 'Картинка сохранена',
   'share.failed': 'Не удалось сделать картинку',
-  'share.context': '{role} · {rank}',
 };
 
 export const STRINGS: Record<'en' | 'ru', Record<StringKey, string>> = { en, ru };

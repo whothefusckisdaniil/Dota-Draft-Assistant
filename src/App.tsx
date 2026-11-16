@@ -96,7 +96,7 @@ export default function App() {
   const shareCard = (): CardData => ({
     enemies: d.enemies.flatMap((id) => { const h = d.heroById.get(id); return h ? [{ hero: h, name: i18n.heroName(h) }] : []; }),
     picks: cardPicks(d.results, d.position === 'all', (lane) => t(`lane.${lane}` as StringKey), i18n.heroName),
-    context: t('share.context', { role: roleName, rank: rankName }),
+    context: `${roleName} · ${rankName}`,
     labels: { enemies: t('draft.title'), counters: t('results.title'), slogan: t('app.slogan'), notAffiliated: t('app.notAffiliated') },
     site: window.location.host,
   });
