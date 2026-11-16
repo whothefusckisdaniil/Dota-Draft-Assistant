@@ -76,10 +76,12 @@ The URL updates as you edit the draft (`history.replaceState`, no history spam) 
 - `.github/workflows/update-data.yml` refreshes the dataset **every day** via GitHub Actions (daily `cron` at 03:17 UTC and manual `workflow_dispatch`), validates it, runs `npm test`, typecheck and build, and commits the new 30-day window. If the run fails, the old dataset stays committed.
 - `npm test` covers the app and the production pipeline. The frozen STRATZ research suites (FIX9–FIX17) pin the hashes of the snapshot they were recorded with, so they run separately via `npm run test:research` and are expected to fail once the data has been refreshed.
 - Local manual run: `node scripts/update-data-stratz.mjs` (Node 20+, requires `STRATZ_API_TOKEN`).
+- STRATZ is called over plain HTTPS with `User-Agent: STRATZ_API` and the bearer token (no browser, no Cloudflare workaround); ~21 requests per refresh.
+- **Terms, attribution, monetization risks and what to do if the STRATZ token stops working: [`docs/data-sources.md`](docs/data-sources.md).**
 
 Frontend loads `public/data/*.json` once, scores locally, and shows `Data updated …` freshness from `meta.generatedAt`.
 
-Details and measured impact of the OpenDota → STRATZ switch: [`docs/stratz-migration.md`](docs/stratz-migration.md). The research spike behind it (schema, direction proof, Cloudflare workaround) is in [`docs/stratz-research.md`](docs/stratz-research.md).
+Details and measured impact of the OpenDota → STRATZ switch: [`docs/stratz-migration.md`](docs/stratz-migration.md). The research spike behind it (schema, direction proof, the former Cloudflare workaround — no longer used) is in [`docs/stratz-research.md`](docs/stratz-research.md).
 
 ## How scoring works (MVP model, see `src/scoring/engine.ts` + `src/config.ts`)
 

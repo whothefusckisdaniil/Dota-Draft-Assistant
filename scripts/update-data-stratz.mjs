@@ -44,8 +44,6 @@ const __dirname = path.dirname(__filename);
 const ROOT = path.resolve(__dirname, '..');
 const DATA_DIR = path.resolve(ROOT, 'public', 'data');
 const ENDPOINT = 'https://api.stratz.com/graphql';
-const UA =
-  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36';
 
 const CHUNK_SIZE = 32;
 const WEEKS_COUNT = 4;
@@ -73,85 +71,81 @@ function sanitize(text) {
   return out.replace(/Bearer\s+[A-Za-z0-9._-]{8,}/gi, 'Bearer <redacted>');
 }
 
+/**
+ * STRATZ GraphQL client.
+ *
+ * STRATZ's API sits behind Cloudflare. API clients are expected to identify
+ * themselves with `User-Agent: STRATZ_API` plus their bearer token; such
+ * requests are let through, generic clients get a "Just a moment…" challenge
+ * (verified 2026-11-16: 200 with STRATZ_API, 403 challenge with a generic UA).
+ * Earlier versions drove a headless Chromium with automation detection
+ * disabled to get past that challenge; that is not needed and not done any more.
+ *
+ * The class keeps its init/query/close shape so research scripts and tests that
+ * inject a transport keep working.
+ */
+export const STRATZ_USER_AGENT = 'STRATZ_API';
+const RETRYABLE = new Set([429, 500, 502, 503, 504]);
+
 class StratzTransport {
-  constructor(token) {
+  constructor(token, { fetchImpl = globalThis.fetch, sleep = (ms) => new Promise((r) => setTimeout(r, ms)), maxAttempts = 4 } = {}) {
+    if (!token) throw new Error('STRATZ_API_TOKEN is not set');
     this.token = token;
-    this.browser = null;
-    this.page = null;
+    this.fetchImpl = fetchImpl;
+    this.sleep = sleep;
+    this.maxAttempts = maxAttempts;
   }
 
-  async init() {
-    const { chromium } = await import('playwright');
-    this.browser = await chromium.launch({
-      headless: true,
-      channel: 'chromium',
-      args: ['--disable-blink-features=AutomationControlled'],
-    });
-    const ctx = await this.browser.newContext({ userAgent: UA });
-    this.page = await ctx.newPage();
-  }
-
-  async ensureNavigated() {
-    if (!this.page.url() || this.page.url() === 'about:blank') {
-      await this.page.goto(ENDPOINT, { waitUntil: 'domcontentloaded', timeout: 45000 }).catch(() => {});
-      await this.waitChallenge();
-    }
-  }
-
-  async waitChallenge() {
-    for (let i = 0; i < 60; i += 1) {
-      const title = await this.page.title().catch(() => '');
-      if (!/just a moment/i.test(title)) return true;
-      await this.page.waitForTimeout(2000);
-    }
-    return false;
-  }
+  async init() {}
 
   async query(queryStr, variables) {
-    await this.ensureNavigated();
-    let res = null;
-    for (let attempt = 1; attempt <= 5; attempt += 1) {
-      res = await this.page.evaluate(
-        async ({ endpoint, query, variables, token }) => {
-          const r = await fetch(endpoint, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({ query, variables }),
-          });
-          return { status: r.status, text: await r.text() };
-        },
-        { endpoint: ENDPOINT, query: queryStr, variables, token: this.token },
-      );
+    let lastError = null;
+    for (let attempt = 1; attempt <= this.maxAttempts; attempt += 1) {
+      let res;
+      try {
+        const r = await this.fetchImpl(ENDPOINT, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'User-Agent': STRATZ_USER_AGENT,
+            Authorization: `Bearer ${this.token}`,
+          },
+          body: JSON.stringify({ query: queryStr, variables }),
+        });
+        res = { status: r.status, text: await r.text() };
+      } catch (e) {
+        lastError = new Error(`STRATZ network error: ${sanitize(e.message)}`);
+        if (attempt < this.maxAttempts) await this.sleep(2000 * attempt);
+        continue;
+      }
 
-      const challenged =
-        res.status === 403 && /just a moment|cf-chl|challenge-platform|Attention Required/i.test(res.text);
-      if (!challenged) break;
+      if (res.status === 403 && /just a moment|cf-chl|challenge-platform|Attention Required/i.test(res.text)) {
+        // Not retried: a challenge here means STRATZ changed how API clients are admitted.
+        throw new Error(
+          'STRATZ API request was stopped by Cloudflare even with User-Agent STRATZ_API. ' +
+            'STRATZ may have changed its API access rules — check https://stratz.com/api. ' +
+            'The previous dataset stays published.',
+        );
+      }
+      if (RETRYABLE.has(res.status) && attempt < this.maxAttempts) {
+        lastError = new Error(`HTTP ${res.status}`);
+        await this.sleep((res.status === 429 ? 15000 : 3000) * attempt);
+        continue;
+      }
+      if (res.status === 429) throw new Error(`HTTP 429 rate limited: ${sanitize(res.text.slice(0, 200))}`);
+      if (res.status === 401 || (res.status === 403 && /token/i.test(res.text))) {
+        throw new Error(`STRATZ token rejected (HTTP ${res.status}) — renew it at https://stratz.com/api: ${sanitize(res.text.slice(0, 200))}`);
+      }
+      if (res.status !== 200) throw new Error(`GraphQL HTTP ${res.status}: ${sanitize(res.text.slice(0, 300))}`);
 
-      console.warn(`  [Cloudflare challenge] attempt ${attempt}/5 — re-navigating…`);
-      await this.page.goto(ENDPOINT, { waitUntil: 'domcontentloaded', timeout: 45000 }).catch(() => {});
-      const cleared = await this.waitChallenge();
-      if (!cleared) throw new Error('Cloudflare interstitial did not clear within 60s');
+      const parsed = JSON.parse(res.text);
+      if (parsed.errors) throw new Error(`GraphQL errors: ${sanitize(JSON.stringify(parsed.errors).slice(0, 600))}`);
+      return parsed;
     }
-
-    if (!res) throw new Error('No response from STRATZ GraphQL');
-    if (res.status === 429) throw new Error(`HTTP 429 rate limited: ${sanitize(res.text.slice(0, 200))}`);
-    if (res.status !== 200) throw new Error(`GraphQL HTTP ${res.status}: ${sanitize(res.text.slice(0, 300))}`);
-
-    const parsed = JSON.parse(res.text);
-    if (parsed.errors) throw new Error(`GraphQL errors: ${sanitize(JSON.stringify(parsed.errors).slice(0, 600))}`);
-    return parsed;
+    throw lastError ?? new Error('No response from STRATZ GraphQL');
   }
 
-  async close() {
-    if (this.browser) {
-      await this.browser.close().catch(() => {});
-      this.browser = null;
-      this.page = null;
-    }
-  }
+  async close() {}
 }
 
 export function buildChunkQuery(heroIds, buckets, brackets = BRACKETS) {

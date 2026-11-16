@@ -73,6 +73,7 @@ export default function App() {
             <p className="mt-2">You can pick your rank (Herald–Guardian, Crusader–Archon, Legend–Ancient, Divine–Immortal): counters differ a lot between low and high ranks, so each rank has its own matchup statistics and its own baseline win rates. “All ranks” combines every bracket. Hero roles (which positions a hero is played in) always use all ranks, since a single rank does not have enough games for rarer heroes.</p>
             <p className="mt-2">Counterpicks are ranked by matchup advantage: how much better a hero does against each enemy than both heroes' usual win rates predict. A hero that is simply strong in the current patch is not treated as a counter to everyone.</p>
             <p className="mt-2 text-dim">Recommendations are statistical suggestions, not guarantees of match outcomes.</p>
+            <p className="mt-2 text-dim">Data: <a href="https://stratz.com" target="_blank" rel="noopener" className="underline hover:text-ink">Powered by STRATZ</a> (matchups, positions) and <a href="https://www.opendota.com" target="_blank" rel="noopener" className="underline hover:text-ink">OpenDota</a> (hero metadata, patches). Dota 2 is a registered trademark of Valve Corporation. This site is not affiliated with or endorsed by Valve, STRATZ or OpenDota.</p>
           </section>
         )}
         {page === 'privacy' && (
@@ -191,9 +192,18 @@ export default function App() {
           )
         )}
         <footer className="mt-12 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-5 text-[11px] leading-relaxed text-dim">
+          <p className="order-last w-full text-[10px] text-dim/80">
+            Dota 2 and its hero and rank artwork are trademarks and property of Valve Corporation. Not affiliated with or endorsed by Valve.
+          </p>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
             <span className="font-semibold text-muted">Dota Draft Assistant</span>
-            <span>Matchups: STRATZ, last 30 days of the current patch · Heroes: OpenDota</span>
+            {/* Attribution: STRATZ asks API users to link back; OpenDota is credited too. */}
+            <span>
+              Matchups:{' '}
+              <a href="https://stratz.com" target="_blank" rel="noopener" className="underline decoration-line-2 underline-offset-2 hover:text-ink">Powered by STRATZ</a>
+              , last 30 days of the current patch · Heroes:{' '}
+              <a href="https://www.opendota.com" target="_blank" rel="noopener" className="underline decoration-line-2 underline-offset-2 hover:text-ink">OpenDota</a>
+            </span>
             {d.loadState.kind === 'ready' && d.meta && (
               <>
                 <span aria-hidden="true">·</span>

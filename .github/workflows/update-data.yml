@@ -68,9 +68,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Install Playwright Chromium
-        run: npx playwright install --with-deps chromium chromium-headless-shell
-
       - name: Refresh dataset (OpenDota metadata + STRATZ snapshot)
         env:
           STRATZ_API_TOKEN: ${{ secrets.STRATZ_API_TOKEN }}
