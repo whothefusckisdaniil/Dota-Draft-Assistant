@@ -49,6 +49,22 @@ The frontend loads four static files from `public/data/` (plus the per-rank tabl
 | `meta.json` | Provenance, matchup window, rank brackets, data-quality summary, freshness |
 | `matchups-by-bracket.json` | Optional. Matchup tables per rank bracket (Herald–Guardian, Crusader–Archon, Legend–Ancient, Divine–Immortal) for the rank selector; loaded only when a rank is chosen. Absent in the OpenDota fallback (the selector is then hidden). |
 
+## Shareable links
+
+The draft lives in the URL, so a link can be pasted into Discord / Telegram and opens the same draft:
+
+```
+/?enemy=13,29,8&pos=3&rank=divine
+```
+
+| Param | Meaning |
+|---|---|
+| `enemy` | enemy hero ids (Valve/OpenDota ids), comma-separated, pick order, up to 5 |
+| `pos` | `1`–`5`; absent = all positions |
+| `rank` | `herald` \| `crusader` \| `legend` \| `divine`; absent = all ranks |
+
+The URL updates as you edit the draft (`history.replaceState`, no history spam) and the tab title names the enemies. **Copy link** copies it without tracking tags. Parsing is forgiving: unknown ids, junk and an invalid `pos`/`rank` are dropped instead of breaking the page; a shared rank does not overwrite the viewer's own remembered rank. Code: `src/data/draftUrl.ts`. Link previews use `public/og-image.png` (crawlers do not render SVG or run JS).
+
 ## Data refresh
 
 - `scripts/update-data-stratz.mjs` fetches fresh OpenDota hero metadata, then STRATZ matchup tables and position statistics for the last 30 days (calibrated rank brackets), validates the 13-point matchup data contract and the position layer, and publishes the four files as one atomic directory swap; on any error the previous dataset is kept byte-for-byte.

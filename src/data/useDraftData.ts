@@ -3,6 +3,7 @@ import { APP_CONFIG, type PositionFilter } from '../config';
 import type { CandidateScore, Hero, MatchupRow } from '../types';
 import { loadBracketTables, loadDataset, type BracketTables, type Dataset } from './dataset';
 import { scoreCandidates } from '../scoring/engine';
+import { buildDraftSearch, draftTitle, parseDraftUrl } from './draftUrl';
 
 export type LoadState =
   | { kind: 'loading'; message: string }
@@ -27,12 +28,26 @@ function readStoredRank(): RankFilter {
 /** Production data flow (§23): one static snapshot → local state → local scoring.
  *  Recommendations recompute automatically on every draft change (§9) — no
  *  Calculate button, no network per pick. */
+const BASE_TITLE = 'Dota Draft Assistant — Counter Picks';
+
+/** The draft a shared link opened with (read once, before the first render). */
+function initialUrlState() {
+  try {
+    return parseDraftUrl(window.location.search, APP_CONFIG.ui.maxEnemies);
+  } catch {
+    return parseDraftUrl('', APP_CONFIG.ui.maxEnemies);
+  }
+}
+
 export function useDraftData() {
+  const [urlState] = useState(initialUrlState);
   const [dataset, setDataset] = useState<Dataset | null>(null);
   const [loadState, setLoadState] = useState<LoadState>({ kind: 'loading', message: 'Loading hero data…' });
-  const [enemies, setEnemies] = useState<number[]>([]);
-  const [position, setPosition] = useState<PositionFilter>('all');
-  const [rank, setRankState] = useState<RankFilter>(readStoredRank);
+  // A shared link (`?enemy=…&pos=…&rank=…`) wins over the stored rank preference,
+  // but does not overwrite it: opening a friend's Divine link keeps your own default.
+  const [enemies, setEnemies] = useState<number[]>(urlState.enemies);
+  const [position, setPosition] = useState<PositionFilter>(urlState.position);
+  const [rank, setRankState] = useState<RankFilter>(() => urlState.rank ?? readStoredRank());
   const [bracketTables, setBracketTables] = useState<Map<string, BracketTables> | null>(null);
   const [rankError, setRankError] = useState<string | null>(null);
 
@@ -74,6 +89,8 @@ export function useDraftData() {
     loadDataset()
       .then((ds) => {
         if (!alive) return;
+        // Drop enemy ids from the URL that this snapshot does not know.
+        setEnemies((prev) => prev.filter((id) => ds.heroById.has(id)));
         setDataset(ds);
         setLoadState({ kind: 'ready' });
       })
@@ -86,6 +103,21 @@ export function useDraftData() {
       alive = false;
     };
   }, []);
+
+  // Keep the URL in sync with the draft (replaceState: no history entry per
+  // click). Only after the data has loaded, so unknown ids are already gone.
+  useEffect(() => {
+    if (!dataset) return;
+    try {
+      const search = buildDraftSearch(window.location.search, { enemies, position, rank: activeRank });
+      if (search !== window.location.search) {
+        window.history.replaceState(window.history.state, '', `${window.location.pathname}${search}${window.location.hash}`);
+      }
+      document.title = draftTitle(enemies.map((id) => dataset.heroById.get(id)?.name ?? '').filter(Boolean), BASE_TITLE);
+    } catch {
+      /* a sandboxed frame may forbid history access — sharing just won't update */
+    }
+  }, [dataset, enemies, position, activeRank]);
 
   const heroes = dataset?.heroes ?? [];
   const heroById = dataset?.heroById ?? new Map<number, Hero>();

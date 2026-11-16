@@ -1,7 +1,8 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { Hero } from '../types';
 import { APP_CONFIG, POSITIONS, type PositionFilter } from '../config';
 import { HeroPortrait } from './HeroPortrait';
+import { shareableUrl } from '../data/draftUrl';
 
 /** Empty slot focuses the hero picker (§7): slots are part of the draft flow. */
 function focusSearch() {
@@ -23,7 +24,10 @@ export function EnemySlots({ enemies, heroById, onRemove, onClear }: {
           <span className="text-xs font-semibold tabular-nums text-dim">{enemies.length} / {APP_CONFIG.ui.maxEnemies}</span>
         </div>
         {enemies.length > 0 && (
-          <button type="button" onClick={onClear} className="btn btn-ghost btn-sm">Clear</button>
+          <div className="flex items-center gap-2">
+            <ShareLinkButton />
+            <button type="button" onClick={onClear} className="btn btn-ghost btn-sm">Clear</button>
+          </div>
         )}
       </div>
       <div className="grid grid-cols-3 gap-2.5 sm:grid-cols-5 sm:gap-3">
@@ -57,6 +61,49 @@ export function EnemySlots({ enemies, heroById, onRemove, onClear }: {
         })}
       </div>
     </div>
+  );
+}
+
+/** Copies the current draft link (the URL already encodes enemies, role and
+ *  rank) so it can be pasted into Discord / Telegram. */
+function ShareLinkButton() {
+  const [state, setState] = useState<'idle' | 'copied' | 'failed'>('idle');
+  useEffect(() => {
+    if (state === 'idle') return;
+    const t = window.setTimeout(() => setState('idle'), 2000);
+    return () => window.clearTimeout(t);
+  }, [state]);
+
+  async function copy() {
+    const url = shareableUrl(window.location.href);
+    try {
+      await navigator.clipboard.writeText(url);
+      setState('copied');
+    } catch {
+      // Clipboard API blocked (insecure context, permissions): legacy fallback.
+      const field = document.createElement('textarea');
+      field.value = url;
+      field.setAttribute('readonly', '');
+      field.style.position = 'fixed';
+      field.style.opacity = '0';
+      document.body.appendChild(field);
+      field.select();
+      const ok = document.execCommand('copy');
+      document.body.removeChild(field);
+      setState(ok ? 'copied' : 'failed');
+    }
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={copy}
+      className={`btn btn-ghost btn-sm ${state === 'copied' ? 'text-accent' : ''}`}
+      title="Copy a link to this draft (enemies, role and rank)"
+      aria-live="polite"
+    >
+      {state === 'copied' ? 'Link copied' : state === 'failed' ? 'Copy failed' : 'Copy link'}
+    </button>
   );
 }
 
