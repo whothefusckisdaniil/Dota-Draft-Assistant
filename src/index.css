@@ -159,6 +159,34 @@ body {
     box-shadow: 0 2px 12px rgba(199, 138, 66, 0.35);
   }
 
+  /* rank selector: medal pairs instead of text */
+  .rank-btn {
+    display: flex;
+    align-items: center;
+    padding: 2px 10px;
+    opacity: 0.6;
+    filter: saturate(0.7);
+    transition: opacity 0.15s ease, filter 0.15s ease, background 0.15s ease;
+  }
+  .rank-btn:hover { opacity: 0.95; filter: none; }
+  /* medals stay readable: a soft accent tint + ring instead of the solid fill */
+  .rank-btn.is-active {
+    opacity: 1;
+    filter: none;
+    background: rgba(199, 138, 66, 0.16);
+    box-shadow: inset 0 0 0 1.5px var(--color-accent), 0 2px 12px rgba(199, 138, 66, 0.25);
+  }
+  .rank-medal {
+    width: 40px;
+    height: 40px;
+    flex: none;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
+  }
+  @media (max-width: 480px) {
+    .rank-btn { padding: 2px 6px; }
+    .rank-medal { width: 34px; height: 34px; }
+  }
+
   /* ---- hero search (§8) ---- */
   .field {
     width: 100%;

@@ -89,8 +89,19 @@ export function PositionTabs({ value, onChange }: { value: PositionFilter; onCha
   );
 }
 
+/** Official Dota 2 rank medals (public/ranks/*.png, 80px for 2× screens), two per STRATZ bracket. */
+const RANK_MEDALS: Record<string, [string, string]> = {
+  HERALD_GUARDIAN: ['herald', 'guardian'],
+  CRUSADER_ARCHON: ['crusader', 'archon'],
+  LEGEND_ANCIENT: ['legend', 'ancient'],
+  DIVINE_IMMORTAL: ['divine', 'immortal'],
+};
+const medalSrc = (name: string) => `${import.meta.env.BASE_URL}ranks/${name}.png`;
+const capitalize = (s: string) => s[0].toUpperCase() + s.slice(1);
+
 /** Rank bracket selector (STRATZ brackets). Matchups differ a lot between
- *  Herald and Divine+, so the user can rank counters for their own bracket. */
+ *  Herald and Divine+, so the user can rank counters for their own bracket.
+ *  Brackets are shown as rank medals; the full name is the tooltip/label. */
 export function RankTabs({ value, options, labels, onChange }: {
   value: string;
   options: string[];
@@ -117,19 +128,42 @@ export function RankTabs({ value, options, labels, onChange }: {
         <span className="h-px flex-1 bg-line" />
       </div>
       <div ref={stripRef} className="seg" role="tablist" aria-label="Select rank">
-        {items.map((r) => (
-          <button
-            key={r.id}
-            type="button"
-            role="tab"
-            aria-selected={value === r.id}
-            title={r.id === 'ALL' ? 'All ranks, Herald through Immortal' : `${r.label} matches only`}
-            onClick={() => onChange(r.id)}
-            className={`seg-btn ${value === r.id ? 'is-active' : ''}`}
-          >
-            {r.label}
-          </button>
-        ))}
+        {items.map((r) => {
+          const medals = RANK_MEDALS[r.id];
+          const active = value === r.id;
+          return (
+            <button
+              key={r.id}
+              type="button"
+              role="tab"
+              aria-selected={active}
+              aria-label={r.id === 'ALL' ? 'All ranks' : r.label}
+              title={r.id === 'ALL' ? 'All ranks, Herald through Immortal' : r.label}
+              onClick={() => onChange(r.id)}
+              className={`seg-btn ${medals ? 'rank-btn' : ''} ${active ? 'is-active' : ''}`}
+            >
+              {medals ? (
+                <span className="flex items-center" aria-hidden="true">
+                  {medals.map((m, i) => (
+                    <img
+                      key={m}
+                      src={medalSrc(m)}
+                      alt=""
+                      title={capitalize(m)}
+                      width={40}
+                      height={40}
+                      loading="lazy"
+                      decoding="async"
+                      className={`rank-medal ${i > 0 ? '-ml-2' : ''}`}
+                    />
+                  ))}
+                </span>
+              ) : (
+                r.label
+              )}
+            </button>
+          );
+        })}
       </div>
     </div>
   );
