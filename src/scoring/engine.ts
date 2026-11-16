@@ -3,6 +3,7 @@ import type { AggOptions, CandidateScore, DeltaStats, Hero, MatchupDetail, Match
 import { LANE_AFFINITY } from './positions';
 import { EXTRA_AFFINITY, positionScoreBase, type Lane } from './positionsExtra';
 import { isEligibleAt } from './positionEligibility';
+import { expectedWinrate } from './baseline';
 
 export function positionScore(hero: Hero, pos: Lane): number {
   const a = LANE_AFFINITY[hero.name] ?? {};
@@ -64,10 +65,18 @@ export interface ScoreInput {
   positions: PositionDataset;
   /** Heroes whose matchup table failed to load — no candidate may be scored. */
   failedEnemyIds?: number[];
+  /**
+   * Hero baseline win rates (%) from the FULL snapshot — see
+   * `computeBaseWinrates`. With them, every matchup is scored by its
+   * advantage (win rate vs the enemy minus what both heroes' usual win rates
+   * predict) instead of raw win rate. Production always passes them; without
+   * them (synthetic lab presets) the baseline is the neutral 50%.
+   */
+  baseWinrates?: Map<number, number>;
 }
 
 export function scoreCandidates(input: ScoreInput, pos: Lane, opts: AggOptions = {}): CandidateScore[] {
-  const { heroes, enemyIds, matchupByEnemy, heroById, positions, failedEnemyIds } = input;
+  const { heroes, enemyIds, matchupByEnemy, heroById, positions, failedEnemyIds, baseWinrates } = input;
   const cfg = APP_CONFIG.scoring;
   // Production default is M (median teamScore) — validated against A on the
   // evaluation set in V9/V10 (see liveValidate.ts). A/W stay available in the
@@ -98,9 +107,12 @@ export function scoreCandidates(input: ScoreInput, pos: Lane, opts: AggOptions =
       const games = row.games_played;
       const winsForCandidate = games - row.wins;
       const winrate = (winsForCandidate / games) * 100;
-      const rawDelta = winrate - cfg.neutralWinrate;
+      // Matchup advantage: how much better than the two heroes' usual win
+      // rates predict (neutral 50% baseline when no baselines are supplied).
+      const expected = baseWinrates ? expectedWinrate(baseWinrates, hero.id, enemyId) : cfg.neutralWinrate;
+      const rawDelta = winrate - expected;
       const delta = (rawDelta * games) / (games + cfg.shrinkageK);
-      matchups.push({ enemyId, games, winsForCandidate, winrate, delta, rawDelta, usable: games >= cfg.minMatchesPerPair });
+      matchups.push({ enemyId, games, winsForCandidate, winrate, expectedWinrate: expected, delta, rawDelta, usable: games >= cfg.minMatchesPerPair });
     }
     const usable = matchups.filter((m) => m.usable);
     // Coverage gate. Default (V2, strict): usable data vs EVERY selected enemy.

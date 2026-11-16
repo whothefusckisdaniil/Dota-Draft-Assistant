@@ -28,6 +28,8 @@ export function DraftValidation() {
   const [enemyIds, setEnemyIds] = useState<number[]>([]);
   const [matchups, setMatchups] = useState<Map<number, MatchupRow[]>>(new Map());
   const [positions, setPositions] = useState<PositionDataset>({});
+  // Baselines from the committed snapshot — the same advantage reference production uses.
+  const [baseWinrates, setBaseWinrates] = useState<Map<number, number> | undefined>(undefined);
   const [failed, setFailed] = useState<Set<number>>(new Set());
   const [state, setState] = useState<LoadState>({ kind: 'idle' });
   const [model, setModel] = useState<AggModel>('A');
@@ -58,7 +60,9 @@ export function DraftValidation() {
       // Positions come from the static production snapshot, not from OpenDota:
       // they are the same STRATZ layer the app gates on (ТЗ №9), so the dev
       // lab validates the same eligibility the users get.
-      setPositions((await loadDataset()).positions);
+      const ds = await loadDataset();
+      setPositions(ds.positions);
+      setBaseWinrates(ds.baseWinrates);
       const byId = new Map(merged.map((h) => [h.id, h]));
       setState({ kind: 'loading', message: 'Analyzing matchups…' });
       const res = await getMatchupsMany(draft);
@@ -85,10 +89,10 @@ export function DraftValidation() {
     const failedIds = [...failed].filter((id) => enemyIds.includes(id));
     const out = new Map<Lane, CandidateScore[]>();
     for (const lane of LANES) {
-      out.set(lane, scoreCandidates({ heroes, enemyIds, matchupByEnemy: matchups, heroById, positions, failedEnemyIds: failedIds }, lane, { model }));
+      out.set(lane, scoreCandidates({ heroes, enemyIds, matchupByEnemy: matchups, heroById, positions, baseWinrates, failedEnemyIds: failedIds }, lane, { model }));
     }
     return out;
-  }, [state, enemyIds, heroes, matchups, heroById, positions, failed, model]);
+  }, [state, enemyIds, heroes, matchups, heroById, positions, baseWinrates, failed, model]);
 
   const nameOf = (id: number) => heroById.get(id)?.name ?? `#${id}`;
 

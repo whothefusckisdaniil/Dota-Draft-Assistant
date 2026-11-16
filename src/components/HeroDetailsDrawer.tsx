@@ -53,6 +53,11 @@ export function HeroDetailsDrawer({ candidate: c, enemyIds, heroById, onClose }:
           <h3 className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted">Matchups</h3>
           <span className="h-px flex-1 bg-line" />
         </div>
+        <div className="mb-1.5 flex items-center gap-3 px-3.5 text-[10px] font-semibold uppercase tracking-wide text-dim">
+          <span className="flex-1">Enemy</span>
+          <span className="w-14 text-right" title="Win rate against this enemy minus what both heroes' usual win rates predict">Advantage</span>
+          <span className="w-24 text-right">Win rate</span>
+        </div>
 
         <div className="space-y-2">
           {c.matchups.map((m) => (
@@ -94,6 +99,7 @@ export function HeroDetailsDrawer({ candidate: c, enemyIds, heroById, onClose }:
         </div>
 
         <p className="mt-4 text-[10px] leading-relaxed text-dim">
+          Advantage = win rate against the enemy minus the win rate expected from both heroes' usual win rates (percentage points).
           Statistical suggestions based on STRATZ rank-bracket matchup data — not a guarantee of match outcomes.
         </p>
       </div>

@@ -68,7 +68,11 @@ export interface MatchupDetail {
   games: number;
   winsForCandidate: number;
   winrate: number; // % for candidate vs enemy
-  delta: number; // winrate - 50, shrunk
+  /** Win rate expected from both heroes' baseline win rates (50 without baselines). */
+  expectedWinrate: number;
+  /** Matchup advantage, shrunk toward 0 for small samples: (winrate − expectedWinrate) × games/(games+K). */
+  delta: number;
+  /** Unshrunk advantage: winrate − expectedWinrate. */
   rawDelta: number;
   usable: boolean;
 }

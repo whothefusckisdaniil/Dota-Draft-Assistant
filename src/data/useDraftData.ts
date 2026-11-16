@@ -42,6 +42,7 @@ export function useDraftData() {
   const heroById = dataset?.heroById ?? new Map<number, Hero>();
   const matchups = dataset?.matchups ?? new Map<number, MatchupRow[]>();
   const positions = dataset?.positions ?? {};
+  const baseWinrates = dataset?.baseWinrates;
 
   // Strict coverage holds only when every selected enemy has a matchup table.
   const missingTables = useMemo(
@@ -55,10 +56,10 @@ export function useDraftData() {
     const lanes = position === 'all' ? LANES : [position];
     const out = new Map<Exclude<PositionFilter, 'all'>, CandidateScore[]>();
     for (const lane of lanes) {
-      out.set(lane, scoreCandidates({ heroes, enemyIds: enemies, matchupByEnemy: matchups, heroById, positions }, lane));
+      out.set(lane, scoreCandidates({ heroes, enemyIds: enemies, matchupByEnemy: matchups, heroById, positions, baseWinrates }, lane));
     }
     return out;
-  }, [enemies, position, heroes, matchups, heroById, positions, missingTables.length]);
+  }, [enemies, position, heroes, matchups, heroById, positions, baseWinrates, missingTables.length]);
 
   const addEnemy = useCallback((id: number) => {
     setEnemies((prev) => (prev.includes(id) || prev.length >= APP_CONFIG.ui.maxEnemies ? prev : [...prev, id]));

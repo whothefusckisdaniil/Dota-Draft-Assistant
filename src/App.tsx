@@ -70,6 +70,7 @@ export default function App() {
             <h2 className="mb-3 text-lg font-bold text-ink">About Dota Draft Assistant</h2>
             <p>Dota Draft Assistant analyzes statistical hero matchups to help you evaluate picks against the enemy draft.</p>
             <p className="mt-2">Hero metadata is sourced from OpenDota; matchup statistics are aggregated from STRATZ rank-bracket data over the latest four complete weeks.</p>
+            <p className="mt-2">Counterpicks are ranked by matchup advantage: how much better a hero does against each enemy than both heroes' usual win rates predict. A hero that is simply strong in the current patch is not treated as a counter to everyone.</p>
             <p className="mt-2 text-dim">Recommendations are statistical suggestions, not guarantees of match outcomes.</p>
           </section>
         )}
@@ -143,7 +144,8 @@ export default function App() {
                   summary={d.position === 'all'}
                 />
                 <p className="mt-7 max-w-3xl text-[11px] leading-relaxed text-dim">
-                  Statistically favorable matchup — not a guaranteed win. Scores use the median matchup across the enemy draft,
+                  Statistically favorable matchup — not a guaranteed win. Scores use the median matchup advantage across the enemy draft
+                  (win rate against each enemy compared with both heroes' usual win rates, like Dotabuff's “disadvantage”),
                   sample-size confidence and role fit (role tags + curated lane nudges, not per-position winrates).
                   Matchup statistics aggregated from STRATZ rank-bracket data (calibrated ranks: Herald through Immortal, 4 complete weeks). Hero metadata sourced from OpenDota.
                 </p>

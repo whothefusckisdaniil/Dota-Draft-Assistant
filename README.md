@@ -61,9 +61,10 @@ Details and measured impact of the OpenDota → STRATZ switch: [`docs/stratz-mig
 
 For each candidate vs each selected enemy (1–5):
 
-- `matchups.json` stores **enemy wins** vs candidate → candidate winrate = `1 - wins/games`, delta = `winrate − 50`.
-- **Shrinkage**: `delta × games/(games + 60)` so rare matchups cannot dominate.
-- **Team score**: weighted average of deltas, weight `√games` — stable-against-whole-lineup beats one spiky matchup.
+- `matchups.json` stores **enemy wins** vs candidate → candidate winrate = `1 - wins/games`.
+- **Matchup advantage** (like Dotabuff's “disadvantage”): each hero's baseline win rate is computed over the whole snapshot (`src/scoring/baseline.ts`); the expected win rate of A vs B is `base(A) − (base(B) − 50)` and the delta is `advantage = winrate − expected`. A hero that is simply strong in the patch is therefore not ranked as a counter to everyone. Raw win rate is still shown in the analysis.
+- **Shrinkage**: `advantage × games/(games + 60)` so rare matchups cannot dominate.
+- **Team score**: median advantage across the selected enemies (model M; the `√games`-weighted mean is kept for the dev lab) — stable-against-whole-lineup beats one spiky matchup.
 - **Confidence**: `min(1, √(avgGames/400))`, final score blended toward 0 when data is thin.
 - **Position — hard gate**: a hero is ranked on a lane only where it is actually picked. `positions.json` (STRATZ, same 4-week window and rank brackets as the matchups) must show `share ≥ 8%` and `≥ 500` games. OpenDota `roles` are *not* used for eligibility. See `docs/position-model.md`.
 - **Position — secondary**: heuristic role fit 0–10 (role tags + curated lane nudges, NOT measured per-position winrates) → bonus ±4 pts, weighted `0.8 counter / 0.2 role`. It can nudge the order by at most 0.8 points, but can no longer remove a candidate.

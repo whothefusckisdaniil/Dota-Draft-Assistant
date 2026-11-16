@@ -1,6 +1,7 @@
 import { APP_CONFIG } from '../config';
 import { RU_NAMES } from './ruNames';
 import { searchHeroes as searchHeroesLocal } from './heroes';
+import { computeBaseWinrates } from '../scoring/baseline';
 import type {
   Hero,
   HeroPositionEntry,
@@ -58,6 +59,8 @@ export interface Dataset {
   matchups: Map<number, MatchupRow[]>;
   /** Real pick rates per lane (ТЗ №9) — the hard eligibility gate. */
   positions: PositionDataset;
+  /** Baseline win rate per hero over the whole snapshot — the matchup-advantage reference. */
+  baseWinrates: Map<number, number>;
   meta: DatasetMeta;
 }
 
@@ -119,7 +122,11 @@ export async function loadDataset(): Promise<Dataset> {
       );
     }
 
-    const ds: Dataset = { heroes, heroById, matchups, positions, meta };
+    const baseWinrates = computeBaseWinrates(matchups);
+    for (const h of heroes) {
+      if (!baseWinrates.has(h.id)) throw new Error(`Hero ${h.id} (${h.name}) has no matchup games — cannot compute its baseline win rate.`);
+    }
+    const ds: Dataset = { heroes, heroById, matchups, positions, baseWinrates, meta };
     cache = ds;
     return ds;
   })();

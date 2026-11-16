@@ -143,7 +143,10 @@ export async function runLiveValidation(log: (s: string) => void = console.log):
   const heroById = new Map<number, Hero>(heroes.map((h) => [h.id, h]));
   // Real position data (ТЗ №9). The lab ranks live drafts, so it must gate on
   // the same STRATZ pick rates production uses, not on a synthetic fixture.
-  const positions = (await loadDataset()).positions;
+  const snapshot = await loadDataset();
+  const positions = snapshot.positions;
+  // Advantage baselines from the committed snapshot, as in production.
+  const baseWinrates = snapshot.baseWinrates;
   log(`Loaded ${heroes.length} heroes\n`);
 
   for (const c of LIVE_CASES) {
@@ -172,7 +175,7 @@ export async function runLiveValidation(log: (s: string) => void = console.log):
     for (const lane of LANES) {
       // Rank comparison over the SAME candidate pool: run every model, then
       // build the union so we can see rank changes, not just "n/a".
-      const run = (model: 'A' | 'M' | 'W') => scoreCandidates({ heroes, enemyIds: ids, matchupByEnemy, heroById, positions }, lane, { model });
+      const run = (model: 'A' | 'M' | 'W') => scoreCandidates({ heroes, enemyIds: ids, matchupByEnemy, heroById, positions, baseWinrates }, lane, { model });
       const [topA, topM, topW] = [run('A'), run('M'), run('W')];
       const rankOf = (list: typeof topA, id: number) => {
         const i = list.findIndex((t) => t.hero.id === id);
@@ -243,9 +246,9 @@ export async function runLiveValidation(log: (s: string) => void = console.log):
       continue;
     }
     for (const lane of LANES) {
-      const a = scoreCandidates({ heroes, enemyIds: ids, matchupByEnemy, heroById, positions }, lane);
-      const m = scoreCandidates({ heroes, enemyIds: ids, matchupByEnemy, heroById, positions }, lane, { model: 'M' });
-      const w = scoreCandidates({ heroes, enemyIds: ids, matchupByEnemy, heroById, positions }, lane, { model: 'W' });
+      const a = scoreCandidates({ heroes, enemyIds: ids, matchupByEnemy, heroById, positions, baseWinrates }, lane);
+      const m = scoreCandidates({ heroes, enemyIds: ids, matchupByEnemy, heroById, positions, baseWinrates }, lane, { model: 'M' });
+      const w = scoreCandidates({ heroes, enemyIds: ids, matchupByEnemy, heroById, positions, baseWinrates }, lane, { model: 'W' });
       accumulatePair(statAM, a, m);
       accumulatePair(statAW, a, w);
       // example log for the A/M pair only
