@@ -3,7 +3,8 @@ import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { DATASET_FILES } from './dataset-publish.mjs';
+import { existsSync } from 'node:fs';
+import { DATASET_FILES, OPTIONAL_DATASET_FILES } from './dataset-publish.mjs';
 
 function canonicalize(value) {
   if (Array.isArray(value)) return value.map((entry) => canonicalize(entry));
@@ -18,7 +19,8 @@ function canonicalize(value) {
 
 export async function datasetFingerprint(dataDir) {
   const hash = createHash('sha256');
-  for (const filename of DATASET_FILES) {
+  const optional = OPTIONAL_DATASET_FILES.filter((f) => existsSync(path.join(dataDir, f)));
+  for (const filename of [...DATASET_FILES, ...optional]) {
     let parsed;
     try {
       parsed = JSON.parse(await readFile(path.join(dataDir, filename), 'utf8'));

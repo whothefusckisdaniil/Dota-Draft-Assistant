@@ -51,6 +51,12 @@ export interface DatasetMeta {
     brackets: string[];
   };
   matchupPatchFilter?: boolean;
+  /** Per-rank matchup tables (STRATZ only; absent in the OpenDota fallback). */
+  brackets?: {
+    file: string;
+    ids: string[];
+    labels: Record<string, string>;
+  };
   positionData?: {
     source: string;
     days: number;
@@ -70,6 +76,47 @@ export interface Dataset {
   /** Baseline win rate per hero over the whole snapshot — the matchup-advantage reference. */
   baseWinrates: Map<number, number>;
   meta: DatasetMeta;
+}
+
+/** One rank bracket's matchup tables and its own baselines (advantage reference). */
+export interface BracketTables {
+  matchups: Map<number, MatchupRow[]>;
+  baseWinrates: Map<number, number>;
+}
+
+let bracketCache: Map<string, BracketTables> | null = null;
+let bracketInflight: Promise<Map<string, BracketTables> | null> | null = null;
+
+/**
+ * Lazily load the per-rank tables (only when a rank is chosen). Returns null
+ * when the dataset has none (OpenDota fallback) — the UI then hides the rank
+ * selector. Baselines are per rank: a hero's usual win rate differs by rank.
+ */
+export async function loadBracketTables(heroIds: Set<number>): Promise<Map<string, BracketTables> | null> {
+  if (bracketCache) return bracketCache;
+  if (bracketInflight) return bracketInflight;
+  bracketInflight = (async () => {
+    const res = await fetch(`${import.meta.env.BASE_URL}data/matchups-by-bracket.json`);
+    if (res.status === 404) return null;
+    if (!res.ok) throw new Error(`Failed to load rank data (${res.status}).`);
+    const raw = (await res.json()) as Record<string, Record<string, MatchupRow[]>>;
+    const out = new Map<string, BracketTables>();
+    for (const [bracket, tables] of Object.entries(raw)) {
+      const matchups = new Map<number, MatchupRow[]>();
+      for (const [id, rows] of Object.entries(tables)) {
+        const numId = Number(id);
+        if (heroIds.has(numId) && Array.isArray(rows)) matchups.set(numId, rows);
+      }
+      out.set(bracket, { matchups, baseWinrates: computeBaseWinrates(matchups) });
+    }
+    bracketCache = out;
+    return out;
+  })();
+  try {
+    return await bracketInflight;
+  } finally {
+    bracketInflight = null;
+  }
 }
 
 let cache: Dataset | null = null;

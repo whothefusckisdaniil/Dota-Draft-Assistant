@@ -40,6 +40,14 @@ export const DATASET_FILES = [
 ];
 
 /**
+ * Layers a dataset MAY contain. Per-rank matchup tables come from STRATZ only;
+ * the OpenDota fallback has no rank split and publishes without them (the UI
+ * then hides the rank selector).
+ */
+export const OPTIONAL_DATASET_FILES = ['matchups-by-bracket.json'];
+const ALLOWED_FILES = [...DATASET_FILES, ...OPTIONAL_DATASET_FILES];
+
+/**
  * Re-read the staged files and prove they are complete, parseable and
  * cross-consistent. Writing without this step would mean trusting that the
  * in-memory objects match what actually landed on disk.
@@ -48,7 +56,7 @@ export async function verifyStagedDataset(stagedDir, { heroCount, requireComplet
   const present = new Set(await readdir(stagedDir));
   const missing = DATASET_FILES.filter((f) => !present.has(f));
   if (missing.length > 0) throw new Error(`staged dataset missing files: ${missing.join(', ')}`);
-  const unexpected = [...present].filter((f) => !DATASET_FILES.includes(f)).sort();
+  const unexpected = [...present].filter((f) => !ALLOWED_FILES.includes(f)).sort();
   if (unexpected.length > 0) throw new Error(`staged dataset contains unexpected files: ${unexpected.join(', ')}`);
 
   // Read by NAME, not by position in DATASET_FILES. The positional form broke
@@ -124,6 +132,31 @@ export async function verifyStagedDataset(stagedDir, { heroCount, requireComplet
   for (const id of positionIds) {
     if (!ids.has(id)) throw new Error(`staged positions.json has an entry for unknown hero ${id}`);
   }
+  // Per-rank tables: same roster, one table per hero in every bracket.
+  if (present.has('matchups-by-bracket.json')) {
+    let byBracket;
+    try {
+      byBracket = JSON.parse(await readFile(path.join(stagedDir, 'matchups-by-bracket.json'), 'utf8'));
+    } catch (e) {
+      throw new Error(`staged matchups-by-bracket.json is invalid JSON: ${e.message}`);
+    }
+    if (!byBracket || typeof byBracket !== 'object' || Array.isArray(byBracket) || Object.keys(byBracket).length === 0) {
+      throw new Error('staged matchups-by-bracket.json is not a non-empty object');
+    }
+    for (const [bracket, tables] of Object.entries(byBracket)) {
+      const bracketIds = Object.keys(tables ?? {}).map(Number);
+      if (bracketIds.length !== heroes.length || bracketIds.some((id) => !ids.has(id))) {
+        throw new Error(`staged bracket ${bracket} does not cover exactly the ${heroes.length} heroes`);
+      }
+      for (const id of bracketIds) {
+        const rows = tables[String(id)];
+        if (!Array.isArray(rows)) throw new Error(`staged bracket ${bracket} table ${id} is not an array`);
+        if (requireCompleteTables && rows.length !== heroes.length - 1) {
+          throw new Error(`staged bracket ${bracket} table ${id} has ${rows.length} rows, expected ${heroes.length - 1}`);
+        }
+      }
+    }
+  }
   // Optional external expectation (the caller's in-memory count), when given.
   if (heroCount !== undefined && meta.heroCount !== heroCount) {
     throw new Error(`staged meta.heroCount=${meta.heroCount} does not match the expected ${heroCount}`);
@@ -151,7 +184,7 @@ export async function publishDatasetAtomically(dataDir, files, { requireComplete
   }
   // Only the Counterpick dataset files may be published — a stray layer (e.g. a
   // retired item file) is a caller bug, not something to ship.
-  const extra = Object.keys(files).filter((name) => !DATASET_FILES.includes(name)).sort();
+  const extra = Object.keys(files).filter((name) => !ALLOWED_FILES.includes(name)).sort();
   if (extra.length > 0) throw new Error(`publishDatasetAtomically: unexpected payload ${extra.join(', ')}`);
 
   // Start from a clean slate. `data.__next` is only ever a half-written staging

@@ -16,11 +16,13 @@ import path from 'node:path';
 import {
   PUBLISHED_FILES,
   aggregateStratzMatchupChunks,
+  buildChunkQuery,
   buildDataset,
+  symmetrizeBracketTable,
   buildPublishPayload,
   validateProductionContract,
 } from './update-data-stratz.mjs';
-import { DATASET_FILES } from './dataset-publish.mjs';
+import { DATASET_FILES, OPTIONAL_DATASET_FILES } from './dataset-publish.mjs';
 import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { publishDatasetAtomically } from './dataset-publish.mjs';
@@ -861,6 +863,85 @@ describe('buildDataset — one consistent snapshot (ТЗ §8E)', () => {
 // layers, exactly four published files.
 // ---------------------------------------------------------------------------
 
+describe('validateProductionContract — zero-game rows', () => {
+  it('rejects them by default but accepts them for per-rank tables', () => {
+    const ds = baseline();
+    row(ds, 1, 2).games_played = 0; row(ds, 1, 2).wins = 0;
+    row(ds, 2, 1).games_played = 0; row(ds, 2, 1).wins = 0;
+    expect(() => validateProductionContract(HEROES, ds)).toThrow(/games_played <= 0/);
+    expect(() => validateProductionContract(HEROES, ds, { allowZeroGames: true })).not.toThrow();
+  });
+});
+
+describe('symmetrizeBracketTable', () => {
+  it('averages both directions and keeps the enemy-perspective wins convention', () => {
+    // 1→2: 100 games, hero 1 wins 40; 2→1: 140 games, hero 2 wins 84 (hero 1 wins 56)
+    const t = symmetrizeBracketTable({
+      1: [{ hero_id: 2, games_played: 100, wins: 40 }],
+      2: [{ hero_id: 1, games_played: 140, wins: 84 }],
+    });
+    expect(t['1']).toEqual([{ hero_id: 2, games_played: 120, wins: 48 }]); // (40 + 56) / 2
+    expect(t['2']).toEqual([{ hero_id: 1, games_played: 120, wins: 72 }]); // (84 + 60) / 2
+    expect(t['1'][0].wins + t['2'][0].wins).toBe(120);
+  });
+
+  it('fails on a missing reverse row', () => {
+    expect(() => symmetrizeBracketTable({ 1: [{ hero_id: 2, games_played: 10, wins: 5 }] })).toThrow(/missing reverse row/);
+  });
+});
+
+describe('buildDataset — rank brackets', () => {
+  it('fetches one table per bracket and publishes "All ranks" as their sum', async () => {
+    const asked: string[][] = [];
+    const share: Record<string, number> = { HERALD_GUARDIAN: 100, CRUSADER_ARCHON: 400, LEGEND_ANCIENT: 300, DIVINE_IMMORTAL: 200 };
+    const result = await buildDataset({
+      fetchMetadata: metaFor(),
+      fetchMatchups: async (ids: number[], _w: unknown, opts: { brackets: string[] }) => {
+        asked.push(opts.brackets);
+        const g = share[opts.brackets[0]];
+        const ds: Record<string, { hero_id: number; games_played: number; wins: number }[]> = {};
+        for (const i of ids) ds[String(i)] = ids.filter((j) => j !== i).map((j) => ({ hero_id: j, games_played: g, wins: g / 2 }));
+        return ds;
+      },
+      fetchPositions: async (ids: number[]) => positionFixture(ids),
+      now: NOW,
+      log: silent,
+    } as never);
+    expect(asked).toEqual([['HERALD_GUARDIAN'], ['CRUSADER_ARCHON'], ['LEGEND_ANCIENT'], ['DIVINE_IMMORTAL']]);
+    expect(Object.keys(result.matchupsByBracket)).toEqual(['HERALD_GUARDIAN', 'CRUSADER_ARCHON', 'LEGEND_ANCIENT', 'DIVINE_IMMORTAL']);
+    expect(result.matchupsByBracket.DIVINE_IMMORTAL['1'][0].games_played).toBe(200);
+    expect(result.matchupsByBracket.HERALD_GUARDIAN['1'][0]).toMatchObject({ games_played: 100, wins: 50 });
+    expect(result.matchups['1'][0]).toMatchObject({ games_played: 1000, wins: 500 });
+    expect(result.meta.brackets.ids).toEqual(['HERALD_GUARDIAN', 'CRUSADER_ARCHON', 'LEGEND_ANCIENT', 'DIVINE_IMMORTAL']);
+    expect(result.meta.brackets.labels.DIVINE_IMMORTAL).toBe('Divine–Immortal');
+  });
+
+  it('a broken bracket table blocks the whole refresh and names the bracket', async () => {
+    await expect(buildDataset({
+      fetchMetadata: metaFor(),
+      fetchMatchups: async (ids: number[], _w: unknown, opts: { brackets: string[] }) => {
+        const ds = matchupFixture(ids);
+        if (opts.brackets[0] === 'LEGEND_ANCIENT') {
+          // hero 1 wins 80% of everything in this bracket only: the all-ranks sum
+          // stays inside the 40–60% band (57.5%), the bracket table does not
+          for (const row of ds['1']) row.wins = 800;
+          for (const j of ids.filter((x) => x !== 1)) ds[String(j)].find((r) => r.hero_id === 1)!.wins = 200;
+        }
+        return ds;
+      },
+      fetchPositions: async (ids: number[]) => positionFixture(ids),
+      now: NOW,
+      log: silent,
+    } as never)).rejects.toThrow(/Bracket LEGEND_ANCIENT/);
+  });
+
+  it('builds the per-bracket GraphQL query for exactly the requested bracket', () => {
+    const q = buildChunkQuery([1, 2], [2960], ['DIVINE_IMMORTAL']);
+    expect(q).toContain('bracketBasicIds: [DIVINE_IMMORTAL]');
+    expect(buildChunkQuery([1, 2], [2960])).toContain('bracketBasicIds: [HERALD_GUARDIAN, CRUSADER_ARCHON, LEGEND_ANCIENT, DIVINE_IMMORTAL]');
+  });
+});
+
 describe('buildDataset — no item data (ТЗ №77)', () => {
   const run = async (extra: Record<string, unknown> = {}) => {
     const calls: string[] = [];
@@ -882,12 +963,13 @@ describe('buildDataset — no item data (ТЗ №77)', () => {
     const { calls } = await run({ fetchItems, fetchItemsStats });
     expect(fetchItems).not.toHaveBeenCalled();
     expect(fetchItemsStats).not.toHaveBeenCalled();
-    expect(calls).toEqual(['metadata', 'matchups', 'positions']);
+    // one matchup request set per rank bracket, then positions
+    expect(calls).toEqual(['metadata', 'matchups', 'matchups', 'matchups', 'matchups', 'positions']);
   });
 
   it('returns no item layers and no meta.itemData', async () => {
     const { result } = await run();
-    expect(Object.keys(result).sort()).toEqual(['heroes', 'matchups', 'meta', 'positionInfo', 'positions', 'validationResult']);
+    expect(Object.keys(result).sort()).toEqual(['heroes', 'matchups', 'matchupsByBracket', 'meta', 'positionInfo', 'positions', 'validationResult']);
     expect(result.meta).not.toHaveProperty('itemData');
     expect(JSON.stringify(result.meta)).not.toMatch(/item/i);
   });
@@ -906,11 +988,11 @@ describe('buildDataset — no item data (ТЗ №77)', () => {
     })).rejects.toThrow();
   });
 
-  it('publishes exactly heroes, matchups, positions and meta', async () => {
+  it('publishes exactly heroes, matchups, positions, meta and the per-rank tables', async () => {
     const { result } = await run();
-    expect([...PUBLISHED_FILES]).toEqual(['heroes.json', 'matchups.json', 'positions.json', 'meta.json']);
+    expect([...PUBLISHED_FILES]).toEqual(['heroes.json', 'matchups.json', 'positions.json', 'meta.json', 'matchups-by-bracket.json']);
     expect(Object.keys(buildPublishPayload(result))).toEqual([...PUBLISHED_FILES]);
-    expect([...DATASET_FILES].sort()).toEqual([...PUBLISHED_FILES].sort());
+    expect([...DATASET_FILES, ...OPTIONAL_DATASET_FILES].sort()).toEqual([...PUBLISHED_FILES].sort());
     expect(() => buildPublishPayload({ ...result, positions: undefined } as never)).toThrow(/positions\.json/);
   });
 

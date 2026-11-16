@@ -3,6 +3,8 @@ import matchupsRaw from '../../public/data/matchups.json';
 import heroesRaw from '../../public/data/heroes.json';
 import positionsRaw from '../../public/data/positions.json';
 import meta from '../../public/data/meta.json';
+import bracketsRaw from '../../public/data/matchups-by-bracket.json';
+import { computeBaseWinrates } from './baseline';
 import type { Hero, MatchupRow, PositionDataset } from '../types';
 import { scoreCandidates } from './engine';
 import type { Lane } from './positionsExtra';
@@ -67,6 +69,44 @@ describe('STRATZ production snapshot feeds the real scoring engine', () => {
         }
       }
       expect(ranked[0].finalScore).toBeGreaterThanOrEqual(ranked[ranked.length - 1].finalScore);
+    }
+  });
+});
+
+describe('per-rank tables (rank selector)', () => {
+  const brackets = bracketsRaw as unknown as Record<string, Record<string, MatchupRow[]>>;
+  const ids = (meta as unknown as { brackets: { ids: string[] } }).brackets.ids;
+
+  it('meta lists the four STRATZ brackets and the file has exactly those', () => {
+    expect(ids).toEqual(['HERALD_GUARDIAN', 'CRUSADER_ARCHON', 'LEGEND_ANCIENT', 'DIVINE_IMMORTAL']);
+    expect(Object.keys(brackets)).toEqual(ids);
+  });
+
+  it('every rank covers every hero vs all 126 opponents, symmetric by construction', () => {
+    for (const b of ids) {
+      for (const h of heroes) {
+        const rows = brackets[b][String(h.id)];
+        expect(rows?.length, `${b} ${h.name}`).toBe(heroes.length - 1);
+      }
+      const [a, c] = [heroes[0].id, heroes[1].id];
+      const ab = brackets[b][String(a)].find((r) => r.hero_id === c)!;
+      const ba = brackets[b][String(c)].find((r) => r.hero_id === a)!;
+      expect(ab.games_played).toBe(ba.games_played);
+      expect(Math.abs(ab.wins + ba.wins - ab.games_played)).toBeLessThanOrEqual(1);
+    }
+  });
+
+  it('each rank scores a draft with its own baselines', () => {
+    const enemyIds = [13, 7, 74];
+    for (const b of ids) {
+      const matchupByEnemy = new Map(enemyIds.map((e) => [e, brackets[b][String(e)]]));
+      const tables = new Map(Object.entries(brackets[b]).map(([k, v]) => [Number(k), v]));
+      const ranked = scoreCandidates({
+        heroes, enemyIds, matchupByEnemy, positions: positionById,
+        heroById: new Map(heroes.map((h) => [h.id, h])), baseWinrates: computeBaseWinrates(tables),
+      }, '2');
+      expect(ranked.length, b).toBeGreaterThan(0);
+      for (const c of ranked) expect(Number.isFinite(c.finalScore), b).toBe(true);
     }
   });
 });

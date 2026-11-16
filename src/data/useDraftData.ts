@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { APP_CONFIG, type PositionFilter } from '../config';
 import type { CandidateScore, Hero, MatchupRow } from '../types';
-import { loadDataset, type Dataset } from './dataset';
+import { loadBracketTables, loadDataset, type BracketTables, type Dataset } from './dataset';
 import { scoreCandidates } from '../scoring/engine';
 
 export type LoadState =
@@ -11,6 +11,19 @@ export type LoadState =
 
 const LANES: Exclude<PositionFilter, 'all'>[] = ['1', '2', '3', '4', '5'];
 
+/** 'ALL' = all ranks combined; otherwise a STRATZ bracket id (e.g. DIVINE_IMMORTAL). */
+export type RankFilter = string;
+export const ALL_RANKS = 'ALL';
+const RANK_STORAGE_KEY = 'dda.rank';
+
+function readStoredRank(): RankFilter {
+  try {
+    return localStorage.getItem(RANK_STORAGE_KEY) ?? ALL_RANKS;
+  } catch {
+    return ALL_RANKS;
+  }
+}
+
 /** Production data flow (§23): one static snapshot → local state → local scoring.
  *  Recommendations recompute automatically on every draft change (§9) — no
  *  Calculate button, no network per pick. */
@@ -19,6 +32,42 @@ export function useDraftData() {
   const [loadState, setLoadState] = useState<LoadState>({ kind: 'loading', message: 'Loading hero data…' });
   const [enemies, setEnemies] = useState<number[]>([]);
   const [position, setPosition] = useState<PositionFilter>('all');
+  const [rank, setRankState] = useState<RankFilter>(readStoredRank);
+  const [bracketTables, setBracketTables] = useState<Map<string, BracketTables> | null>(null);
+  const [rankError, setRankError] = useState<string | null>(null);
+
+  const setRank = useCallback((next: RankFilter) => {
+    setRankState(next);
+    try {
+      localStorage.setItem(RANK_STORAGE_KEY, next);
+    } catch {
+      /* storage unavailable — the choice just isn't remembered */
+    }
+  }, []);
+
+  // Ranks offered by this snapshot; a stored rank the snapshot lacks falls back to all ranks.
+  const rankOptions = dataset?.meta.brackets?.ids ?? [];
+  const activeRank = rank !== ALL_RANKS && rankOptions.includes(rank) ? rank : ALL_RANKS;
+
+  useEffect(() => {
+    if (!dataset || activeRank === ALL_RANKS || bracketTables) return;
+    let alive = true;
+    setRankError(null);
+    loadBracketTables(new Set(dataset.heroes.map((h) => h.id)))
+      .then((tables) => {
+        if (!alive) return;
+        if (tables) setBracketTables(tables);
+        else setRankError('Rank data is not available right now — showing all ranks.');
+      })
+      .catch((e) => {
+        if (!alive) return;
+        console.error(e);
+        setRankError('Could not load rank data — showing all ranks.');
+      });
+    return () => {
+      alive = false;
+    };
+  }, [dataset, activeRank, bracketTables]);
 
   useEffect(() => {
     let alive = true;
@@ -40,26 +89,33 @@ export function useDraftData() {
 
   const heroes = dataset?.heroes ?? [];
   const heroById = dataset?.heroById ?? new Map<number, Hero>();
-  const matchups = dataset?.matchups ?? new Map<number, MatchupRow[]>();
   const positions = dataset?.positions ?? {};
-  const baseWinrates = dataset?.baseWinrates;
+  // Selected rank: its own tables and baselines. While they load (or if they
+  // failed) the all-ranks data is NOT silently shown under a rank label.
+  const rankTables = activeRank === ALL_RANKS ? null : bracketTables?.get(activeRank) ?? null;
+  const rankLoading = activeRank !== ALL_RANKS && !rankTables && !rankError;
+  const useAllRanks = activeRank === ALL_RANKS || (!rankTables && !!rankError);
+  const matchups = useAllRanks
+    ? dataset?.matchups ?? new Map<number, MatchupRow[]>()
+    : rankTables?.matchups ?? new Map<number, MatchupRow[]>();
+  const baseWinrates = useAllRanks ? dataset?.baseWinrates : rankTables?.baseWinrates;
 
   // Strict coverage holds only when every selected enemy has a matchup table.
   const missingTables = useMemo(
-    () => enemies.filter((id) => !matchups.has(id)),
-    [enemies, matchups],
+    () => (rankLoading ? [] : enemies.filter((id) => !matchups.has(id))),
+    [enemies, matchups, rankLoading],
   );
 
   // Auto-recompute (§9): local scoring is fast, no request gate needed.
   const results = useMemo(() => {
-    if (enemies.length === 0 || missingTables.length > 0) return null;
+    if (enemies.length === 0 || missingTables.length > 0 || rankLoading) return null;
     const lanes = position === 'all' ? LANES : [position];
     const out = new Map<Exclude<PositionFilter, 'all'>, CandidateScore[]>();
     for (const lane of lanes) {
       out.set(lane, scoreCandidates({ heroes, enemyIds: enemies, matchupByEnemy: matchups, heroById, positions, baseWinrates }, lane));
     }
     return out;
-  }, [enemies, position, heroes, matchups, heroById, positions, baseWinrates, missingTables.length]);
+  }, [enemies, position, heroes, matchups, heroById, positions, baseWinrates, missingTables.length, rankLoading]);
 
   const addEnemy = useCallback((id: number) => {
     setEnemies((prev) => (prev.includes(id) || prev.length >= APP_CONFIG.ui.maxEnemies ? prev : [...prev, id]));
@@ -79,6 +135,13 @@ export function useDraftData() {
     enemies,
     position,
     setPosition,
+    /** Rank selector: ids offered by the snapshot (empty → hide the selector). */
+    rankOptions,
+    rankLabels: dataset?.meta.brackets?.labels ?? {},
+    rank: activeRank,
+    setRank,
+    rankLoading,
+    rankError,
     addEnemy,
     removeEnemy,
     clearEnemies,

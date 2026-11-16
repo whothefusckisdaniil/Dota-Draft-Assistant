@@ -1,6 +1,6 @@
 # Dota Counterpick Assistant
 
-A counterpick tool for Dota 2: pick the enemy heroes and get the heroes that statistically perform best against that draft. Matchup statistics are aggregated from STRATZ rank-bracket data (calibrated ranks: Herald through Immortal); hero metadata comes from OpenDota.
+A counterpick tool for Dota 2: pick the enemy heroes and get the heroes that statistically perform best against that draft. Matchup statistics are aggregated from STRATZ rank-bracket data (calibrated ranks: Herald through Immortal), and you can pick your rank bracket — counters differ a lot between Herald and Divine+; hero metadata comes from OpenDota.
 
 **Only the last 30 days of the current patch are counted.** The statistics window slides every day: each daily refresh drops the oldest day and adds the newest one. Matches from before the latest patch are cut off, so two metas are never mixed after a balance patch (during the first 7 days of a new patch the window is the last 7 days, with pre-patch days at a quarter weight). Deploys to Vercel as a static Vite app.
 
@@ -39,7 +39,7 @@ npm test         # vitest: scoring engine, dataset and pipeline tests
 
 ## Dataset
 
-The frontend loads exactly four static files from `public/data/` — no runtime API calls:
+The frontend loads four static files from `public/data/` (plus the per-rank tables on demand) — no runtime API calls:
 
 | File | Content |
 |---|---|
@@ -47,10 +47,12 @@ The frontend loads exactly four static files from `public/data/` — no runtime 
 | `matchups.json` | STRATZ hero-vs-hero games and wins over the last 30 days |
 | `positions.json` | STRATZ per-position pick share and games — the hard position eligibility gate |
 | `meta.json` | Provenance, matchup window, rank brackets, data-quality summary, freshness |
+| `matchups-by-bracket.json` | Optional. Matchup tables per rank bracket (Herald–Guardian, Crusader–Archon, Legend–Ancient, Divine–Immortal) for the rank selector; loaded only when a rank is chosen. Absent in the OpenDota fallback (the selector is then hidden). |
 
 ## Data refresh
 
 - `scripts/update-data-stratz.mjs` fetches fresh OpenDota hero metadata, then STRATZ matchup tables and position statistics for the last 30 days (calibrated rank brackets), validates the 13-point matchup data contract and the position layer, and publishes the four files as one atomic directory swap; on any error the previous dataset is kept byte-for-byte.
+- **Rank brackets**: matchups are fetched once per STRATZ bracket (Herald–Guardian, Crusader–Archon, Legend–Ancient, Divine–Immortal). `matchups.json` ("All ranks") is the sum of the four raw tables, which equals the combined all-bracket query (STRATZ's bracket groups partition it exactly, verified in FIX12). Within a single bracket STRATZ's A→B and B→A rows differ a lot (median 3–6.5%, up to 72% in Herald), i.e. the bracket filter applies to one player of the pair, not to the match; each rank table therefore averages both directions (matches where either hero was played in that bracket). Every rank table passes the same data contract (zero-game pairs are allowed there, e.g. Herald on the first day of a patch). Positions are always all-bracket (the eligibility gate needs ≥ 500 games per lane). In the app each rank uses its own baselines for the advantage.
 - **Patch cut**: the window never starts before the current patch release (`/constants/patch` date from OpenDota). If the patch is younger than 7 days, the window is the last 7 days and the pre-patch part counts at weight 0.25, so the new meta dominates while the sample stays usable. A new patch triggers a refresh the same day. `meta.json → matchupWindow.patch` records the patch, its release time and which rule applied.
 - **Rolling 30-day window** (`getRollingWindow` in `scripts/stratz/buckets.mjs`): STRATZ publishes matchup and position statistics only per weekly bucket (Thursday 00:00 UTC), so the window `[max(today − 30 days, patch release), now)` is built from weeks: the current week is taken as-is (STRATZ fills it live, so it already holds the days elapsed so far), complete weeks inside the window count fully, and the oldest week that is only partly inside is scaled by the share of its 7 days still in the window (it loses 1/7 per day until it drops out). `meta.json → matchupWindow` records the exact dates, buckets and weights.
 - Reverse-pair asymmetry: STRATZ returns slightly different `matchCount` for A→B and B→A (known, reported to STRATZ). Up to 0.1% of rows may exceed 3% / 15 games and are logged as warnings; any row above 10%, or more rows than that, still blocks the refresh.

@@ -4,7 +4,7 @@ import { freshnessLabel } from './data/dataset';
 import { APP_CONFIG, POSITIONS } from './config';
 import type { CandidateScore } from './types';
 import { HeroSearch } from './components/HeroSearch';
-import { EnemySlots, PositionTabs } from './components/Selectors';
+import { EnemySlots, PositionTabs, RankTabs } from './components/Selectors';
 import { ResultsGrid } from './components/ResultsGrid';
 import { HeroDetailsDrawer } from './components/HeroDetailsDrawer';
 import { ScoringPlayground } from './components/ScoringPlayground';
@@ -70,6 +70,7 @@ export default function App() {
             <h2 className="mb-3 text-lg font-bold text-ink">About Dota Draft Assistant</h2>
             <p>Dota Draft Assistant analyzes statistical hero matchups to help you evaluate picks against the enemy draft.</p>
             <p className="mt-2">Hero metadata is sourced from OpenDota; matchup statistics are aggregated from STRATZ rank-bracket data. Only the last 30 days are counted, and the window is updated every day: the oldest day drops out and the newest one is added. Matches from before the latest patch are excluded, so two different metas are never mixed; during the first week of a new patch the last 7 days are used, with pre-patch days counting only a quarter.</p>
+            <p className="mt-2">You can pick your rank (Herald–Guardian, Crusader–Archon, Legend–Ancient, Divine–Immortal): counters differ a lot between low and high ranks, so each rank has its own matchup statistics and its own baseline win rates. “All ranks” combines every bracket. Hero roles (which positions a hero is played in) always use all ranks, since a single rank does not have enough games for rarer heroes.</p>
             <p className="mt-2">Counterpicks are ranked by matchup advantage: how much better a hero does against each enemy than both heroes' usual win rates predict. A hero that is simply strong in the current patch is not treated as a counter to everyone.</p>
             <p className="mt-2 text-dim">Recommendations are statistical suggestions, not guarantees of match outcomes.</p>
           </section>
@@ -112,6 +113,9 @@ export default function App() {
                     <p className="mt-2 text-xs text-dim">Pick 1–{APP_CONFIG.ui.maxEnemies} enemies — recommendations update automatically.</p>
                   </div>
                   <PositionTabs value={d.position} onChange={d.setPosition} />
+                  {d.rankOptions.length > 0 && (
+                    <RankTabs value={d.rank} options={d.rankOptions} labels={d.rankLabels} onChange={d.setRank} />
+                  )}
                 </div>
               </section>
             )}
@@ -119,6 +123,15 @@ export default function App() {
               <div className="panel mt-6 border-accent/40 px-4 py-3.5 text-sm text-accent-2">
                 Not enough matchup data for {d.missingTables.map((id) => d.heroById.get(id)?.name ?? `#${id}`).join(', ')} — recommendations need coverage vs the full draft.
               </div>
+            )}
+            {d.loadState.kind === 'ready' && d.enemies.length > 0 && d.rankLoading && (
+              <div className="panel mt-6 flex items-center gap-3 px-5 py-4 text-sm text-muted">
+                <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-line-2 border-t-accent" aria-hidden="true" />
+                Loading {d.rankLabels[d.rank] ?? 'rank'} data…
+              </div>
+            )}
+            {d.loadState.kind === 'ready' && d.rankError && d.rank !== 'ALL' && (
+              <div className="panel mt-6 border-accent/40 px-4 py-3.5 text-sm text-accent-2">{d.rankError}</div>
             )}
             {/* RESULTSLOT */}
             {d.loadState.kind === 'ready' && d.results && (
@@ -129,6 +142,7 @@ export default function App() {
                     <h2 className="text-[13px] font-extrabold uppercase tracking-[0.2em] text-ink">Recommendations</h2>
                     <span className="text-xs text-muted">
                       · {d.position === 'all' ? 'Best pick per role' : (POSITIONS.find((p) => p.id === d.position)?.label ?? 'All')}
+                      {' · '}{d.rank === 'ALL' || d.rankError ? 'All ranks' : (d.rankLabels[d.rank] ?? d.rank)}
                     </span>
                   </div>
                   <span className="text-[11px] text-dim">
@@ -147,7 +161,7 @@ export default function App() {
                   Statistically favorable matchup — not a guaranteed win. Scores use the median matchup advantage across the enemy draft
                   (win rate against each enemy compared with both heroes' usual win rates, like Dotabuff's “disadvantage”),
                   sample-size confidence and role fit (role tags + curated lane nudges, not per-position winrates).
-                  Only matches from the last 30 days of the current patch are counted: the window slides every day and never reaches back before the latest patch (STRATZ rank-bracket data, Herald through Immortal). Hero metadata sourced from OpenDota.
+                  Only matches from the last 30 days of the current patch are counted: the window slides every day and never reaches back before the latest patch (STRATZ rank-bracket data: your selected rank, or Herald through Immortal for “All ranks”). Hero metadata sourced from OpenDota.
                 </p>
               </div>
             )}

@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import type { Hero } from '../types';
 import { APP_CONFIG, POSITIONS, type PositionFilter } from '../config';
 import { HeroPortrait } from './HeroPortrait';
@@ -81,6 +82,52 @@ export function PositionTabs({ value, onChange }: { value: PositionFilter; onCha
             className={`seg-btn ${value === p.id ? 'is-active' : ''}`}
           >
             {SHORT_LABEL[p.id] ?? p.short}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** Rank bracket selector (STRATZ brackets). Matchups differ a lot between
+ *  Herald and Divine+, so the user can rank counters for their own bracket. */
+export function RankTabs({ value, options, labels, onChange }: {
+  value: string;
+  options: string[];
+  labels: Record<string, string>;
+  onChange: (rank: string) => void;
+}) {
+  const items = [{ id: 'ALL', label: 'All ranks' }, ...options.map((id) => ({ id, label: labels[id] ?? id }))];
+  // On narrow screens the strip scrolls sideways: keep the chosen rank visible
+  // (a remembered "Divine–Immortal" would otherwise sit off-screen).
+  const stripRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const strip = stripRef.current;
+    const active = strip?.querySelector<HTMLElement>('[aria-selected="true"]');
+    if (!strip || !active) return;
+    const left = active.offsetLeft - strip.offsetLeft;
+    if (left < strip.scrollLeft || left + active.offsetWidth > strip.scrollLeft + strip.clientWidth) {
+      strip.scrollLeft = left - (strip.clientWidth - active.offsetWidth) / 2;
+    }
+  }, [value]);
+  return (
+    <div className="min-w-0">
+      <div className="mb-2.5 flex items-center gap-3">
+        <h2 className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted">Rank</h2>
+        <span className="h-px flex-1 bg-line" />
+      </div>
+      <div ref={stripRef} className="seg" role="tablist" aria-label="Select rank">
+        {items.map((r) => (
+          <button
+            key={r.id}
+            type="button"
+            role="tab"
+            aria-selected={value === r.id}
+            title={r.id === 'ALL' ? 'All ranks, Herald through Immortal' : `${r.label} matches only`}
+            onClick={() => onChange(r.id)}
+            className={`seg-btn ${value === r.id ? 'is-active' : ''}`}
+          >
+            {r.label}
           </button>
         ))}
       </div>

@@ -154,11 +154,11 @@ class StratzTransport {
   }
 }
 
-export function buildChunkQuery(heroIds, buckets) {
+export function buildChunkQuery(heroIds, buckets, brackets = BRACKETS) {
   const nodes = buckets
     .map(
       (b) =>
-        `w${b}: matchUp(heroIds: [${heroIds.join(', ')}], week: ${b * BUCKET_SEC}, bracketBasicIds: [${BRACKETS.join(', ')}], take: 200) { heroId vs { heroId1 heroId2 matchCount winCount } }`,
+        `w${b}: matchUp(heroIds: [${heroIds.join(', ')}], week: ${b * BUCKET_SEC}, bracketBasicIds: [${brackets.join(', ')}], take: 200) { heroId vs { heroId1 heroId2 matchCount winCount } }`,
     )
     .join('\n    ');
   return `{ heroStats {\n    ${nodes}\n  } }`;
@@ -204,7 +204,12 @@ export const ASYMMETRY_HARD_REL = 0.1;
 export const ASYMMETRY_MAX_SHARE = 0.001;
 export const ASYMMETRY_MIN_BUDGET = 4;
 
-function validateProductionContract(heroes, dataset) {
+/**
+ * @param {{ allowZeroGames?: boolean }} [options] allowZeroGames: per-rank tables
+ *   may legitimately have a pair nobody played in that bracket (e.g. Herald on
+ *   the first day of a patch); the app treats such a row as "no data".
+ */
+function validateProductionContract(heroes, dataset, { allowZeroGames = false } = {}) {
   const expectedHeroIds = heroes.map((h) => h.id).sort((a, b) => a - b);
   const expectedIds = new Set(expectedHeroIds);
   const presentIds = new Set(Object.keys(dataset).map(Number));
@@ -248,7 +253,7 @@ function validateProductionContract(heroes, dataset) {
       if (r.hero_id === enemyId) selfRows += 1;
       if (seen.has(r.hero_id)) duplicateOpponents += 1;
       seen.add(r.hero_id);
-      if (r.games_played <= 0) gamesNotPositive += 1;
+      if (allowZeroGames ? r.games_played < 0 : r.games_played <= 0) gamesNotPositive += 1;
       if (r.wins < 0 || r.wins > r.games_played) winsOutOfRange += 1;
       if (!expectedIds.has(r.hero_id)) unknownOpponents += 1;
       g += r.games_played;
@@ -258,7 +263,7 @@ function validateProductionContract(heroes, dataset) {
       const rev = dataset[String(r.hero_id)]?.find((x) => x.hero_id === enemyId);
       if (!rev) {
         missingReversePairs += 1;
-      } else {
+      } else if (r.games_played > 0) {
         const dRel = Math.abs(r.games_played - rev.games_played) / r.games_played;
         gamesDiffRel.push(dRel);
         // Small sample pairs (e.g. Chen vs Elder Titan ~150 games) can have ±5 matches diff (~3.3%).
@@ -293,7 +298,7 @@ function validateProductionContract(heroes, dataset) {
   if (wrongOpponentCount.length > 0) throw new Error(`${wrongOpponentCount.length} heroes have != ${expectedHeroIds.length - 1} opponents`);
   if (selfRows > 0) throw new Error(`Found ${selfRows} self-matchup rows`);
   if (duplicateOpponents > 0) throw new Error(`Found ${duplicateOpponents} duplicate opponent entries`);
-  if (gamesNotPositive > 0) throw new Error(`Found ${gamesNotPositive} rows with games_played <= 0`);
+  if (gamesNotPositive > 0) throw new Error(`Found ${gamesNotPositive} rows with games_played ${allowZeroGames ? '< 0' : '<= 0'}`);
   if (winsOutOfRange > 0) throw new Error(`Found ${winsOutOfRange} rows with wins out of [0, games] range`);
   if (unknownOpponents > 0) throw new Error(`Found ${unknownOpponents} unknown opponent IDs`);
   if (missingReversePairs > 0) throw new Error(`Found ${missingReversePairs} missing reverse pairs`);
@@ -453,8 +458,9 @@ export function aggregateStratzMatchupChunks(chunks, windowInfo, validHeroIdsSet
   return matchups;
 }
 
-export async function fetchMatchupsFromStratz(heroIds, windowInfo, { token, log = console.log } = {}) {
-  log(`    Querying STRATZ GraphQL in ${Math.ceil(heroIds.length / CHUNK_SIZE)} chunk requests…`);
+export async function fetchMatchupsFromStratz(heroIds, windowInfo, { token, log = console.log, brackets = BRACKETS } = {}) {
+  if (!brackets.length || brackets.some((b) => !BRACKETS.includes(b))) throw new Error(`Invalid brackets: ${brackets}`);
+  log(`    Querying STRATZ GraphQL in ${Math.ceil(heroIds.length / CHUNK_SIZE)} chunk requests (${brackets.length === BRACKETS.length ? 'all brackets' : brackets.join(', ')})…`);
   const transport = new StratzTransport(token);
   await transport.init();
 
@@ -471,7 +477,7 @@ export async function fetchMatchupsFromStratz(heroIds, windowInfo, { token, log 
   try {
     for (let ci = 0; ci < chunks.length; ci += 1) {
       const chunk = chunks[ci];
-      const q = buildChunkQuery(chunk, windowInfo.buckets);
+      const q = buildChunkQuery(chunk, windowInfo.buckets, brackets);
       const t0 = Date.now();
       const res = await transport.query(q);
       log(`    Chunk ${ci + 1}/${chunks.length} (${chunk.length} heroes) fetched in ${Date.now() - t0}ms`);
@@ -499,7 +505,71 @@ export async function fetchMatchupsFromStratz(heroIds, windowInfo, { token, log 
 }
 
 /** The only files a refresh publishes (ТЗ №77: Counterpick data only). */
-export const PUBLISHED_FILES = Object.freeze(['heroes.json', 'matchups.json', 'positions.json', 'meta.json']);
+export const PUBLISHED_FILES = Object.freeze(['heroes.json', 'matchups.json', 'positions.json', 'meta.json', 'matchups-by-bracket.json']);
+
+/** Rank brackets offered in the UI, each published as its own matchup table. */
+export const BRACKET_LABELS = Object.freeze({
+  HERALD_GUARDIAN: 'Herald–Guardian',
+  CRUSADER_ARCHON: 'Crusader–Archon',
+  LEGEND_ANCIENT: 'Legend–Ancient',
+  DIVINE_IMMORTAL: 'Divine–Immortal',
+});
+
+/**
+ * Per-bracket tables are directional. Within ONE bracket, STRATZ's A→B and B→A
+ * rows differ a lot (median 3–6.5%, Herald up to 72% on the 2026-11-16 window),
+ * i.e. the bracket filter applies to one player of the pair, not to the match;
+ * the directions only (almost) agree once all brackets are summed. Each rank
+ * table is therefore symmetrised: both directions are averaged, so a row
+ * describes matches where either hero's player was in that bracket. Games
+ * stay on the real scale (the mean, not the sum, of the two directions).
+ * Rows keep the enemy-perspective convention: `wins` = wins of the table's key hero.
+ */
+export function symmetrizeBracketTable(table) {
+  const out = {};
+  for (const [enemy, rows] of Object.entries(table)) {
+    out[enemy] = rows.map((r) => {
+      const rev = table[String(r.hero_id)]?.find((x) => x.hero_id === Number(enemy));
+      if (!rev) throw new Error(`symmetrize: missing reverse row ${r.hero_id}->${enemy}`);
+      // wins of `enemy` against r.hero_id, seen from both directions
+      const games = (r.games_played + rev.games_played) / 2;
+      const enemyWins = (r.wins + (rev.games_played - rev.wins)) / 2;
+      const g = Math.round(games);
+      return { hero_id: r.hero_id, games_played: g, wins: Math.min(g, Math.max(0, Math.round(enemyWins))) };
+    }).sort((a, b) => b.games_played - a.games_played);
+  }
+  return out;
+}
+
+/**
+ * The all-ranks table is the sum of the per-bracket tables (raw, directional). STRATZ bracket
+ * groups partition the multi-bracket aggregate exactly (verified in FIX12:
+ * querying each group separately reproduces the combined matchCount/winCount in
+ * 32/32 pair-weeks), so this equals the combined query while guaranteeing the
+ * rank tables and the "All ranks" table describe the same matches.
+ */
+export function sumBracketTables(byBracket) {
+  const totals = new Map();
+  for (const tables of Object.values(byBracket)) {
+    for (const [enemy, rows] of Object.entries(tables)) {
+      if (!totals.has(enemy)) totals.set(enemy, new Map());
+      const m = totals.get(enemy);
+      for (const r of rows) {
+        const cur = m.get(r.hero_id) ?? { games: 0, wins: 0 };
+        cur.games += r.games_played;
+        cur.wins += r.wins;
+        m.set(r.hero_id, cur);
+      }
+    }
+  }
+  const out = {};
+  for (const [enemy, m] of totals) {
+    out[enemy] = [...m.entries()]
+      .map(([hero_id, v]) => ({ hero_id, games_played: v.games, wins: v.wins }))
+      .sort((a, b) => b.games_played - a.games_played);
+  }
+  return out;
+}
 
 /**
  * The whole refresh as a function: OpenDota metadata -> STRATZ matchups ->
@@ -544,7 +614,15 @@ export async function buildDataset({
   // can never describe different weeks (§6). A failure in either aborts the
   // whole run; nothing is published partially.
   log('3/6 Fetching STRATZ matchups...');
-  const matchups = await fetchMatchups(heroIds, windowInfo, { log });
+  // One table per rank bracket (for the rank selector); "All ranks" is their
+  // sum. Positions stay all-bracket: the eligibility gate needs >= 500 games
+  // per lane, which a single bracket does not give for rarer heroes, and a
+  // hero's lanes barely change by rank.
+  const rawByBracket = {};
+  for (const bracket of BRACKETS) {
+    rawByBracket[bracket] = await fetchMatchups(heroIds, windowInfo, { log, brackets: [bracket] });
+  }
+  const matchups = sumBracketTables(rawByBracket);
   log('4/6 Fetching STRATZ positions...');
   const positions = await fetchPositions(heroIds, windowInfo, { log });
 
@@ -557,6 +635,21 @@ export async function buildDataset({
   }
   log(`    Reverse pair asymmetry median: ${validationResult.reversePairAsymmetry.medianPct}% (p99: ${validationResult.reversePairAsymmetry.p99Pct}%, max: ${validationResult.reversePairAsymmetry.maxPct}%)`);
   log(`    Wins sum skew median: ${validationResult.winsSumSkew.medianPct}% (p99: ${validationResult.winsSumSkew.p99Pct}%, max: ${validationResult.winsSumSkew.maxPct}%)`);
+  // Rank tables: symmetrised only after the raw all-ranks table passed the
+  // contract (roster, completeness, ranges), then validated in full.
+  const matchupsByBracket = Object.fromEntries(
+    BRACKETS.map((bracket) => [bracket, symmetrizeBracketTable(rawByBracket[bracket])]),
+  );
+  const bracketQuality = {};
+  for (const bracket of BRACKETS) {
+    try {
+      const v = validateProductionContract(heroes, matchupsByBracket[bracket], { allowZeroGames: true });
+      bracketQuality[bracket] = { reversePairAsymmetry: v.reversePairAsymmetry, winsSumSkew: v.winsSumSkew, asymmetricFaces: v.asymmetricFaces.length };
+      log(`    Bracket ${bracket} passed (${v.asymmetricFaces.length} known-asymmetry faces)`);
+    } catch (e) {
+      throw new Error(`Bracket ${bracket}: ${e.message}`, { cause: e });
+    }
+  }
   const positionInfo = validatePositionData(positions, { heroes, windowInfo });
   log(`    Position data passed! ${positionInfo.heroCount} heroes across buckets [${positionInfo.buckets.join(', ')}]`);
 
@@ -592,6 +685,16 @@ export async function buildDataset({
       brackets: BRACKETS,
     },
     matchupPatchFilter: false,
+    brackets: {
+      file: 'matchups-by-bracket.json',
+      ids: BRACKETS,
+      labels: BRACKET_LABELS,
+      allRanks: 'matchups.json = sum of the raw bracket tables (= the combined all-bracket query)',
+      perBracket:
+        'STRATZ applies the bracket to one player of a pair, so A→B and B→A differ within a bracket; ' +
+        'each bracket table averages both directions (matches where either hero was played in that bracket).',
+      positions: 'all brackets (positions.json)',
+    },
     positionData: {
       source: 'STRATZ',
       days: windowInfo.days,
@@ -621,19 +724,21 @@ export async function buildDataset({
       winsSumSkew: validationResult.winsSumSkew,
       rowColSkew: validationResult.rowColSkew,
       checksPassed: 13,
+      brackets: bracketQuality,
     },
   };
 
-  return { heroes, matchups, positions, meta, validationResult, positionInfo };
+  return { heroes, matchups, matchupsByBracket, positions, meta, validationResult, positionInfo };
 }
 
 /** The atomic publish payload: exactly PUBLISHED_FILES, nothing else. */
-export function buildPublishPayload({ heroes, matchups, positions, meta }) {
+export function buildPublishPayload({ heroes, matchups, positions, meta, matchupsByBracket }) {
   const payload = {
     'heroes.json': heroes,
     'matchups.json': matchups,
     'positions.json': positions,
     'meta.json': meta,
+    'matchups-by-bracket.json': matchupsByBracket,
   };
   for (const [name, value] of Object.entries(payload)) {
     if (value === undefined || value === null) throw new Error(`Refusing to publish: ${name} is missing`);
