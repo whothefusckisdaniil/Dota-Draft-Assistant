@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Hero } from '../types';
 import { searchHeroes } from '../data/heroes';
 import { HeroPortrait } from './HeroPortrait';
+import { useI18n } from '../i18n';
 
 interface Props {
   heroes: Hero[];
@@ -11,6 +12,8 @@ interface Props {
 }
 
 export function HeroSearch({ heroes, excluded, onPick, disabled }: Props) {
+  const i18n = useI18n();
+  const { t } = i18n;
   const [q, setQ] = useState('');
   const [open, setOpen] = useState(false);
   const [hi, setHi] = useState(0);
@@ -54,15 +57,15 @@ export function HeroSearch({ heroes, excluded, onPick, disabled }: Props) {
           else if (e.key === 'Enter' && results.length > 0 && results[hi]) { e.preventDefault(); pick(results[hi]); }
           else if (e.key === 'Escape') setOpen(false);
         }}
-        placeholder="Search hero by name… (jug / пак / anti)"
-        aria-label="Search heroes"
+        placeholder={t('search.placeholder')}
+        aria-label={t('search.label')}
         autoComplete="off"
         className="field"
       />
       {open && q.trim().length > 0 && (
-        <div className="drop nice-scroll" role="listbox" aria-label="Hero search results">
+        <div className="drop nice-scroll" role="listbox" aria-label={t('search.results')}>
           {results.length === 0 && (
-            <div className="px-4 py-3 text-sm text-muted">No heroes found for “{q}”.</div>
+            <div className="px-4 py-3 text-sm text-muted">{t('search.none', { q })}</div>
           )}
           {results.map((h, i) => (
             <button
@@ -78,9 +81,11 @@ export function HeroSearch({ heroes, excluded, onPick, disabled }: Props) {
                 <HeroPortrait hero={h} fill variant="small" />
               </span>
               <span className="min-w-0 flex-1">
-                <span className="block truncate font-semibold text-ink">{h.name}</span>
+                <span className="block truncate font-semibold text-ink">{i18n.heroName(h)}</span>
                 <span className="block truncate text-xs text-muted">
-                  {h.nameRu ? `${h.nameRu} · ` : ''}{h.roles.slice(0, 3).join(' / ')}
+                  {/* the other language's name helps match the in-game (English) name */}
+                  {i18n.lang === 'ru' ? `${h.name} · ` : h.nameRu ? `${h.nameRu} · ` : ''}
+                  {h.roles.slice(0, 3).map(i18n.role).join(' / ')}
                 </span>
               </span>
             </button>

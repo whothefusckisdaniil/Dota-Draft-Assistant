@@ -59,10 +59,18 @@ describe('buildDraftSearch', () => {
   });
 });
 
+describe('lang in the link', () => {
+  it('keeps lang=ru, drops lang for English', () => {
+    expect(buildDraftSearch('?lang=en', { enemies: [1], position: 'all', rank: 'ALL', lang: 'ru' })).toBe('?enemy=1&lang=ru');
+    expect(buildDraftSearch('?lang=ru', { enemies: [1], position: 'all', rank: 'ALL', lang: 'en' })).toBe('?enemy=1');
+  });
+});
+
 describe('draftTitle', () => {
   it('names the enemies', () => {
     expect(draftTitle(['Puck', 'Tidehunter'], 'Dota Draft Assistant — Counter Picks')).toBe('Counters to Puck, Tidehunter — Dota Draft Assistant');
     expect(draftTitle([], 'Dota Draft Assistant — Counter Picks')).toBe('Dota Draft Assistant — Counter Picks');
+    expect(draftTitle(['Пак'], 'base', 'Контрпики против {names} — Dota Draft Assistant')).toBe('Контрпики против Пак — Dota Draft Assistant');
   });
 });
 

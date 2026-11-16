@@ -4,11 +4,12 @@ import type { CandidateScore, Hero, MatchupRow } from '../types';
 import { loadBracketTables, loadDataset, type BracketTables, type Dataset } from './dataset';
 import { scoreCandidates } from '../scoring/engine';
 import { buildDraftSearch, draftTitle, parseDraftUrl } from './draftUrl';
+import { useI18n } from '../i18n';
 
 export type LoadState =
-  | { kind: 'loading'; message: string }
+  | { kind: 'loading' }
   | { kind: 'ready' }
-  | { kind: 'error'; message: string };
+  | { kind: 'error' };
 
 const LANES: Exclude<PositionFilter, 'all'>[] = ['1', '2', '3', '4', '5'];
 
@@ -28,8 +29,6 @@ function readStoredRank(): RankFilter {
 /** Production data flow (§23): one static snapshot → local state → local scoring.
  *  Recommendations recompute automatically on every draft change (§9) — no
  *  Calculate button, no network per pick. */
-const BASE_TITLE = 'Dota Draft Assistant — Counter Picks';
-
 /** The draft a shared link opened with (read once, before the first render). */
 function initialUrlState() {
   try {
@@ -42,14 +41,16 @@ function initialUrlState() {
 export function useDraftData() {
   const [urlState] = useState(initialUrlState);
   const [dataset, setDataset] = useState<Dataset | null>(null);
-  const [loadState, setLoadState] = useState<LoadState>({ kind: 'loading', message: 'Loading hero data…' });
+  const [loadState, setLoadState] = useState<LoadState>({ kind: 'loading' });
+  const i18n = useI18n();
   // A shared link (`?enemy=…&pos=…&rank=…`) wins over the stored rank preference,
   // but does not overwrite it: opening a friend's Divine link keeps your own default.
   const [enemies, setEnemies] = useState<number[]>(urlState.enemies);
   const [position, setPosition] = useState<PositionFilter>(urlState.position);
   const [rank, setRankState] = useState<RankFilter>(() => urlState.rank ?? readStoredRank());
   const [bracketTables, setBracketTables] = useState<Map<string, BracketTables> | null>(null);
-  const [rankError, setRankError] = useState<string | null>(null);
+  /** 'unavailable' (no rank file) | 'failed' (network/parse) — translated in the UI. */
+  const [rankError, setRankError] = useState<'unavailable' | 'failed' | null>(null);
 
   const setRank = useCallback((next: RankFilter) => {
     setRankState(next);
@@ -72,12 +73,12 @@ export function useDraftData() {
       .then((tables) => {
         if (!alive) return;
         if (tables) setBracketTables(tables);
-        else setRankError('Rank data is not available right now — showing all ranks.');
+        else setRankError('unavailable');
       })
       .catch((e) => {
         if (!alive) return;
         console.error(e);
-        setRankError('Could not load rank data — showing all ranks.');
+        setRankError('failed');
       });
     return () => {
       alive = false;
@@ -97,7 +98,7 @@ export function useDraftData() {
       .catch((e) => {
         if (!alive) return;
         console.error(e);
-        setLoadState({ kind: 'error', message: "We're having trouble loading Dota data. Please try again later." });
+        setLoadState({ kind: 'error' });
       });
     return () => {
       alive = false;
@@ -109,15 +110,19 @@ export function useDraftData() {
   useEffect(() => {
     if (!dataset) return;
     try {
-      const search = buildDraftSearch(window.location.search, { enemies, position, rank: activeRank });
+      const search = buildDraftSearch(window.location.search, { enemies, position, rank: activeRank, lang: i18n.lang });
       if (search !== window.location.search) {
         window.history.replaceState(window.history.state, '', `${window.location.pathname}${search}${window.location.hash}`);
       }
-      document.title = draftTitle(enemies.map((id) => dataset.heroById.get(id)?.name ?? '').filter(Boolean), BASE_TITLE);
+      document.title = draftTitle(
+        enemies.map((id) => { const h = dataset.heroById.get(id); return h ? i18n.heroName(h) : ''; }).filter(Boolean),
+        i18n.t('title.base'),
+        i18n.t('title.draft'),
+      );
     } catch {
       /* a sandboxed frame may forbid history access — sharing just won't update */
     }
-  }, [dataset, enemies, position, activeRank]);
+  }, [dataset, enemies, position, activeRank, i18n]);
 
   const heroes = dataset?.heroes ?? [];
   const heroById = dataset?.heroById ?? new Map<number, Hero>();

@@ -1,6 +1,5 @@
 import { APP_CONFIG } from '../config';
-import { RU_NAMES } from './ruNames';
-import { searchHeroes as searchHeroesLocal } from './heroes';
+import { ruNamesFor, searchHeroes as searchHeroesLocal } from './heroes';
 import { computeBaseWinrates } from '../scoring/baseline';
 import type {
   Hero,
@@ -147,7 +146,7 @@ export async function loadDataset(): Promise<Dataset> {
     // that produced wrong keys for 20 heroes (ТЗ №18.1). An older snapshot
     // without `key` fails closed below.
     const raw = (await heroesRes.json()) as RawHeroFile[];
-    const heroes: Hero[] = raw.map((h) => ({ ...h, nameRu: RU_NAMES[h.name] ?? '' }));
+    const heroes: Hero[] = raw.map((h) => ({ ...h, nameRu: ruNamesFor(h.key).ru }));
     for (const h of heroes) {
       if (typeof h.key !== 'string' || !/^npc_dota_hero_[a-z0-9_]+$/.test(h.key)) {
         throw new Error(
@@ -192,16 +191,20 @@ export async function loadDataset(): Promise<Dataset> {
   }
 }
 
-/** Freshness label for the UI (§17). */
-export function freshnessLabel(meta: DatasetMeta): string {
-  const h = (Date.now() - new Date(meta.generatedAt).getTime()) / 3600_000;
-  if (!Number.isFinite(h) || h < 0) return 'Data updated: unknown';
-  if (h < 1) return 'Data updated just now';
-  if (h < 24) return `Data updated ${Math.floor(h)} hour${Math.floor(h) === 1 ? '' : 's'} ago`;
+/** Freshness of the snapshot for the UI (§17), as a language-neutral value. */
+export type Freshness =
+  | { kind: 'unknown' | 'now' | 'yesterday' | 'outdated' }
+  | { kind: 'hours' | 'days'; n: number };
+
+export function freshness(meta: DatasetMeta, now = Date.now()): Freshness {
+  const h = (now - new Date(meta.generatedAt).getTime()) / 3600_000;
+  if (!Number.isFinite(h) || h < 0) return { kind: 'unknown' };
+  if (h < 1) return { kind: 'now' };
+  if (h < 24) return { kind: 'hours', n: Math.floor(h) };
   const d = Math.floor(h / 24);
-  if (d === 1) return 'Data updated yesterday';
-  if (d <= 3) return `Data updated ${d} days ago`;
-  return 'Data may be outdated';
+  if (d === 1) return { kind: 'yesterday' };
+  if (d <= 3) return { kind: 'days', n: d };
+  return { kind: 'outdated' };
 }
 
 export function searchHeroes(heroes: Hero[], q: string, limit?: number): Hero[] {

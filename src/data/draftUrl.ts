@@ -55,24 +55,27 @@ export function parseDraftUrl(search: string, maxEnemies = 5): DraftUrlState {
  */
 export function buildDraftSearch(
   current: string,
-  state: { enemies: number[]; position: PositionFilter; rank: string },
+  state: { enemies: number[]; position: PositionFilter; rank: string; lang?: 'en' | 'ru' },
 ): string {
   const params = new URLSearchParams(current);
   params.delete('enemy');
   params.delete('pos');
   params.delete('rank');
+  params.delete('lang');
   if (state.enemies.length > 0) params.set('enemy', state.enemies.join(','));
   if (state.position !== 'all') params.set('pos', state.position);
   const slug = RANK_SLUGS[state.rank];
   if (slug) params.set('rank', slug);
+  // Russian is kept in the link so a shared draft opens in Russian; English is the default.
+  if (state.lang === 'ru') params.set('lang', 'ru');
   // URLSearchParams encodes ',' as %2C; keep the ids human-readable in shared links.
   const qs = params.toString().replace(/%2C/gi, ',');
   return qs ? `?${qs}` : '';
 }
 
 /** Page title for a draft — what a browser tab, bookmark or history entry shows. */
-export function draftTitle(enemyNames: string[], base: string, short = 'Dota Draft Assistant'): string {
-  return enemyNames.length > 0 ? `Counters to ${enemyNames.join(', ')} — ${short}` : base;
+export function draftTitle(enemyNames: string[], base: string, draftTemplate = 'Counters to {names} — Dota Draft Assistant'): string {
+  return enemyNames.length > 0 ? draftTemplate.replace('{names}', enemyNames.join(', ')) : base;
 }
 
 /** The link to share: the current URL without someone else's tracking tags. */
