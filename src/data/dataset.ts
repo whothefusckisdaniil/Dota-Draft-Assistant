@@ -220,9 +220,9 @@ export async function loadDataset(): Promise<Dataset> {
     }
 
     const baseWinrates = computeBaseWinrates(matchups);
-    for (const h of heroes) {
-      if (!baseWinrates.has(h.id)) throw new Error(`Hero ${h.id} (${h.name}) has no matchup games — cannot compute its baseline win rate.`);
-    }
+    // A hero with no games yet (released today) has no baseline; scoring falls
+    // back to the neutral 50% for it (see expectedWinrate) and its 0-game pairs
+    // are "no data". It must not take the whole site down.
     const ds: Dataset = { heroes, heroById, matchups, positions, baseWinrates, meta };
     cache = ds;
     return ds;

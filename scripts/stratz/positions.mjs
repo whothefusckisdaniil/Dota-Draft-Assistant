@@ -90,7 +90,8 @@ export const SHARE_SUM_TOLERANCE = 1e-9;
  * window, same population. A positions layer from a different week or bracket
  * set would silently mislabel every hero, so it is a hard gate, not a warning.
  */
-export function validatePositionData(positions, { heroes, windowInfo, brackets = BRACKETS }) {
+export function validatePositionData(positions, { heroes, windowInfo, brackets = BRACKETS, newHeroIds = [] }) {
+  const newHeroes = new Set(newHeroIds);
   const heroIds = heroes.map((h) => h.id);
   const canonical = new Set(heroIds);
   const problems = [];
@@ -106,6 +107,12 @@ export function validatePositionData(positions, { heroes, windowInfo, brackets =
   for (const id of heroIds) {
     const entry = positions[String(id)];
     const where = `hero ${id}`;
+    // A new hero (see findNewHeroes) may have no lane games yet: all zeros.
+    if (newHeroes.has(id) && entry.totalGames === 0) {
+      const zero = ['1', '2', '3', '4', '5'].every((n) => entry.positions?.[n]?.games === 0 && entry.positions?.[n]?.share === 0);
+      if (!zero) throw new Error(`Position data contract failed: ${where} has totalGames 0 but non-zero positions`);
+      continue;
+    }
     if (!Number.isInteger(entry.totalGames) || entry.totalGames <= 0) {
       throw new Error(`Position data contract failed: ${where} totalGames must be a positive integer, got ${entry.totalGames}`);
     }

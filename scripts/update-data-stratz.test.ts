@@ -24,6 +24,8 @@ import {
   validateSynergyTable,
   buildPublishPayload,
   validateProductionContract,
+  findNewHeroes,
+  fillMissingPairs,
 } from './update-data-stratz.mjs';
 import { DATASET_FILES, OPTIONAL_DATASET_FILES } from './dataset-publish.mjs';
 import { existsSync, readFileSync } from 'node:fs';
@@ -408,14 +410,16 @@ describe('buildDataset — failure policy (ТЗ §3, §8D)', () => {
         fetchMetadata: metaFor(),
         fetchMatchups: async (ids: number[]) => {
           const t = matchupFixture(ids);
-          delete t['7']; // a hole in the tables — exactly what gate #1 exists to catch
+          delete t['7']; // a hole in the tables of an established hero
           return t;
         },
         fetchPositions: async (ids: number[]) => positionFixture(ids),
         now: NOW,
         log: silent,
       }),
-    ).rejects.toThrow(/Hero ID mismatch|Missing: 7/);
+      // its own rows become 0-game rows while every reverse row still has
+      // 1000 games: the pair-symmetry gate rejects it
+    ).rejects.toThrow(/Hero ID mismatch|Missing: 7|asymmetry/);
   });
 
   it('rejects STRATZ tables that reference a hero OpenDota no longer lists', async () => {
@@ -809,19 +813,20 @@ describe('buildDataset — failure policy (ТЗ §8D)', () => {
     ).rejects.toThrow(/STRATZ HTTP 429/);
   });
 
-  it('rejects when STRATZ data does not cover the fresh roster', async () => {
-    // Hero 101 was added upstream; STRATZ has no data for it. Publishing anyway
-    // would ship a heroes.json the app cannot rank against.
+  it('publishes a hero STRATZ has no data for yet as "no data" (released today)', async () => {
+    // Hero 101 was added upstream; STRATZ has nothing for it yet. Blocking the
+    // refresh would freeze the data for every other hero until it is played.
     const ids = Array.from({ length: 101 }, (_, i) => i + 1);
-    await expect(
-      buildDataset({
-        fetchMetadata: async () => ({ heroes: heroFixture(ids), latestPatch: '7.42', heroCount: 101 }),
-        fetchMatchups: async () => matchupFixture(IDS_100), // stale 100-hero answer
-        fetchPositions: async (h: number[]) => positionFixture(h),
-        now: NOW,
-        log: silent,
-      }),
-    ).rejects.toThrow(/101/);
+    const { matchups } = await buildDataset({
+      fetchMetadata: async () => ({ heroes: heroFixture(ids), latestPatch: '7.42', heroCount: 101 }),
+      fetchMatchups: async () => matchupFixture(IDS_100), // nothing for 101 yet
+      fetchPositions: async (h: number[]) => positionFixture(h),
+      now: NOW,
+      log: silent,
+    });
+    expect(matchups['101']).toHaveLength(100);
+    expect(matchups['101'].every((r: { games_played: number }) => r.games_played === 0)).toBe(true);
+    expect(matchups['1'].find((r: { hero_id: number }) => r.hero_id === 101)?.games_played).toBe(0);
   });
 });
 
@@ -1262,5 +1267,76 @@ describe('aggregateStratzMatchupChunks — production GraphQL contract', () => {
       '1': [{ hero_id: 2, games_played: 100, wins: 40 }],
       '2': [{ hero_id: 1, games_played: 100, wins: 60 }],
     });
+  });
+});
+
+describe('a newly released hero does not block the daily refresh', () => {
+  /** Hero 1 is brand new: 3 games per pair, and it has not met heroes 2–10 yet. */
+  function withNewHero(newIds = [1]): Dataset {
+    const ds = baseline();
+    for (const n of newIds) {
+      for (const j of IDS.filter((j) => j !== n)) {
+        const met = j > 10;
+        row(ds, n, j).games_played = met ? 3 : 0;
+        row(ds, n, j).wins = met ? 1 : 0;
+        row(ds, j, n).games_played = met ? 3 : 0;
+        row(ds, j, n).wins = met ? 2 : 0;
+      }
+    }
+    return ds;
+  }
+
+  it('flags only heroes far below the median as new', () => {
+    expect([...findNewHeroes(HEROES, withNewHero())]).toEqual([1]);
+    expect(findNewHeroes(HEROES, baseline()).size).toBe(0);
+  });
+
+  it('accepts 0-game pairs and an off-band win rate for the new hero', () => {
+    const ds = withNewHero();
+    for (const j of IDS.filter((j) => j > 10)) row(ds, 1, j).wins = 0; // 0% so far
+    for (const j of IDS.filter((j) => j > 10)) row(ds, j, 1).wins = 3;
+    const res = validateProductionContract(HEROES, ds);
+    expect(res.newHeroes).toEqual([1]);
+  });
+
+  it('still rejects a 0-game pair between two established heroes', () => {
+    const ds = withNewHero();
+    row(ds, 20, 21).games_played = 0;
+    row(ds, 20, 21).wins = 0;
+    expect(() => validateProductionContract(HEROES, ds)).toThrow(/games_played <= 0/);
+  });
+
+  it('treats many "new" heroes at once as broken data', () => {
+    expect(() => validateProductionContract(HEROES, withNewHero([1, 2, 3, 4]))).toThrow(/broken data, not a new hero/);
+  });
+
+  it('fills pairs STRATZ did not return with explicit 0-game rows', () => {
+    const ds = baseline();
+    ds['1'] = ds['1'].filter((r) => r.hero_id > 10);
+    delete ds['2'];
+    const filled = fillMissingPairs(HEROES, ds);
+    expect(filled['1']).toHaveLength(N - 1);
+    expect(filled['2']).toHaveLength(N - 1);
+    expect(filled['1'].find((r) => r.hero_id === 5)).toEqual({ hero_id: 5, games_played: 0, wins: 0 });
+  });
+
+  it('publishes the snapshot with a new hero that has barely been played and has no lane stats', async () => {
+    const ids = Array.from({ length: 101 }, (_, i) => i + 1);
+    const { matchups, positions } = await buildDataset({
+      fetchMetadata: async () => ({ heroes: heroFixture(ids), latestPatch: '7.42', heroCount: 101 }),
+      fetchMatchups: async (heroIds: number[]) => {
+        const ds = matchupFixture(heroIds.filter((id) => id !== 101));
+        // hero 101 met only heroes 50–100, a few games each; STRATZ omits the rest
+        ds['101'] = heroIds.filter((j) => j >= 50 && j !== 101).map((j) => ({ hero_id: j, games_played: 4, wins: 2 }));
+        for (const j of heroIds.filter((j) => j >= 50 && j !== 101)) ds[String(j)].push({ hero_id: 101, games_played: 4, wins: 2 });
+        return ds;
+      },
+      fetchPositions: async (heroIds: number[]) => positionFixture(heroIds.filter((id) => id !== 101)),
+      now: NOW,
+      log: silent,
+    });
+    expect(matchups['101']).toHaveLength(100);
+    expect(matchups['101'].find((r: Row) => r.hero_id === 1)?.games_played).toBe(0);
+    expect((positions as Record<string, { totalGames: number }>)['101'].totalGames).toBe(0);
   });
 });

@@ -199,6 +199,46 @@ export const ASYMMETRY_MAX_SHARE = 0.001;
 export const ASYMMETRY_MIN_BUDGET = 4;
 
 /**
+ * New heroes (a hero released days ago). In a 30-day window such a hero has a
+ * sliver of everyone else's games and may not have met every opponent yet. It
+ * must not block the daily refresh for all other heroes, so for these heroes
+ * only: a pair with 0 games is "no data" (the app already treats it so), and
+ * the 40–60% aggregate win-rate band is skipped. Everything else stays strict.
+ * The rarest established hero (Chen) sits at ~6% of the median hero's games,
+ * so the 3% line keeps every existing hero under the full contract, and more
+ * than MAX_NEW_HEROES such heroes means broken data, not a release.
+ */
+const NEW_HERO_GAMES_SHARE = 0.03;
+const MAX_NEW_HEROES = 3;
+
+export function findNewHeroes(heroes, table) {
+  const totals = heroes.map((h) => ({
+    id: h.id,
+    games: (table[String(h.id)] ?? []).reduce((s, r) => s + Math.max(0, Number(r.games_played) || 0), 0),
+  }));
+  const sorted = totals.map((t) => t.games).sort((a, b) => a - b);
+  const median = sorted[Math.floor(sorted.length / 2)] ?? 0;
+  return new Set(totals.filter((t) => t.games < median * NEW_HERO_GAMES_SHARE).map((t) => t.id));
+}
+
+/** Every hero gets a table with every opponent: pairs STRATZ did not return
+ *  (nobody played them yet) become explicit 0-game rows, so the contract can
+ *  tell "a new hero has not met X yet" from a broken response. Unknown keys are
+ *  kept so the contract still reports them. */
+export function fillMissingPairs(heroes, table) {
+  const ids = heroes.map((h) => h.id);
+  const out = {};
+  for (const id of ids) {
+    const rows = table[String(id)] ?? [];
+    const have = new Set(rows.map((r) => r.hero_id));
+    const extra = ids.filter((o) => o !== id && !have.has(o)).map((o) => ({ hero_id: o, games_played: 0, wins: 0 }));
+    out[String(id)] = extra.length ? [...rows, ...extra] : rows;
+  }
+  for (const k of Object.keys(table)) if (!(k in out)) out[k] = table[k];
+  return out;
+}
+
+/**
  * @param {{ allowZeroGames?: boolean }} [options] allowZeroGames: per-rank tables
  *   may legitimately have a pair nobody played in that bracket (e.g. Herald on
  *   the first day of a patch); the app treats such a row as "no data".
@@ -209,6 +249,10 @@ function validateProductionContract(heroes, dataset, { allowZeroGames = false } 
   const presentIds = new Set(Object.keys(dataset).map(Number));
 
   if (expectedHeroIds.length < 100) throw new Error(`Too few heroes in definition: ${expectedHeroIds.length}`);
+  const newHeroes = findNewHeroes(heroes, dataset);
+  if (newHeroes.size > MAX_NEW_HEROES) {
+    throw new Error(`${newHeroes.size} heroes have under ${NEW_HERO_GAMES_SHARE * 100}% of the median hero's games (${[...newHeroes].slice(0, 8).join(',')}): broken data, not a new hero`);
+  }
 
   const missingHeroIds = expectedHeroIds.filter((id) => !presentIds.has(id));
   const extraHeroIds = [...presentIds].filter((id) => !expectedIds.has(id));
@@ -247,7 +291,8 @@ function validateProductionContract(heroes, dataset, { allowZeroGames = false } 
       if (r.hero_id === enemyId) selfRows += 1;
       if (seen.has(r.hero_id)) duplicateOpponents += 1;
       seen.add(r.hero_id);
-      if (allowZeroGames ? r.games_played < 0 : r.games_played <= 0) gamesNotPositive += 1;
+      const newPair = newHeroes.has(enemyId) || newHeroes.has(r.hero_id);
+      if (allowZeroGames || newPair ? r.games_played < 0 : r.games_played <= 0) gamesNotPositive += 1;
       if (r.wins < 0 || r.wins > r.games_played) winsOutOfRange += 1;
       if (!expectedIds.has(r.hero_id)) unknownOpponents += 1;
       g += r.games_played;
@@ -283,7 +328,7 @@ function validateProductionContract(heroes, dataset, { allowZeroGames = false } 
     return rt ? Math.abs(rt - (colTotal.get(id) ?? 0)) / rt : 0;
   });
   const rowColOver1p5 = rowColRel.filter((x) => x > 0.015).length;
-  const wrOutOfBand = heroAggWr.filter((x) => x.wr < 40 || x.wr > 60);
+  const wrOutOfBand = heroAggWr.filter((x) => !newHeroes.has(x.heroId) && (x.wr < 40 || x.wr > 60));
 
   const totalExpectedPairs = expectedHeroIds.length * (expectedHeroIds.length - 1);
   if (totalPairs !== totalExpectedPairs) {
@@ -317,6 +362,7 @@ function validateProductionContract(heroes, dataset, { allowZeroGames = false } 
   if (rowColOver1p5 > 0) throw new Error(`Found ${rowColOver1p5} heroes with row/column total skew > 1.5%`);
 
   return {
+    newHeroes: [...newHeroes],
     totalPairs,
     reversePairAsymmetry: dist(gamesDiffRel),
     asymmetricFaces,
@@ -513,7 +559,8 @@ export function symmetrizeSynergyTable(table) {
 }
 
 /** Contract for a same-team table: full roster, sane counts, plausible team win rates. */
-export function validateSynergyTable(heroes, table, { allowZeroGames = false } = {}) {
+export function validateSynergyTable(heroes, table, { allowZeroGames = false, newHeroIds = [] } = {}) {
+  const newHeroes = new Set(newHeroIds);
   const ids = heroes.map((h) => h.id);
   const idSet = new Set(ids);
   const problems = [];
@@ -534,7 +581,7 @@ export function validateSynergyTable(heroes, table, { allowZeroGames = false } =
       w += r.wins;
     }
     const wr = g > 0 ? (100 * w) / g : 50;
-    if (wr < 35 || wr > 65) problems.push(`hero ${id} team win rate ${wr.toFixed(1)}% outside 35–65%`);
+    if (!newHeroes.has(id) && (wr < 35 || wr > 65)) problems.push(`hero ${id} team win rate ${wr.toFixed(1)}% outside 35–65%`);
     if (problems.length > 20) break;
   }
   if (problems.length) throw new Error(`Synergy contract failed: ${problems.slice(0, 5).join('; ')}${problems.length > 5 ? ` (+${problems.length - 5} more)` : ''}`);
@@ -710,8 +757,8 @@ export async function buildDataset({
     // A fetcher may return just the matchup table (tests, older callers) or
     // { vs, with } when it also collected the same-team tables.
     const hasSynergy = res && typeof res === 'object' && 'vs' in res && 'with' in res;
-    rawByBracket[bracket] = hasSynergy ? res.vs : res;
-    if (hasSynergy) rawSynergyByBracket[bracket] = res.with;
+    rawByBracket[bracket] = fillMissingPairs(heroes, hasSynergy ? res.vs : res);
+    if (hasSynergy) rawSynergyByBracket[bracket] = fillMissingPairs(heroes, res.with);
   }
   const matchups = sumBracketTables(rawByBracket);
   const synergyComplete = BRACKETS.every((b) => rawSynergyByBracket[b]);
@@ -722,6 +769,11 @@ export async function buildDataset({
   log('5/6 Validating dataset integrity contract...');
   const validationResult = validateProductionContract(heroes, matchups);
   log(`    Validation passed! Total rows: ${validationResult.totalPairs}`);
+  const newHeroIds = validationResult.newHeroes;
+  for (const id of newHeroIds) {
+    const h = heroes.find((x) => x.id === id);
+    log(`    WARNING: new hero ${id} (${h?.name ?? '?'}) has little data yet — published with 0-game pairs as "no data"`);
+  }
   for (const f of validationResult.asymmetricFaces) {
     log(`    WARNING: reverse-pair games asymmetry ${f.enemyId}->${f.heroId}: ${f.games} vs ${f.reverseGames} (known STRATZ behaviour, within budget)`);
   }
@@ -749,12 +801,12 @@ export async function buildDataset({
   if (synergyComplete) {
     synergy = symmetrizeSynergyTable(sumBracketTables(rawSynergyByBracket));
     // zero-game pairs allowed: right after a patch a rare pair may not have met yet
-    validateSynergyTable(heroes, synergy, { allowZeroGames: true });
+    validateSynergyTable(heroes, synergy, { allowZeroGames: true, newHeroIds });
     synergyByBracket = {};
     for (const bracket of BRACKETS) {
       synergyByBracket[bracket] = symmetrizeSynergyTable(rawSynergyByBracket[bracket]);
       try {
-        validateSynergyTable(heroes, synergyByBracket[bracket], { allowZeroGames: true });
+        validateSynergyTable(heroes, synergyByBracket[bracket], { allowZeroGames: true, newHeroIds });
       } catch (e) {
         throw new Error(`Bracket ${bracket}: ${e.message}`, { cause: e });
       }
@@ -763,7 +815,17 @@ export async function buildDataset({
   } else {
     log('    WARNING: no same-team data from the fetcher — publishing without synergy');
   }
-  const positionInfo = validatePositionData(positions, { heroes, windowInfo });
+  // A new hero may have no lane stats yet: an all-zero entry keeps the roster
+  // complete and makes it ineligible for every lane until it is really played.
+  for (const id of newHeroIds) {
+    if (!positions[String(id)]) {
+      positions[String(id)] = {
+        totalGames: 0,
+        positions: Object.fromEntries(['1', '2', '3', '4', '5'].map((n) => [n, { games: 0, share: 0 }])),
+      };
+    }
+  }
+  const positionInfo = validatePositionData(positions, { heroes, windowInfo, newHeroIds });
   log(`    Position data passed! ${positionInfo.heroCount} heroes across buckets [${positionInfo.buckets.join(', ')}]`);
 
   const totalPairGames = Object.values(matchups).reduce(
