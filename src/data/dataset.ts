@@ -133,8 +133,8 @@ function toTables(raw: Record<string, MatchupRow[]>, heroIds: Set<number>): Map<
   return m;
 }
 
-async function fetchOptionalJson<T>(file: string): Promise<T | null> {
-  const res = await fetch(`${import.meta.env.BASE_URL}data/${file}`);
+async function fetchOptionalJson<T>(file: string, dir = 'data'): Promise<T | null> {
+  const res = await fetch(`${import.meta.env.BASE_URL}${dir}/${file}`);
   if (res.status === 404) return null;
   if (!res.ok) throw new Error(`Failed to load ${file} (${res.status}).`);
   const type = res.headers.get('content-type') ?? '';
@@ -171,6 +171,56 @@ export function loadRoleStats(): Promise<RoleStats | null> {
     throw e;
   });
   return roleStatsPromise;
+}
+
+/** Hero builds (public/builds, scripts/update-builds-stratz.mjs). */
+export type BuildItem = [itemId: number, pct: number, minute: number, winrate: number];
+export type BuildTalent = [heroLevel: number, a: [id: number, pct: number, wr: number], b: [id: number, pct: number, wr: number]];
+export interface Build {
+  m: number;
+  low: boolean;
+  start: [itemId: number, pct: number, qty: number][];
+  boots: [itemId: number, pct: number, minute: number][];
+  items: BuildItem[];
+  talents: BuildTalent[];
+  skills: [abilityId: number, maxedAtLevel: number, pctMaxed: number][];
+}
+export interface HeroBuilds {
+  heroId: number;
+  /** position '1'..'5' → 'ALL' | bracket → build */
+  positions: Record<string, Record<string, Build>>;
+}
+export interface BuildIndex {
+  generatedAt: string;
+  patch: string;
+  heroes: number[];
+  /** itemId → [key, English name] */
+  items: Record<string, [string, string]>;
+  /** abilityId → [key, English name, Russian name] */
+  abilities: Record<string, [string, string, string]>;
+}
+
+let buildIndexPromise: Promise<BuildIndex | null> | null = null;
+const heroBuildCache = new Map<number, Promise<HeroBuilds | null>>();
+
+export function loadBuildIndex(): Promise<BuildIndex | null> {
+  buildIndexPromise ??= fetchOptionalJson<BuildIndex>('index.json', 'builds').catch((e) => {
+    buildIndexPromise = null;
+    throw e;
+  });
+  return buildIndexPromise;
+}
+
+export function loadHeroBuild(heroId: number): Promise<HeroBuilds | null> {
+  let p = heroBuildCache.get(heroId);
+  if (!p) {
+    p = fetchOptionalJson<HeroBuilds>(`${heroId}.json`, 'builds').catch((e) => {
+      heroBuildCache.delete(heroId);
+      throw e;
+    });
+    heroBuildCache.set(heroId, p);
+  }
+  return p;
 }
 
 let cache: Dataset | null = null;

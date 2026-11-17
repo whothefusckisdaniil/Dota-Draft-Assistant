@@ -6,12 +6,12 @@ import { shareableUrl } from '../data/draftUrl';
 import { useI18n, type Lang } from '../i18n';
 import type { StringKey } from '../i18n/strings';
 
-export type Target = 'enemy' | 'ally' | 'ban';
+export type Target = 'enemy' | 'ally' | 'ban' | 'me';
 
 /** Enemy team (5 slots) or your team (4 slots + "you"). An empty slot opens
  *  the hero picker for that team. Mobile: one row of 56 px slots; tablet and
  *  desktop: enemies stacked with names (CSS, see .enemy-slots). */
-export function TeamSlots({ team, ids, max, heroById, active, onRemove, onAdd, title, actions }: {
+export function TeamSlots({ team, ids, max, heroById, active, onRemove, onAdd, title, actions, me = null, meActive = false, onRemoveMe }: {
   team: 'enemy' | 'ally';
   ids: number[];
   max: number;
@@ -21,9 +21,14 @@ export function TeamSlots({ team, ids, max, heroById, active, onRemove, onAdd, t
   onAdd: (t: Target) => void;
   title?: boolean;
   actions?: ReactNode;
+  /** Your own hero in the "You" slot (team="ally"). */
+  me?: number | null;
+  meActive?: boolean;
+  onRemoveMe?: () => void;
 }) {
   const i18n = useI18n();
   const { t } = i18n;
+  const meHero = me != null ? heroById.get(me) : undefined;
   const slots = Array.from({ length: max }, (_, i) => ids[i]);
   const firstEmpty = ids.length;
   const small = team === 'ally';
@@ -68,9 +73,24 @@ export function TeamSlots({ team, ids, max, heroById, active, onRemove, onAdd, t
             </div>
           );
         })}
-        {team === 'ally' && (
-          <div className="slot slot-sm slot-you" aria-hidden="true">{t('draft.you')}</div>
-        )}
+        {team === 'ally' && (meHero ? (
+          <div className="slot-wrap">
+            <div className="slot slot-filled slot-sm pop-in team-me" title={`${t('draft.you')}: ${i18n.heroName(meHero)}`}>
+              <HeroPortrait hero={meHero} fill variant="large" />
+              <button type="button" onClick={onRemoveMe} aria-label={t('draft.remove', { name: i18n.heroName(meHero) })} className="slot-x">×</button>
+            </div>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => onAdd('me')}
+            className={`slot slot-sm slot-you ${meActive ? 'is-target' : ''}`}
+            aria-label={t('draft.pickMe')}
+            title={t('draft.pickMe')}
+          >
+            {t('draft.you')}
+          </button>
+        ))}
       </div>
     </div>
   );
@@ -127,6 +147,7 @@ export function TargetSwitch({ value, onChange, counts, limits }: {
     { id: 'enemy', label: t('target.enemy') },
     { id: 'ally', label: t('target.ally') },
     { id: 'ban', label: t('target.ban') },
+    { id: 'me', label: t('target.me') },
   ];
   return (
     <div className="seg seg-sm" role="radiogroup" aria-label={t('target.title')}>
@@ -136,11 +157,11 @@ export function TargetSwitch({ value, onChange, counts, limits }: {
           type="button"
           role="radio"
           aria-checked={value === it.id}
-          disabled={counts[it.id] >= limits[it.id] && value !== it.id}
+          disabled={it.id !== 'me' && counts[it.id] >= limits[it.id] && value !== it.id}
           onClick={() => onChange(it.id)}
           className={`seg-btn target-btn ${value === it.id ? 'is-active' : ''}`}
         >
-          {it.label}<span className="count tnum">{counts[it.id]}/{limits[it.id]}</span>
+          {it.label}{it.id !== 'me' && <span className="count tnum">{counts[it.id]}/{limits[it.id]}</span>}
         </button>
       ))}
     </div>

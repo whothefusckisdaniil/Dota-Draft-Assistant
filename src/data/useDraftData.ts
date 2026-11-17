@@ -42,12 +42,13 @@ function initialPosition(fromUrl: PositionFilter): PositionFilter {
 }
 
 /** Where a hero picked in the search goes. */
-export type PickTarget = 'enemy' | 'ally' | 'ban';
+export type PickTarget = 'enemy' | 'ally' | 'ban' | 'me';
 
 const LIMITS: Record<PickTarget, number> = {
   enemy: APP_CONFIG.ui.maxEnemies,
   ally: APP_CONFIG.ui.maxAllies,
   ban: APP_CONFIG.ui.maxBans,
+  me: 1,
 };
 
 function readStoredRank(): RankFilter {
@@ -81,6 +82,9 @@ export function useDraftData() {
   const [enemies, setEnemies] = useState<number[]>(urlState.enemies);
   const [allies, setAllies] = useState<number[]>(urlState.allies);
   const [bans, setBans] = useState<number[]>(urlState.bans);
+  /** Your own hero (its build is shown). Stored as a 0/1-element list like the others. */
+  const [meList, setMeList] = useState<number[]>(urlState.me ? [urlState.me] : []);
+  const me = meList[0] ?? null;
   const [target, setTarget] = useState<PickTarget>('enemy');
   const [position, setPositionState] = useState<PositionFilter>(() => initialPosition(urlState.position));
   const setPosition = useCallback((next: PositionFilter) => {
@@ -127,6 +131,7 @@ export function useDraftData() {
         setEnemies(known);
         setAllies(known);
         setBans(known);
+        setMeList(known);
         setDataset(ds);
         setLoadState({ kind: 'ready' });
       })
@@ -210,7 +215,7 @@ export function useDraftData() {
   useEffect(() => {
     if (!dataset) return;
     try {
-      const search = buildDraftSearch(window.location.search, { enemies, allies, bans, position, rank: activeRank, lang: i18n.lang });
+      const search = buildDraftSearch(window.location.search, { enemies, allies, bans, me, position, rank: activeRank, lang: i18n.lang });
       if (search !== window.location.search) {
         window.history.replaceState(window.history.state, '', `${window.location.pathname}${search}${window.location.hash}`);
       }
@@ -222,7 +227,7 @@ export function useDraftData() {
     } catch {
       /* a sandboxed frame may forbid history access — sharing just won't update */
     }
-  }, [dataset, enemies, allies, bans, position, activeRank, i18n]);
+  }, [dataset, enemies, allies, bans, me, position, activeRank, i18n]);
 
   const heroes = dataset?.heroes ?? [];
   const heroById = dataset?.heroById ?? new Map<number, Hero>();
@@ -261,36 +266,39 @@ export function useDraftData() {
     for (const lane of lanes) {
       out.set(lane, scoreCandidates({
         heroes, enemyIds: enemies, matchupByEnemy: matchups, heroById, positions, baseWinrates,
-        allyIds: allies, synergyByAlly: synergy, excludeIds: bans,
+        allyIds: allies, synergyByAlly: synergy, excludeIds: me ? [...bans, me] : bans,
       }, lane));
     }
     return out;
-  }, [enemies, allies, bans, position, heroes, matchups, heroById, positions, baseWinrates, synergy, synergyLoading, missingTables.length, rankLoading]);
+  }, [enemies, allies, bans, me, position, heroes, matchups, heroById, positions, baseWinrates, synergy, synergyLoading, missingTables.length, rankLoading]);
 
   const banSuggestions = useMemo(() => {
     if (!dataset || !hasDraft || rankLoading || synergyLoading) return [];
     return suggestBans({
-      heroes, allyIds: allies, enemyIds: enemies, excludeIds: bans,
+      heroes, allyIds: allies, enemyIds: enemies, excludeIds: me ? [...bans, me] : bans,
       matchupByHero: matchups, synergyByHero: synergy, baseWinrates,
     });
-  }, [dataset, hasDraft, rankLoading, synergyLoading, heroes, allies, enemies, bans, matchups, synergy, baseWinrates]);
+  }, [dataset, hasDraft, rankLoading, synergyLoading, heroes, allies, enemies, bans, me, matchups, synergy, baseWinrates]);
 
   /** Put a hero into the enemy team, your team or the bans. A hero lives in
    *  one place only: adding it somewhere moves it out of the others. */
   const addHero = useCallback((id: number, to: PickTarget) => {
     const lists: Record<PickTarget, [number[], (f: (p: number[]) => number[]) => void]> = {
-      enemy: [enemies, setEnemies], ally: [allies, setAllies], ban: [bans, setBans],
+      enemy: [enemies, setEnemies], ally: [allies, setAllies], ban: [bans, setBans], me: [meList, setMeList],
     };
     const [current] = lists[to];
-    if (current.includes(id) || current.length >= LIMITS[to]) return;
+    if (current.includes(id)) return;
+    // your hero is replaced, the other lists stop at their limit
+    if (to !== 'me' && current.length >= LIMITS[to]) return;
     for (const key of Object.keys(lists) as PickTarget[]) {
       if (key !== to) lists[key][1]((prev) => prev.filter((x) => x !== id));
     }
-    lists[to][1]((prev) => (prev.includes(id) || prev.length >= LIMITS[to] ? prev : [...prev, id]));
-  }, [enemies, allies, bans]);
+    if (to === 'me') setMeList([id]);
+    else lists[to][1]((prev) => (prev.includes(id) || prev.length >= LIMITS[to] ? prev : [...prev, id]));
+  }, [enemies, allies, bans, meList]);
 
   const remove = useCallback((id: number, from: PickTarget) => {
-    const set = from === 'enemy' ? setEnemies : from === 'ally' ? setAllies : setBans;
+    const set = from === 'enemy' ? setEnemies : from === 'ally' ? setAllies : from === 'me' ? setMeList : setBans;
     set((prev) => prev.filter((x) => x !== id));
   }, []);
 
@@ -298,11 +306,12 @@ export function useDraftData() {
     setEnemies([]);
     setAllies([]);
     setBans([]);
+    setMeList([]);
     setTarget('enemy');
   }, []);
 
   /** Ids that cannot be picked again (anywhere in the draft). */
-  const taken = useMemo(() => new Set([...enemies, ...allies, ...bans]), [enemies, allies, bans]);
+  const taken = useMemo(() => new Set([...enemies, ...allies, ...bans, ...meList]), [enemies, allies, bans, meList]);
 
   return {
     heroes,
@@ -312,6 +321,7 @@ export function useDraftData() {
     enemies,
     allies,
     bans,
+    me,
     taken,
     target,
     setTarget,

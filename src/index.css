@@ -272,6 +272,9 @@ body {
   .slot-filled.team-enemy { --slot-line: var(--color-neg); }
   .slot-filled.team-enemy::after { background: rgba(255, 92, 92, 0.1); }
   .slot-filled.team-ally { --slot-line: var(--color-ally); }
+  .slot-filled.team-me { --slot-line: var(--color-accent); }
+  .slot-you { cursor: pointer; transition: border-color 160ms ease-out, color 160ms ease-out; }
+  .slot-you:hover, .slot-you.is-target { border-color: rgba(255, 180, 58, 0.7); color: var(--color-accent); }
   .slot-x {
     position: absolute;
     z-index: 1;

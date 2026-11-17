@@ -6,6 +6,7 @@ import type { PositionFilter } from '../config';
  * - `enemy` — enemy hero ids (OpenDota/Valve ids), comma-separated, in pick order
  * - `ally`  — your team (up to 4; you are the 5th)
  * - `ban`   — banned heroes
+ * - `hero`  — your own hero (its build is shown)
  * - `pos`   — 1..5; absent = all positions
  * - `rank`  — herald | crusader | legend | divine; absent = all ranks
  *
@@ -28,6 +29,8 @@ export interface DraftUrlState {
   enemies: number[];
   allies: number[];
   bans: number[];
+  /** Your own hero, or null. */
+  me: number | null;
   position: PositionFilter;
   /** STRATZ bracket id, 'ALL', or null when the URL says nothing about the draft. */
   rank: string | null;
@@ -56,12 +59,13 @@ export function parseDraftUrl(search: string, maxEnemies = 5, maxAllies = 4, max
   const enemies = parseIds(params.get('enemy'), maxEnemies, taken);
   const allies = parseIds(params.get('ally'), maxAllies, taken);
   const bans = parseIds(params.get('ban'), maxBans, taken);
+  const me = parseIds(params.get('hero'), 1, taken)[0] ?? null;
   const pos = params.get('pos') ?? '';
   const position: PositionFilter = LANES.has(pos) ? (pos as PositionFilter) : 'all';
   const rankParam = (params.get('rank') ?? '').toLowerCase();
-  const hasDraft = params.has('enemy') || params.has('ally') || params.has('ban') || params.has('pos') || params.has('rank');
+  const hasDraft = ['enemy', 'ally', 'ban', 'hero', 'pos', 'rank'].some((k) => params.has(k));
   const rank = SLUG_TO_RANK[rankParam] ?? (hasDraft ? 'ALL' : null);
-  return { enemies, allies, bans, position, rank, hasDraft };
+  return { enemies, allies, bans, me, position, rank, hasDraft };
 }
 
 /**
@@ -71,18 +75,20 @@ export function parseDraftUrl(search: string, maxEnemies = 5, maxAllies = 4, max
  */
 export function buildDraftSearch(
   current: string,
-  state: { enemies: number[]; allies?: number[]; bans?: number[]; position: PositionFilter; rank: string; lang?: 'en' | 'ru' },
+  state: { enemies: number[]; allies?: number[]; bans?: number[]; me?: number | null; position: PositionFilter; rank: string; lang?: 'en' | 'ru' },
 ): string {
   const params = new URLSearchParams(current);
   params.delete('enemy');
   params.delete('ally');
   params.delete('ban');
+  params.delete('hero');
   params.delete('pos');
   params.delete('rank');
   params.delete('lang');
   if (state.enemies.length > 0) params.set('enemy', state.enemies.join(','));
   if (state.allies?.length) params.set('ally', state.allies.join(','));
   if (state.bans?.length) params.set('ban', state.bans.join(','));
+  if (state.me) params.set('hero', String(state.me));
   if (state.position !== 'all') params.set('pos', state.position);
   const slug = RANK_SLUGS[state.rank];
   if (slug) params.set('rank', slug);

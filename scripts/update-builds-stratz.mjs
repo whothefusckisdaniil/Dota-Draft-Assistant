@@ -1,0 +1,219 @@
+#!/usr/bin/env node
+/**
+ * Weekly hero builds → public/builds/ (see scripts/stratz/builds.mjs).
+ *
+ *   public/builds/index.json      window, patch, names/keys of every item and
+ *                                 ability the builds reference (EN + RU)
+ *   public/builds/<heroId>.json   { heroId, positions: { pos: { ALL | bracket: Build } } }
+ *
+ * Same window as the matchups (meta.json → matchupWindow: last 30 days of the
+ * current patch, bucket weights), same rank brackets, and only the positions
+ * the hero is really played at (positions.json, the app's eligibility rule).
+ *
+ * Runs daily after the data refresh but rebuilds only when due: no builds yet,
+ * a new patch, the builds are ≥ 7 days old, the roster changed, or --force.
+ * ~1 request per hero per weekly bucket (~640, ~25 min) — well inside the
+ * token's limits (8/s, 150/min, 1 500/h). Written to builds.__next and swapped
+ * in only after the whole set passes validateBuilds; on any error the old
+ * builds stay untouched.
+ *
+ * Usage: node scripts/update-builds-stratz.mjs [--force] [--heroes 26,1]
+ */
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { StratzTransport, loadToken, BUCKET_SEC, BRACKETS } from './update-data-stratz.mjs';
+import { POSITION_ELIGIBILITY } from './stratz/eligibility.mjs';
+import { accumulateHero, addAllRanks, buildHeroQuery, summarizeBuild, validateBuilds } from './stratz/builds.mjs';
+
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const DATA = path.join(ROOT, 'public', 'data');
+const OUT = path.join(ROOT, 'public', 'builds');
+const OPEN_DOTA = 'https://api.opendota.com/api';
+const MAX_AGE_DAYS = 7;
+
+const readJson = (p) => JSON.parse(fs.readFileSync(p, 'utf8'));
+
+async function getJson(url) {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      const res = await fetch(url, { headers: { 'User-Agent': 'lastpick-builds' } });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return await res.json();
+    } catch (e) {
+      if (attempt >= 4) throw new Error(`${url}: ${e.message}`);
+      await new Promise((r) => setTimeout(r, 2000 * attempt));
+    }
+  }
+}
+
+/** Is a rebuild due? Returns a reason or null. */
+export function rebuildReason({ index, meta, heroIds, now = new Date(), force = false }) {
+  if (force) return 'FORCE';
+  if (!index) return 'NO_BUILDS';
+  if (index.patch !== meta.latestPatch) return 'NEW_PATCH';
+  const age = (now.getTime() - Date.parse(index.generatedAt)) / 86_400_000;
+  if (!(age < MAX_AGE_DAYS - 0.25)) return 'WEEKLY';
+  const built = new Set(index.heroes);
+  if (heroIds.some((id) => !built.has(id))) return 'ROSTER_CHANGED';
+  return null;
+}
+
+function eligiblePositions(entry) {
+  if (!entry?.positions) return [];
+  return ['1', '2', '3', '4', '5'].filter((p) => {
+    const s = entry.positions[p];
+    return s && s.share >= POSITION_ELIGIBILITY.minShare && s.games >= POSITION_ELIGIBILITY.minGames;
+  }).map(Number);
+}
+
+async function main() {
+  const args = process.argv.slice(2);
+  const force = args.includes('--force');
+  const only = args.includes('--heroes') ? args[args.indexOf('--heroes') + 1].split(',').map(Number) : null;
+
+  const meta = readJson(path.join(DATA, 'meta.json'));
+  const heroes = readJson(path.join(DATA, 'heroes.json'));
+  const positions = readJson(path.join(DATA, 'positions.json'));
+  const indexPath = path.join(OUT, 'index.json');
+  const index = fs.existsSync(indexPath) ? readJson(indexPath) : null;
+  const reason = only ? 'PARTIAL' : rebuildReason({ index, meta, heroIds: heroes.map((h) => h.id), force });
+  if (!reason) {
+    console.log(`Builds are current (patch ${index.patch}, generated ${index.generatedAt}) — nothing to do.`);
+    return;
+  }
+  console.log(`--- Building hero builds (${reason}) ---`);
+
+  const window = meta.matchupWindow;
+  const buckets = window.weeklyBuckets;
+  const weights = window.bucketWeights ?? {};
+
+  // Names and keys: OpenDota for item keys/cost/type and hero ability lists,
+  // STRATZ for display names with the numbers filled in (EN + RU).
+  const [odItems, heroAbilities, abilityIds] = await Promise.all([
+    getJson(`${OPEN_DOTA}/constants/items`),
+    getJson(`${OPEN_DOTA}/constants/hero_abilities`),
+    getJson(`${OPEN_DOTA}/constants/ability_ids`),
+  ]);
+  const itemMeta = new Map(Object.entries(odItems).map(([key, v]) => [v.id, { key, name: v.dname, cost: v.cost, qual: v.qual }]));
+  const abilityIdByName = new Map(Object.entries(abilityIds).map(([id, name]) => [name, Number(id)]));
+
+  const transport = new StratzTransport(loadToken());
+  await transport.init();
+  const abilityNames = new Map();
+  try {
+    for (const lang of ['ENGLISH', 'RUSSIAN']) {
+      const r = await transport.query(`{ constants { abilities(language: ${lang}) { id name language { displayName } } } }`);
+      for (const a of r.data?.constants?.abilities ?? []) {
+        const e = abilityNames.get(a.id) ?? { key: a.name };
+        e[lang === 'ENGLISH' ? 'en' : 'ru'] = a.language?.displayName ?? null;
+        abilityNames.set(a.id, e);
+      }
+    }
+
+    const builds = {};
+    const list = heroes.filter((h) => !only || only.includes(h.id));
+    let n = 0;
+    for (const hero of list) {
+      n += 1;
+      const pos = eligiblePositions(positions[String(hero.id)]);
+      const ha = heroAbilities[hero.key];
+      if (!pos.length || !ha) {
+        console.log(`    [${n}/${list.length}] ${hero.name}: skipped (${!pos.length ? 'no eligible position' : 'no ability list'})`);
+        continue;
+      }
+      const ctx = {
+        abilityIds: ha.abilities.filter((a) => a !== 'generic_hidden').map((a) => abilityIdByName.get(a)).filter(Boolean),
+        talents: (ha.talents ?? []).map((t) => ({ id: abilityIdByName.get(t.name), level: t.level })).filter((t) => t.id),
+        items: itemMeta,
+      };
+      const raw = {};
+      const t0 = Date.now();
+      for (const bucket of buckets) {
+        const res = await transport.query(buildHeroQuery(hero.id, bucket * BUCKET_SEC, pos, BRACKETS));
+        accumulateHero(raw, res, pos, BRACKETS, weights[bucket] ?? 1);
+      }
+      addAllRanks(raw, BRACKETS);
+      const out = { heroId: hero.id, positions: {} };
+      for (const p of pos) {
+        const byRank = {};
+        for (const rank of ['ALL', ...BRACKETS]) {
+          const b = raw[p]?.[rank] ? summarizeBuild(raw[p][rank], ctx) : null;
+          if (b) byRank[rank] = b;
+        }
+        if (byRank.ALL) out.positions[p] = byRank;
+      }
+      if (Object.keys(out.positions).length) builds[hero.id] = out;
+      console.log(`    [${n}/${list.length}] ${hero.name}: positions ${pos.join(',')} in ${Date.now() - t0}ms`);
+    }
+
+    validateBuilds(builds, { minHeroes: only ? 1 : 100 });
+
+    // Only the names the builds use.
+    const usedItems = new Set();
+    const usedAbilities = new Set();
+    for (const b of Object.values(builds)) {
+      for (const byRank of Object.values(b.positions)) {
+        for (const build of Object.values(byRank)) {
+          for (const it of [...build.start, ...build.boots, ...build.items]) usedItems.add(it[0]);
+          for (const t of build.talents) { usedAbilities.add(t[1][0]); usedAbilities.add(t[2][0]); }
+          for (const s of build.skills) usedAbilities.add(s[0]);
+        }
+      }
+    }
+    const items = {};
+    for (const id of usedItems) {
+      const m = itemMeta.get(id);
+      if (m) items[id] = [m.key, m.name];
+    }
+    const abilities = {};
+    for (const id of usedAbilities) {
+      const a = abilityNames.get(id);
+      const key = a?.key ?? abilityIds[id];
+      abilities[id] = [key, a?.en ?? key, a?.ru ?? a?.en ?? key];
+    }
+    const newIndex = {
+      generatedAt: new Date().toISOString(),
+      patch: meta.latestPatch,
+      window: { start: window.windowStartUtc, end: window.windowEndUtc, buckets, weights },
+      brackets: BRACKETS,
+      heroes: Object.keys(builds).map(Number).sort((a, b) => a - b),
+      items,
+      abilities,
+    };
+
+    // Atomic swap of the whole directory (a partial run keeps the other heroes).
+    const next = `${OUT}.__next`;
+    const prev = `${OUT}.__prev`;
+    fs.rmSync(next, { recursive: true, force: true });
+    fs.rmSync(prev, { recursive: true, force: true });
+    if (only && fs.existsSync(OUT)) fs.cpSync(OUT, next, { recursive: true });
+    else fs.mkdirSync(next, { recursive: true });
+    if (only && index) {
+      newIndex.heroes = [...new Set([...index.heroes, ...newIndex.heroes])].sort((a, b) => a - b);
+      newIndex.items = { ...index.items, ...newIndex.items };
+      newIndex.abilities = { ...index.abilities, ...newIndex.abilities };
+      newIndex.generatedAt = index.generatedAt; // a partial run does not make the rest fresh
+    }
+    let bytes = 0;
+    for (const [id, b] of Object.entries(builds)) {
+      const s = JSON.stringify(b);
+      bytes += s.length;
+      fs.writeFileSync(path.join(next, `${id}.json`), s);
+    }
+    fs.writeFileSync(path.join(next, 'index.json'), JSON.stringify(newIndex));
+    if (fs.existsSync(OUT)) fs.renameSync(OUT, prev);
+    fs.renameSync(next, OUT);
+    fs.rmSync(prev, { recursive: true, force: true });
+    console.log(`--- Builds published: ${Object.keys(builds).length} heroes, ${Math.round(bytes / 1024)} KB, index ${Math.round(JSON.stringify(newIndex).length / 1024)} KB ---`);
+  } finally {
+    await transport.close();
+  }
+}
+
+if (import.meta.url === `file://${process.argv[1]}` || process.argv[1]?.endsWith('update-builds-stratz.mjs')) {
+  main().catch((e) => {
+    console.error(`✗ builds update failed: ${e.message}`);
+    process.exit(1);
+  });
+}

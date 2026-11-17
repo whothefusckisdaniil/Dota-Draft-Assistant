@@ -13,6 +13,8 @@ interface Props {
   enemyIds: number[];
   heroById: Map<number, Hero>;
   onClose: () => void;
+  /** Make this hero "yours" and open its build. */
+  onShowBuild?: () => void;
 }
 
 /** Reliability: 3 dots by sample size (same thresholds as the explanation). */
@@ -52,7 +54,7 @@ function PairRow({ hero, name, delta, usable, winrate, games, wrKey }: {
 }
 
 /** Hero analysis: full-screen sheet on phones, 420 px side panel from 768 px. */
-export function HeroDetailsDrawer({ candidate: c, laneName, enemyIds, heroById, onClose }: Props) {
+export function HeroDetailsDrawer({ candidate: c, laneName, enemyIds, heroById, onClose, onShowBuild }: Props) {
   const i18n = useI18n();
   const { t } = i18n;
   const closeRef = useRef<HTMLButtonElement>(null);
@@ -100,6 +102,12 @@ export function HeroDetailsDrawer({ candidate: c, laneName, enemyIds, heroById, 
               </div>
             </div>
           </div>
+
+          {onShowBuild && (
+            <button type="button" onClick={onShowBuild} className="btn btn-accent mt-5 w-full">
+              {t('build.show')}: {i18n.heroName(c.hero)} <span aria-hidden="true">→</span>
+            </button>
+          )}
 
           {c.matchups.length > 0 && (
             <section className="mt-6">

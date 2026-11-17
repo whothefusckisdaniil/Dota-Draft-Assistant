@@ -13,7 +13,7 @@ A counterpick tool for Dota 2: pick the enemy heroes and get the heroes that sta
 3. Get the Top-15 counterpicks per position (in All Positions mode: the best pick per role).
 4. Open **View analysis** for a recommended hero: its Counterpick Score against your draft, per-enemy matchup statistics (win rate, games played), Team Score, Median Matchup, Coverage and the explanation of the recommendation.
 
-The app recommends heroes only. It does not recommend items, item builds or purchase orders (removed in ТЗ №77).
+The app recommends heroes and shows the **statistical build** of your own hero (what players of your rank buy and pick on that hero and position). It does not adapt items to the enemy draft yet: research in ТЗ §36–§38 found no robust item-vs-enemy signal in the data, so that part will be rule-based and labelled as such.
 
 ## Design and brand
 
@@ -118,6 +118,15 @@ Details and measured impact of the OpenDota → STRATZ switch: [`docs/stratz-mig
 Before any hero is picked, the main screen shows **Strongest supports right now**: the top 10 heroes on position 4 or 5 by their **win rate when played at that position**, for the rank chosen in the block or the header chip (each bracket or all ranks), over the same 30-day window. Only heroes really played there count (≥ 20% of their games at that position, ≥ 500 games in a bracket / 2 000 across all ranks); the ranking pulls small samples toward 50% (`games / (games + 1000)`), and each row shows the raw win rate, its distance from 50% and the number of games. Code: `src/scoring/topByRole.ts`, `src/components/TopSupports.tsx`.
 
 Data: `public/data/role-stats.json` — `{ ALL | <bracket>: { heroId: [[games, wins] for positions 1..5] } }`, from STRATZ `heroStats.stats(groupByPosition: true)` with `winCount`, one request per weekly bucket for all four brackets (`scripts/stratz/role-stats.mjs`). Checked before publishing (the five position totals of a bracket must match within 10% — every match has two players per position — and each position's population win rate must sit within 45–55%). It is an optional layer: if STRATZ fails or the check fails, the refresh publishes everything else and the block is hidden.
+
+## Hero builds (MVP)
+
+Pick **your hero** in the "You" slot (or press **Build** in a recommended hero's analysis) and the results column shows its build for a position and the selected rank: starting items (with quantities), boots and laning items, core (bought in ≥ 35% of games), situational items, skill order (level at which each ability is usually maxed; the ultimate at 6/12/18) and talents with pick shares. Each item shows the share of games it is bought in and the typical minute. If the rank has too few games on that position (< 300), the all-ranks build is shown with a notice. URL: `?hero=26`.
+
+- **Data:** STRATZ `heroStats` — `itemStartingPurchase`, `itemBootPurchase`, `itemFullPurchase` (by game minute), `talent`, `abilityMaxLevel`, `abilityMinLevel` — filtered by hero, week, rank bracket and **position**; one request per hero per weekly bucket covering all its positions and brackets. Names: OpenDota constants (item keys, costs, hero ability lists) and STRATZ constants (talent texts with numbers, EN + RU).
+- **Denominator:** the item endpoints count a larger population than `heroStats.stats`, so shares are taken against the number of matches in the item population itself — every basic ability is first skilled once per match, and those totals agree to ~0.1% (Lion pos 5 Divine: 27 289 / 27 292 / 27 264 / 27 275).
+- **Not available:** neutral items (STRATZ returns none for the current patch), facets, exact skill-by-level order.
+- **Pipeline:** `scripts/update-builds-stratz.mjs` + `scripts/stratz/builds.mjs` → `public/builds/<heroId>.json` (loaded only for the chosen hero) and `public/builds/index.json` (names). Same 30-day patch window, brackets and position eligibility as the matchups. `.github/workflows/update-builds.yml` runs daily after the data job but rebuilds only when due (weekly, new patch, new hero, or forced) — ~640 requests / ~25 min, inside the token's limits (8/s, 150/min, 1 500/h, 15 000/day). Validated before an atomic directory swap; on failure the old builds stay.
 
 ## Allies, synergy and bans
 

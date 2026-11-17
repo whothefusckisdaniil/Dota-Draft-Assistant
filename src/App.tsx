@@ -13,6 +13,7 @@ import { ResultsGrid, ResultsSkeleton } from './components/ResultsGrid';
 import { HeroDetailsDrawer } from './components/HeroDetailsDrawer';
 import { HeroPool } from './components/HeroPool';
 import { TopSupports } from './components/TopSupports';
+import { BuildPanel } from './components/BuildPanel';
 import { PickerSheet } from './components/PickerSheet';
 import { DiamondLoader, EmptyDiamonds, Logo } from './components/Brand';
 import { ScoringPlayground } from './components/ScoringPlayground';
@@ -53,6 +54,8 @@ export default function App() {
   const [page, setPage] = useState<Page>('main');
   const [details, setDetails] = useState<{ c: CandidateScore; lane: Exclude<PositionFilter, 'all'> } | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
+  /** Position the build panel should open on (the lane a hero was recommended for). */
+  const [buildLane, setBuildLane] = useState<string | null>(null);
   const isDesktop = useMedia(DESKTOP);
 
   // Close the analysis whenever the draft changes or the user navigates —
@@ -84,7 +87,7 @@ export default function App() {
     try { navigator.vibrate?.(10); } catch { /* unsupported */ }
   }, [d]);
 
-  const counts = { enemy: d.enemies.length, ally: d.allies.length, ban: d.bans.length };
+  const counts = { enemy: d.enemies.length, ally: d.allies.length, ban: d.bans.length, me: d.me ? 1 : 0 };
   const ready = d.loadState.kind === 'ready';
   const hasDraft = d.enemies.length > 0 || d.allies.length > 0;
   const resultsKey = [d.enemies.join(), d.allies.join(), d.bans.join(), d.position, d.rank].join('|');
@@ -217,6 +220,9 @@ export default function App() {
                   active={d.target === 'ally'}
                   onRemove={(id) => d.remove(id, 'ally')}
                   onAdd={openPicker}
+                  me={d.me}
+                  meActive={d.target === 'me'}
+                  onRemoveMe={() => d.me && d.remove(d.me, 'me')}
                 />
                 <BanRow
                   ids={d.bans}
@@ -246,6 +252,14 @@ export default function App() {
               {d.rankError && d.rank !== 'ALL' && <div className="notice mb-4">{t(`rank.${d.rankError}` as StringKey)}</div>}
               {d.synergyUnavailable && <div className="notice mb-4">{t('synergy.unavailable')}</div>}
 
+              {d.me && d.heroById.get(d.me) && (
+                <BuildPanel
+                  hero={d.heroById.get(d.me)!}
+                  rank={d.rank === 'ALL' || d.rankError ? 'ALL' : d.rank}
+                  preferLane={buildLane ?? (d.position !== 'all' ? d.position : null)}
+                  onClose={() => { if (d.me) d.remove(d.me, 'me'); setBuildLane(null); }}
+                />
+              )}
               {!hasDraft ? (
                 <div className="fade-in">
                   {/* Short prompt: the draft is still the main action. */}
@@ -376,6 +390,12 @@ export default function App() {
           enemyIds={d.enemies}
           heroById={d.heroById}
           onClose={() => setDetails(null)}
+          onShowBuild={() => {
+            d.addHero(details.c.hero.id, 'me');
+            setBuildLane(details.lane);
+            setDetails(null);
+            window.setTimeout(() => document.getElementById('build-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60);
+          }}
         />
       )}
     </div>

@@ -50,7 +50,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
   if (url.origin === self.location.origin) {
-    if (url.pathname.startsWith('/data/')) event.respondWith(networkFirst(req));
+    if (url.pathname.startsWith('/data/') || url.pathname.startsWith('/builds/')) event.respondWith(networkFirst(req));
     else if (/^\/(assets|heroes|ranks|icons|brand)\//.test(url.pathname) || url.pathname === '/favicon.svg') event.respondWith(cacheFirst(req));
     return;
   }
