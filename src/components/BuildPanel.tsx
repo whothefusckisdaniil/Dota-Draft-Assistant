@@ -12,6 +12,7 @@ const CDN = 'https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react
 const itemImg = (key: string) => `${CDN}/items/${key}.png`;
 const abilityImg = (key: string) => `${CDN}/abilities/${key}.png`;
 const pct = (x: number) => Math.round(x * 100);
+const SHORT_NAMES: Record<string, string> = { ultimate_scepter: 'Scepter', aghanims_shard: 'Shard', ultimate_scepter_2: 'Blessing' };
 
 /** Core = bought in at least this share of games (after the laning items). */
 const CORE_PCT = 0.35;
@@ -176,6 +177,8 @@ function ItemTile({ id, meta, top, bottom, qty, hot, tag, tagHot }: {
   tagHot?: boolean;
 }) {
   const name = meta?.[1] ?? `#${id}`;
+  // both start with "Aghanim's" and truncate to the same text in a tile
+  const label = meta ? SHORT_NAMES[meta[0]] ?? name : name;
   return (
     <li className="flex w-[72px] flex-none flex-col items-center text-center" title={[name, top, bottom].filter(Boolean).join(' · ')}>
       <span className="relative h-[44px] w-[60px] overflow-hidden rounded-md bg-surface-2">
@@ -184,7 +187,7 @@ function ItemTile({ id, meta, top, bottom, qty, hot, tag, tagHot }: {
         {/* drawn inside the tile: an outer ring is clipped by the scrolling row */}
         {hot && <span aria-hidden="true" className="pointer-events-none absolute inset-0 rounded-md border-2 border-accent" />}
       </span>
-      <span className="mt-1 w-full truncate text-[11px] leading-[14px] text-ink">{name}</span>
+      <span className="mt-1 w-full truncate text-[11px] leading-[14px] text-ink">{label}</span>
       {top && <span className="tnum text-[11px] font-semibold leading-[14px] text-ink">{top}</span>}
       {bottom && <span className="tnum text-[11px] leading-[14px] text-muted">{bottom}</span>}
       {tag && <span className={`mt-0.5 w-full truncate text-[11px] font-semibold leading-[14px] ${tagHot ? 'text-accent' : 'text-muted'}`}>{tag}</span>}
@@ -369,8 +372,20 @@ function IdealRow({ build, itemOf, suggestions }: {
             tagHot={sl.kind === 'draft'}
           />
         ))}
+        {ib.shard && (
+          <>
+            <li aria-hidden="true" className="mx-1 w-px self-stretch bg-line" />
+            <ItemTile
+              id={ib.shard.id}
+              meta={itemOf(ib.shard.id)}
+              top={`${Math.round(ib.shard.pct * 100)}%`}
+              bottom={t('build.min', { min: ib.shard.minute })}
+              tag={t('build.noSlot')}
+            />
+          </>
+        )}
       </ol>
-      {ib.shard && <p className="mt-1 text-[11px] leading-[14px] text-muted">{t('build.shard', { min: ib.shard.minute, pct: Math.round(ib.shard.pct * 100) })}</p>}
+      {ib.shard && <p className="mt-2 text-[11px] leading-[14px] text-muted">{t('build.shardNote', { min: ib.shard.minute, pct: Math.round(ib.shard.pct * 100) })}</p>}
       <p className="mt-2 text-[11px] leading-[14px] text-muted">{t('build.idealNote')}</p>
     </div>
   );

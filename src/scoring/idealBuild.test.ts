@@ -26,6 +26,13 @@ const BUILD = {
 } as unknown as Build;
 
 describe('ideal build', () => {
+  it('reports the shard from 10% of purchases (Tormentor shards are not purchases)', () => {
+    const low = { ...BUILD, items: BUILD.items.map((x) => (x[0] === 609 ? [609, 0.13, 25, 52] : x)) } as unknown as Build;
+    expect(idealBuild(low, itemOf).shard).toEqual({ id: 609, pct: 0.13, minute: 25 });
+    const rare = { ...BUILD, items: BUILD.items.map((x) => (x[0] === 609 ? [609, 0.06, 25, 52] : x)) } as unknown as Build;
+    expect(idealBuild(rare, itemOf).shard).toBeNull();
+  });
+
   it('six slots in buying order, completed components replaced, shard and boots aside', () => {
     const ib = idealBuild(BUILD, itemOf);
     expect(ib.boots).toEqual({ id: 63, pct: 0.9, minute: 9 });

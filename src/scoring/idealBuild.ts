@@ -13,7 +13,7 @@ import type { ItemSuggestion } from './itemRules';
  * → Manta, Perseverance → Battle Fury, Crystalys → Daedalus): a component
  * leaves the list when its upgrade is bought in at least half as many games.
  * Aghanim's Shard / Blessing and boots do not take a slot; the shard is
- * reported separately. Order = typical purchase minute.
+ * reported separately (shown after the slots as "no slot"). Order = typical purchase minute.
  */
 export type SlotKind = 'core' | 'draft' | 'situational';
 
@@ -32,7 +32,7 @@ export interface IdealBuild {
   shard: { id: number; pct: number; minute: number } | null;
 }
 
-export const IDEAL = { slots: 6, corePct: 0.35, laningMinute: 12, draftSlots: 2, upgradeRatio: 0.5 } as const;
+export const IDEAL = { slots: 6, corePct: 0.35, laningMinute: 12, draftSlots: 2, upgradeRatio: 0.5, shardMinPct: 0.1 } as const;
 
 const NO_SLOT = new Set(['aghanims_shard', 'ultimate_scepter_2']);
 
@@ -77,6 +77,8 @@ export function idealBuild(
   return {
     boots: b ? { id: b[0], pct: b[1], minute: b[2] } : null,
     slots: [...chosen.values()].sort((a, b) => a.minute - b.minute),
-    shard: shardRow && shardRow[1] >= 0.2 ? { id: shardRow[0], pct: shardRow[1], minute: shardRow[2] } : null,
+    // Purchases only: a shard from a Tormentor is free and invisible here, so
+    // the real share is higher — a low bar, and the UI says so.
+    shard: shardRow && shardRow[1] >= IDEAL.shardMinPct ? { id: shardRow[0], pct: shardRow[1], minute: shardRow[2] } : null,
   };
 }
