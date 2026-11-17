@@ -257,6 +257,7 @@ export default function App() {
                   hero={d.heroById.get(d.me)!}
                   rank={d.rank === 'ALL' || d.rankError ? 'ALL' : d.rank}
                   preferLane={buildLane ?? (d.position !== 'all' ? d.position : null)}
+                  enemies={d.enemies.flatMap((id) => { const h = d.heroById.get(id); return h ? [h] : []; })}
                   onClose={() => { if (d.me) d.remove(d.me, 'me'); setBuildLane(null); }}
                 />
               )}

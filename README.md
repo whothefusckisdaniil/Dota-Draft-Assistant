@@ -128,6 +128,13 @@ Pick **your hero** in the "You" slot (or press **Build** in a recommended hero's
 - **Not available:** neutral items (STRATZ returns none for the current patch), facets, exact skill-by-level order.
 - **Pipeline:** `scripts/update-builds-stratz.mjs` + `scripts/stratz/builds.mjs` → `public/builds/<heroId>.json` (loaded only for the chosen hero) and `public/builds/index.json` (names). Same 30-day patch window, brackets and position eligibility as the matchups. `.github/workflows/update-builds.yml` runs daily after the data job but rebuilds only when due (weekly, new patch, new hero, or forced) — ~640 requests / ~25 min, inside the token's limits (8/s, 150/min, 1 500/h, 15 000/day). Validated before an atomic directory swap; on failure the old builds stay.
 
+### For this draft (rules, not statistics)
+
+With enemies in the draft, the build panel adds **For this draft**: up to 4 items with the reason and the enemies behind it ("Black King Bar — vs Lion, Bane, Earthshaker · hard disables on the enemy team: 6"). Items already in the statistical build that match get an amber frame. This is rule-based on purpose (the data showed no robust item-vs-enemy signal, ТЗ §36–§38) and is labelled as such in the UI.
+
+- **Hero traits** — `src/data/heroTags.ts`, one line per hero: damage type (magic / physical / mixed), number of hard disables, flags (invisible, healing, illusions, summons, evasion, silence, slippery, right-click carry). **Hand-authored draft — worth a review by a strong player**; a hero without tags adds nothing (tests allow up to 3 untagged, e.g. a just-released hero).
+- **Rules** — `src/scoring/itemRules.ts`: disables ≥ 4 → BKB / Lotus / Glimmer / Aeon; magic ≥ 60% → BKB / Pipe / Eternal Shroud / Mage Slayer / Glimmer; invisible → Dust / Sentry / Gem; heal ≥ 2 → Spirit Vessel / Skadi / Shiva's; evasion → MKB / Bloodthorn; ≥ 2 physical carries → Ghost / Force / Crimson / Halberd / Blade Mail; illusions or summons ≥ 2 → Mjollnir / Battle Fury (melee) / Shiva's; ≥ 2 slippery → Orchid / Abyssal / Atos / Gleipnir / Scythe; ≥ 2 silences → Manta (agi/universal) / Lotus / Eul's. Items are filtered by position (cores vs supports); an item the hero already buys in ≥ 60% of games is not repeated; items it buys sometimes rank higher, items it almost never buys (< 2%, e.g. BKB on Juggernaut, who has Blade Fury) rank lower and say so.
+
 ## Allies, synergy and bans
 
 The draft has three lists: **enemies** (up to 5), **your team** (up to 4 — you are the 5th) and **bans** (up to 14). The search adds to whichever is selected ("Add to: Enemies / My team / Bans"); a hero lives in one list only.

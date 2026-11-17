@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { accumulateHero, addAllRanks, buildHeroQuery, summarizeBuild, validateBuilds } from './builds.mjs';
-import { rebuildReason } from '../update-builds-stratz.mjs';
+import { abilityDisplayName, rebuildReason } from '../update-builds-stratz.mjs';
 
 const B = ['HERALD_GUARDIAN', 'DIVINE_IMMORTAL'];
 const items = new Map<number, { qual: string; cost: number }>([
@@ -106,5 +106,13 @@ describe('hero builds from STRATZ purchase statistics', () => {
     expect(rebuildReason({ index: { ...index, generatedAt: '2026-11-10T05:00:00Z' }, meta, heroIds: [1, 2], now })).toBe('WEEKLY');
     expect(rebuildReason({ index, meta, heroIds: [1, 2, 3], now })).toBe('ROSTER_CHANGED');
     expect(rebuildReason({ index, meta, heroIds: [1, 2], now, force: true })).toBe('FORCE');
+  });
+});
+
+describe('ability / talent display names', () => {
+  it('never shows a raw special_bonus key', () => {
+    expect(abilityDisplayName({ key: 'special_bonus_unique_lion_5', stratz: '-2.0s Hex Cooldown', openDota: 'x' })).toBe('-2.0s Hex Cooldown');
+    expect(abilityDisplayName({ key: 'special_bonus_unique_lion_5', stratz: 'special_bonus_unique_lion_5', openDota: '-{s:bonus_AbilityCooldown}s Hex Cooldown' })).toBe('Hex Cooldown');
+    expect(abilityDisplayName({ key: 'special_bonus_unique_dazzle_nothl_projection_duration', stratz: null, openDota: undefined })).toBe('Dazzle nothl projection duration');
   });
 });

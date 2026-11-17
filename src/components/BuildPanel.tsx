@@ -5,6 +5,7 @@ import { useI18n } from '../i18n';
 import type { StringKey } from '../i18n/strings';
 import { HeroPortrait } from './HeroPortrait';
 import { DiamondLoader } from './Brand';
+import { suggestItems, type ItemSuggestion } from '../scoring/itemRules';
 
 const CDN = 'https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react';
 const itemImg = (key: string) => `${CDN}/items/${key}.png`;
@@ -18,8 +19,10 @@ const LANING_MINUTE = 12;
 type State = { index: BuildIndex | null; builds: HeroBuilds | null; status: 'loading' | 'ready' | 'none' | 'error' };
 
 /** Statistical build of your hero for a position and rank (MVP: no enemy adaptation). */
-export function BuildPanel({ hero, rank, preferLane, onClose }: {
+export function BuildPanel({ hero, rank, preferLane, onClose, enemies = [] }: {
   hero: Hero;
+  /** Enemy heroes: drive the rule-based "for this draft" suggestions. */
+  enemies?: Hero[];
   rank: string;
   /** '1'..'5' to prefer that position (role tab, or the lane it was recommended for). */
   preferLane: string | null;
@@ -64,6 +67,10 @@ export function BuildPanel({ hero, rank, preferLane, onClose }: {
   const ix = state.index;
 
   const item = (id: number) => ix?.items[id];
+  const suggestions = useMemo<ItemSuggestion[]>(
+    () => (lane && build ? suggestItems({ hero, position: Number(lane) as 1 | 2 | 3 | 4 | 5, enemies, build, itemKeyOf: (id) => ix?.items[id]?.[0] }) : []),
+    [hero, lane, enemies, build, ix],
+  );
   const ability = (id: number) => ix?.abilities[id];
   const abilityName = (id: number) => {
     const a = ability(id);
@@ -108,7 +115,8 @@ export function BuildPanel({ hero, rank, preferLane, onClose }: {
           {preferLane && !lanes.includes(preferLane) && <p className="notice mt-3">{t('build.noPos', { lane: laneName(preferLane) })}</p>}
           {fellBack && <p className="notice mt-3">{t('build.lowData', { rank: rankName(rank) })}</p>}
 
-          <BuildBody build={build} itemOf={item} abilityOf={ability} abilityName={abilityName} />
+          <Adaptation suggestions={suggestions} enemies={enemies} />
+          <BuildBody build={build} itemOf={item} abilityOf={ability} abilityName={abilityName} highlight={new Set(suggestions.map((x) => x.key))} />
           <p className="mt-5 text-[11px] leading-[14px] text-muted">{t('build.note')}</p>
         </>
       )}
@@ -116,17 +124,19 @@ export function BuildPanel({ hero, rank, preferLane, onClose }: {
   );
 }
 
-function ItemTile({ id, meta, top, bottom, qty }: {
+function ItemTile({ id, meta, top, bottom, qty, hot }: {
   id: number;
   meta: [string, string] | undefined;
   top?: string;
   bottom?: string;
   qty?: number;
+  /** Also suggested for this enemy draft. */
+  hot?: boolean;
 }) {
   const name = meta?.[1] ?? `#${id}`;
   return (
     <li className="flex w-[64px] flex-none flex-col items-center text-center" title={[name, top, bottom].filter(Boolean).join(' · ')}>
-      <span className="relative h-[44px] w-[60px] overflow-hidden rounded-md bg-surface-2">
+      <span className={`relative h-[44px] w-[60px] overflow-hidden rounded-md bg-surface-2 ${hot ? 'ring-2 ring-accent' : ''}`}>
         {meta && <img src={itemImg(meta[0])} alt={name} width={88} height={64} loading="lazy" decoding="async" className="h-full w-full object-cover" />}
         {qty && qty > 1 ? <span className="tnum absolute bottom-0 right-0 rounded-tl-md bg-bg/85 px-1 text-[11px] font-semibold text-ink">×{qty}</span> : null}
       </span>
@@ -145,8 +155,9 @@ function Row({ title, children }: { title: string; children: React.ReactNode }) 
   );
 }
 
-function BuildBody({ build, itemOf, abilityOf, abilityName }: {
+function BuildBody({ build, itemOf, abilityOf, abilityName, highlight }: {
   build: Build;
+  highlight: Set<string>;
   itemOf: (id: number) => [string, string] | undefined;
   abilityOf: (id: number) => [string, string, string] | undefined;
   abilityName: (id: number) => string;
@@ -157,6 +168,7 @@ function BuildBody({ build, itemOf, abilityOf, abilityName }: {
   const situational = build.items.filter((x) => x[2] >= LANING_MINUTE && x[1] < CORE_PCT).sort((a, b) => b[1] - a[1]);
   const pctLabel = (x: number) => `${pct(x)}%`;
   const minLabel = (m: number) => t('build.min', { min: m });
+  const hot = (id: number) => highlight.has(itemOf(id)?.[0] ?? '');
 
   return (
     <>
@@ -168,17 +180,17 @@ function BuildBody({ build, itemOf, abilityOf, abilityName }: {
       {(laning.length > 0 || build.boots.length > 0) && (
         <Row title={`${t('build.early')} · ${t('build.boots')}`}>
           {build.boots.map(([id, p, m]) => <ItemTile key={`b${id}`} id={id} meta={itemOf(id)} top={pctLabel(p)} bottom={minLabel(m)} />)}
-          {laning.map(([id, p, m]) => <ItemTile key={id} id={id} meta={itemOf(id)} top={pctLabel(p)} bottom={minLabel(m)} />)}
+          {laning.map(([id, p, m]) => <ItemTile key={id} id={id} meta={itemOf(id)} top={pctLabel(p)} bottom={minLabel(m)} hot={hot(id)} />)}
         </Row>
       )}
       {core.length > 0 && (
         <Row title={t('build.core')}>
-          {core.map(([id, p, m]) => <ItemTile key={id} id={id} meta={itemOf(id)} top={pctLabel(p)} bottom={minLabel(m)} />)}
+          {core.map(([id, p, m]) => <ItemTile key={id} id={id} meta={itemOf(id)} top={pctLabel(p)} bottom={minLabel(m)} hot={hot(id)} />)}
         </Row>
       )}
       {situational.length > 0 && (
         <Row title={t('build.situational')}>
-          {situational.slice(0, 12).map(([id, p, m]) => <ItemTile key={id} id={id} meta={itemOf(id)} top={pctLabel(p)} bottom={minLabel(m)} />)}
+          {situational.slice(0, 12).map(([id, p, m]) => <ItemTile key={id} id={id} meta={itemOf(id)} top={pctLabel(p)} bottom={minLabel(m)} hot={hot(id)} />)}
         </Row>
       )}
 
@@ -229,5 +241,45 @@ function BuildBody({ build, itemOf, abilityOf, abilityName }: {
         </div>
       )}
     </>
+  );
+}
+
+/** Rule-based suggestions for the enemy draft, each with "why". */
+function Adaptation({ suggestions, enemies }: { suggestions: ItemSuggestion[]; enemies: Hero[] }) {
+  const i18n = useI18n();
+  const { t } = i18n;
+  const names = (hs: Hero[]) => hs.map((h) => i18n.heroName(h)).join(', ');
+  if (!enemies.length) return <p className="mt-4 text-[13px] leading-[18px] text-muted">{t('adapt.pickEnemies')}</p>;
+  return (
+    <div className="mt-4 rounded-xl border border-accent/30 bg-accent/5 p-3">
+      <h3 className="label text-accent">{t('adapt.title')}</h3>
+      {suggestions.length === 0 ? (
+        <p className="mt-2 text-[13px] leading-[18px] text-muted">{t('adapt.none')}</p>
+      ) : (
+        <ul className="stagger mt-2 grid gap-2">
+          {suggestions.map((s, i) => {
+            const vs = [...new Map(s.reasons.flatMap((r) => r.heroes).map((h) => [h.id, h])).values()];
+            return (
+              <li key={s.key} className="flex items-start gap-3" style={{ '--i': i } as React.CSSProperties}>
+                <span className="h-[44px] w-[60px] shrink-0 overflow-hidden rounded-md bg-surface-2">
+                  <img src={itemImg(s.key)} alt="" width={88} height={64} loading="lazy" decoding="async" className="h-full w-full object-cover" />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="flex flex-wrap items-baseline gap-x-2">
+                    <span className="text-[15px] font-semibold leading-5 text-ink">{s.name}</span>
+                    <span className="badge badge-accent">{t('adapt.vs', { names: names(vs.slice(0, 3)) })}</span>
+                  </span>
+                  <span className="mt-0.5 block text-[11px] leading-[14px] text-muted">
+                    {s.reasons.map((r) => t(`rule.${r.rule}` as StringKey, { n: r.n })).join(' · ')}
+                    {' · '}{s.buildPct > 0.01 ? t('adapt.inBuild', { pct: Math.round(s.buildPct * 100) }) : t('adapt.rare')}
+                  </span>
+                </span>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+      <p className="mt-3 text-[11px] leading-[14px] text-muted">{t('adapt.note')}</p>
+    </div>
   );
 }

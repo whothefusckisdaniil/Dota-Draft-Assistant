@@ -59,6 +59,42 @@ export function rebuildReason({ index, meta, heroIds, now = new Date(), force = 
   return null;
 }
 
+/** A usable display name: STRATZ text with numbers → OpenDota text without its
+ *  `{s:…}` templates → a readable key. Never the raw `special_bonus_…` key. */
+export function abilityDisplayName({ key, stratz, openDota }) {
+  const raw = (x) => !x || x === key || /^special_bonus_/.test(x);
+  if (!raw(stratz)) return stratz;
+  if (openDota && !raw(openDota)) {
+    const cleaned = openDota.replace(/[+\-–]?\{s:[^}]+\}[%s]?\s*/g, '').replace(/\s+/g, ' ').trim();
+    if (cleaned.length >= 4) return cleaned;
+  }
+  const words = String(key ?? '').replace(/^special_bonus_(unique_)?/, '').replace(/_/g, ' ').trim();
+  return words ? words[0].toUpperCase() + words.slice(1) : String(key);
+}
+
+async function fetchNames(transport) {
+  const [abilityIds, odAbilities] = await Promise.all([
+    getJson(`${OPEN_DOTA}/constants/ability_ids`),
+    getJson(`${OPEN_DOTA}/constants/abilities`),
+  ]);
+  const stratz = new Map();
+  for (const lang of ['ENGLISH', 'RUSSIAN']) {
+    const r = await transport.query(`{ constants { abilities(language: ${lang}) { id name language { displayName } } } }`);
+    for (const a of r.data?.constants?.abilities ?? []) {
+      const e = stratz.get(a.id) ?? { key: a.name };
+      e[lang === 'ENGLISH' ? 'en' : 'ru'] = a.language?.displayName ?? null;
+      stratz.set(a.id, e);
+    }
+  }
+  return (id) => {
+    const a = stratz.get(Number(id));
+    const key = a?.key ?? abilityIds[id] ?? String(id);
+    const en = abilityDisplayName({ key, stratz: a?.en, openDota: odAbilities[key]?.dname });
+    const ru = a?.ru && !/^special_bonus_/.test(a.ru) && a.ru !== key ? a.ru : en;
+    return [key, en, ru];
+  };
+}
+
 function eligiblePositions(entry) {
   if (!entry?.positions) return [];
   return ['1', '2', '3', '4', '5'].filter((p) => {
@@ -72,6 +108,21 @@ async function main() {
   const force = args.includes('--force');
   const only = args.includes('--heroes') ? args[args.indexOf('--heroes') + 1].split(',').map(Number) : null;
 
+  if (args.includes('--names-only')) {
+    // Refresh ability/talent names in index.json without re-querying the stats.
+    const idx = readJson(path.join(OUT, 'index.json'));
+    const tr = new StratzTransport(loadToken());
+    await tr.init();
+    try {
+      const nameOf = await fetchNames(tr);
+      for (const id of Object.keys(idx.abilities)) idx.abilities[id] = nameOf(id);
+    } finally {
+      await tr.close();
+    }
+    fs.writeFileSync(path.join(OUT, 'index.json'), JSON.stringify(idx));
+    console.log(`Names refreshed for ${Object.keys(idx.abilities).length} abilities.`);
+    return;
+  }
   const meta = readJson(path.join(DATA, 'meta.json'));
   const heroes = readJson(path.join(DATA, 'heroes.json'));
   const positions = readJson(path.join(DATA, 'positions.json'));
@@ -100,17 +151,8 @@ async function main() {
 
   const transport = new StratzTransport(loadToken());
   await transport.init();
-  const abilityNames = new Map();
+  const nameOf = await fetchNames(transport);
   try {
-    for (const lang of ['ENGLISH', 'RUSSIAN']) {
-      const r = await transport.query(`{ constants { abilities(language: ${lang}) { id name language { displayName } } } }`);
-      for (const a of r.data?.constants?.abilities ?? []) {
-        const e = abilityNames.get(a.id) ?? { key: a.name };
-        e[lang === 'ENGLISH' ? 'en' : 'ru'] = a.language?.displayName ?? null;
-        abilityNames.set(a.id, e);
-      }
-    }
-
     const builds = {};
     const list = heroes.filter((h) => !only || only.includes(h.id));
     let n = 0;
@@ -167,11 +209,7 @@ async function main() {
       if (m) items[id] = [m.key, m.name];
     }
     const abilities = {};
-    for (const id of usedAbilities) {
-      const a = abilityNames.get(id);
-      const key = a?.key ?? abilityIds[id];
-      abilities[id] = [key, a?.en ?? key, a?.ru ?? a?.en ?? key];
-    }
+    for (const id of usedAbilities) abilities[id] = nameOf(id);
     const newIndex = {
       generatedAt: new Date().toISOString(),
       patch: meta.latestPatch,
