@@ -21,19 +21,21 @@ const LANING_MINUTE = 12;
 type State = { index: BuildIndex | null; builds: HeroBuilds | null; status: 'loading' | 'ready' | 'none' | 'error' };
 
 /** Statistical build of your hero for a position and rank (MVP: no enemy adaptation). */
-export function BuildPanel({ hero, rank, preferLane, onClose, enemies = [] }: {
+export function BuildPanel({ hero, rank, preferLane, onLane, onClose, enemies = [] }: {
   hero: Hero;
   /** Enemy heroes: drive the rule-based "for this draft" suggestions. */
   enemies?: Hero[];
   rank: string;
-  /** '1'..'5' to prefer that position (role tab, or the lane it was recommended for). */
+  /** The role tab: '1'..'5', or null for "All" (then the hero's main position). */
   preferLane: string | null;
+  /** Switch the role tab (the panel has no position of its own: one switch for
+   *  the recommendations and the build). */
+  onLane: (lane: string) => void;
   onClose: () => void;
 }) {
   const i18n = useI18n();
   const { t } = i18n;
   const [state, setState] = useState<State>({ index: null, builds: null, status: 'loading' });
-  const [lane, setLane] = useState<string | null>(null);
   /** 'mine' = the selected rank (default), 'pro' = Divine–Immortal games. */
   const [source, setSource] = useState<'mine' | 'pro'>('mine');
 
@@ -56,12 +58,10 @@ export function BuildPanel({ hero, rank, preferLane, onClose, enemies = [] }: {
     const p = state.builds?.positions ?? {};
     return Object.keys(p).sort((a, b) => (p[b].ALL?.m ?? 0) - (p[a].ALL?.m ?? 0));
   }, [state.builds]);
-  useEffect(() => {
-    if (!lanes.length) return;
-    // A position the hero is (almost) never played on has no honest build:
-    // show nothing rather than another role's items under that role's name.
-    setLane(!preferLane ? lanes[0] : lanes.includes(preferLane) ? preferLane : null);
-  }, [lanes, preferLane]);
+  // Derived from the role tab, never stored: "All" → the hero's main position;
+  // a position it is (almost) never played at has no honest build → null
+  // (the panel says so instead of showing another role's items).
+  const lane: string | null = !lanes.length ? null : !preferLane ? lanes[0] : lanes.includes(preferLane) ? preferLane : null;
 
   const laneName = (l: string) => t(`lane.${l}` as StringKey);
   const rankName = (r: string) => (r === 'ALL' ? t('rank.all') : t(`rank.${r}` as StringKey));
@@ -120,7 +120,7 @@ export function BuildPanel({ hero, rank, preferLane, onClose, enemies = [] }: {
           <p className="text-[13px] leading-[18px] text-ink">{t('build.offRole', { name: i18n.heroName(hero), n: preferLane, role: t(`pos.sub.${preferLane}` as StringKey) })}</p>
           <div className="mt-3 flex flex-wrap gap-2">
             {lanes.map((l) => (
-              <button key={l} type="button" onClick={() => setLane(l)} className="btn btn-ghost btn-sm">
+              <button key={l} type="button" onClick={() => onLane(l)} className="btn btn-ghost btn-sm">
                 {l} · {t(`pos.sub.${l}` as StringKey)} <span aria-hidden="true">→</span>
               </button>
             ))}
@@ -133,7 +133,7 @@ export function BuildPanel({ hero, rank, preferLane, onClose, enemies = [] }: {
           {lanes.length > 1 && (
             <div className="seg seg-sm mt-4" role="tablist" aria-label={t('role.select')}>
               {lanes.map((l) => (
-                <button key={l} type="button" role="tab" aria-selected={lane === l} onClick={() => setLane(l)} className={`seg-btn ${lane === l ? 'is-active' : ''}`}>
+                <button key={l} type="button" role="tab" aria-selected={lane === l} onClick={() => onLane(l)} className={`seg-btn ${lane === l ? 'is-active' : ''}`}>
                   {l} · {t(`pos.sub.${l}` as StringKey)}
                 </button>
               ))}

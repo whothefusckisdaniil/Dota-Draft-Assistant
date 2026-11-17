@@ -54,8 +54,6 @@ export default function App() {
   const [page, setPage] = useState<Page>('main');
   const [details, setDetails] = useState<{ c: CandidateScore; lane: Exclude<PositionFilter, 'all'> } | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
-  /** Position the build panel should open on (the lane a hero was recommended for). */
-  const [buildLane, setBuildLane] = useState<string | null>(null);
   const isDesktop = useMedia(DESKTOP);
 
   // Close the analysis whenever the draft changes or the user navigates —
@@ -262,9 +260,10 @@ export default function App() {
                 <BuildPanel
                   hero={d.heroById.get(d.me)!}
                   rank={d.rank === 'ALL' || d.rankError ? 'ALL' : d.rank}
-                  preferLane={buildLane ?? (d.position !== 'all' ? d.position : null)}
+                  preferLane={d.position !== 'all' ? d.position : null}
+                  onLane={(l) => d.setPosition(l as Exclude<PositionFilter, 'all'>)}
                   enemies={d.enemies.flatMap((id) => { const h = d.heroById.get(id); return h ? [h] : []; })}
-                  onClose={() => { if (d.me) d.remove(d.me, 'me'); setBuildLane(null); }}
+                  onClose={() => { if (d.me) d.remove(d.me, 'me'); }}
                 />
               )}
               {!hasDraft ? (
@@ -399,7 +398,8 @@ export default function App() {
           onClose={() => setDetails(null)}
           onShowBuild={() => {
             d.addHero(details.c.hero.id, 'me');
-            setBuildLane(details.lane);
+            // the role tab is the one switch for recommendations and build
+            d.setPosition(details.lane);
             setDetails(null);
             window.setTimeout(() => document.getElementById('build-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60);
           }}
