@@ -194,8 +194,8 @@ export interface BuildIndex {
   generatedAt: string;
   patch: string;
   heroes: number[];
-  /** itemId → [key, English name] */
-  items: Record<string, [string, string]>;
+  /** itemId → [key, English name, component keys?] */
+  items: Record<string, [string, string, string[]?]>;
   /** abilityId → [key, English name, Russian name] */
   abilities: Record<string, [string, string, string]>;
 }

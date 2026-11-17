@@ -184,10 +184,10 @@ export const MAX_SUGGESTIONS = 4;
 const ALWAYS_AVAILABLE = new Set(['dust', 'gem', 'ward_sentry']);
 
 /**
- * Suggestions for your hero at a position against the enemies. Items the hero
- * already buys often (≥ 60% of games, the core) are not repeated; items it
- * does buy sometimes rank higher (they fit the hero). One item collects every
- * rule that asks for it.
+ * Suggestions for your hero at a position against the enemies, from the items
+ * this hero actually buys there (consumables excepted). Items it already buys
+ * in ≥ 60% of games (the core) are not repeated; the more often it buys an
+ * item, the higher it ranks. One item collects every rule that asks for it.
  */
 export function suggestItems({ hero, position, enemies, build, itemKeyOf, available }: {
   hero: Hero;
@@ -219,12 +219,13 @@ export function suggestItems({ hero, position, enemies, build, itemKeyOf, availa
       if (available && !available.has(it.key) && !ALWAYS_AVAILABLE.has(it.key)) continue;
       const pct = buildPct.get(it.key) ?? 0;
       if (pct >= 0.6) continue; // already core for this hero: nothing to add
+      // Only items this hero really buys at this position (the build lists
+      // items bought in >= 5% of games): a top item nobody builds on this hero
+      // (BKB on Juggernaut, who has Blade Fury) is not recommended at all.
+      if (build && pct === 0 && !ALWAYS_AVAILABLE.has(it.key)) continue;
       const s = byKey.get(it.key) ?? { key: it.key, name: RULE_ITEM_NAMES[it.key] ?? it.key, score: 0, buildPct: pct, reasons: [] };
-      // stronger trigger → higher; items this hero really buys fit better, and
-      // an item it almost never buys (Juggernaut has its own spell immunity and
-      // skips BKB) goes down: when a build is known, rules don't know the hero.
-      const fit = build && pct < 0.02 ? 0.6 : 1 + Math.min(pct, 0.5) * 2;
-      s.score += hit.strength * fit;
+      // stronger trigger → higher; items this hero buys more often fit better
+      s.score += hit.strength * (1 + Math.min(pct, 0.5) * 2);
       s.reasons.push({ rule: rule.id, heroes: hit.heroes, n: hit.n });
       byKey.set(it.key, s);
     }

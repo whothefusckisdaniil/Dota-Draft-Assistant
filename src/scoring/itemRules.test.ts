@@ -67,13 +67,14 @@ describe('enemy-draft item rules', () => {
     expect(mkb.reasons[0].heroes.map((h) => h.name)).toEqual(['Phantom Assassin']);
   });
 
-  it('lowers items this hero never buys (rules do not know the hero, the build does)', () => {
+  it('does not recommend items this hero never buys at this position', () => {
     const enemies = team('crystal_maiden', 'bane', 'earthshaker', 'phantom_assassin');
-    const none = { items: [], boots: [] } as unknown as Build;
-    const known = suggestItems({ hero: byKey('juggernaut'), position: 1, enemies, build: none, itemKeyOf: () => undefined });
-    const unknown = suggestItems({ hero: byKey('juggernaut'), position: 1, enemies, build: null, itemKeyOf: () => undefined });
-    const bkb = (list: typeof known) => list.find((x) => x.key === 'black_king_bar')!.score;
-    expect(bkb(known)).toBeLessThan(bkb(unknown));
+    const build = { items: [[135, 0.25, 30, 52]], boots: [] } as unknown as Build;
+    const s = suggestItems({ hero: byKey('juggernaut'), position: 1, enemies, build, itemKeyOf: (id) => (id === 135 ? 'monkey_king_bar' : undefined) });
+    expect(s.map((x) => x.key)).toEqual(['monkey_king_bar']);
+    // without a build there is nothing to check against: rules alone
+    const blind = suggestItems({ hero: byKey('juggernaut'), position: 1, enemies, build: null, itemKeyOf: () => undefined });
+    expect(blind.map((x) => x.key)).toContain('black_king_bar');
   });
 
   it('never suggests an item nobody buys this patch (removed from the game)', () => {

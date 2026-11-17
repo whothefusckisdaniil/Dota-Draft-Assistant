@@ -95,6 +95,13 @@ async function fetchNames(transport) {
   };
 }
 
+/** Index entry of an item: [key, name, components]. Components (item keys) let
+ *  the app skip a component most players complete (Yasha → Manta). */
+export function itemEntry(key, od) {
+  const comps = Array.isArray(od?.components) ? od.components.filter((c) => typeof c === 'string') : [];
+  return comps.length ? [key, od?.dname ?? key, comps] : [key, od?.dname ?? key];
+}
+
 function eligiblePositions(entry) {
   if (!entry?.positions) return [];
   return ['1', '2', '3', '4', '5'].filter((p) => {
@@ -116,11 +123,13 @@ async function main() {
     try {
       const nameOf = await fetchNames(tr);
       for (const id of Object.keys(idx.abilities)) idx.abilities[id] = nameOf(id);
+      const odItems = await getJson(`${OPEN_DOTA}/constants/items`);
+      for (const [id, entry] of Object.entries(idx.items)) idx.items[id] = itemEntry(entry[0], odItems[entry[0]]);
     } finally {
       await tr.close();
     }
     fs.writeFileSync(path.join(OUT, 'index.json'), JSON.stringify(idx));
-    console.log(`Names refreshed for ${Object.keys(idx.abilities).length} abilities.`);
+    console.log(`Names refreshed for ${Object.keys(idx.abilities).length} abilities and ${Object.keys(idx.items).length} items.`);
     return;
   }
   const meta = readJson(path.join(DATA, 'meta.json'));
@@ -206,7 +215,7 @@ async function main() {
     const items = {};
     for (const id of usedItems) {
       const m = itemMeta.get(id);
-      if (m) items[id] = [m.key, m.name];
+      if (m) items[id] = itemEntry(m.key, odItems[m.key]);
     }
     const abilities = {};
     for (const id of usedAbilities) abilities[id] = nameOf(id);

@@ -290,6 +290,16 @@ const en = {
   'rule.illusions': 'Illusions and summons: {n}',
   'rule.mobile': 'Slippery heroes: {n}',
   'rule.silence': 'Silences: {n}',
+  'build.ideal': 'Ideal build',
+  'build.idealNote': 'Core = what this hero buys in at least 35% of games; draft slots only from items this hero buys; order = typical minute. Components most players finish (Yasha → Manta) are shown as the finished item.',
+  'build.kindCore': 'core',
+  'build.kindSituational': 'situational',
+  'build.shard': '+ Aghanim’s Shard ~{min} min ({pct}%)',
+  'build.sourceMine': 'My rank',
+  'build.sourcePro': 'Divine+',
+  'build.sourceTitle': 'Whose games the build is based on',
+  'build.details': 'Detailed statistics',
+  'adapt.consumable': 'consumable',
 } as const;
 
 export type StringKey = keyof typeof en;
@@ -581,6 +591,16 @@ const ru: Record<StringKey, string> = {
   'rule.illusions': 'Иллюзии и призывы: {n}',
   'rule.mobile': 'Скользкие герои: {n}',
   'rule.silence': 'Сайленсы: {n}',
+  'build.ideal': 'Идеальный билд',
+  'build.idealNote': 'Кор — то, что этот герой покупает хотя бы в 35% игр; слоты под драфт — только из предметов, которые на нём берут; порядок — по типичной минуте. Компоненты, которые обычно доделывают (Yasha → Manta), показаны готовым предметом.',
+  'build.kindCore': 'кор',
+  'build.kindSituational': 'ситуативно',
+  'build.shard': '+ Aghanim’s Shard ~{min} мин ({pct}%)',
+  'build.sourceMine': 'Мой ранг',
+  'build.sourcePro': 'Божество+',
+  'build.sourceTitle': 'Чьи игры берём за основу',
+  'build.details': 'Подробная статистика',
+  'adapt.consumable': 'расходник',
 };
 
 export const STRINGS: Record<'en' | 'ru', Record<StringKey, string>> = { en, ru };

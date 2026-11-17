@@ -6,6 +6,7 @@ import type { StringKey } from '../i18n/strings';
 import { HeroPortrait } from './HeroPortrait';
 import { DiamondLoader } from './Brand';
 import { suggestItems, type ItemSuggestion } from '../scoring/itemRules';
+import { idealBuild } from '../scoring/idealBuild';
 
 const CDN = 'https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react';
 const itemImg = (key: string) => `${CDN}/items/${key}.png`;
@@ -32,6 +33,8 @@ export function BuildPanel({ hero, rank, preferLane, onClose, enemies = [] }: {
   const { t } = i18n;
   const [state, setState] = useState<State>({ index: null, builds: null, status: 'loading' });
   const [lane, setLane] = useState<string | null>(null);
+  /** 'mine' = the selected rank (default), 'pro' = Divine–Immortal games. */
+  const [source, setSource] = useState<'mine' | 'pro'>('mine');
 
   useEffect(() => {
     let alive = true;
@@ -60,10 +63,12 @@ export function BuildPanel({ hero, rank, preferLane, onClose, enemies = [] }: {
   const laneName = (l: string) => t(`lane.${l}` as StringKey);
   const rankName = (r: string) => (r === 'ALL' ? t('rank.all') : t(`rank.${r}` as StringKey));
   const byRank = lane ? state.builds?.positions[lane] : undefined;
-  const exact = byRank?.[rank];
+  const PRO = 'DIVINE_IMMORTAL';
+  const wantRank = source === 'pro' ? PRO : rank;
+  const exact = byRank?.[wantRank];
   const build: Build | undefined = exact && !exact.low ? exact : byRank?.ALL;
-  const fellBack = rank !== 'ALL' && build === byRank?.ALL;
-  const shownRank = fellBack ? 'ALL' : rank;
+  const fellBack = wantRank !== 'ALL' && build === byRank?.ALL;
+  const shownRank = fellBack ? 'ALL' : wantRank;
   const ix = state.index;
 
   const item = (id: number) => ix?.items[id];
@@ -119,9 +124,23 @@ export function BuildPanel({ hero, rank, preferLane, onClose, enemies = [] }: {
             </div>
           )}
           {preferLane && !lanes.includes(preferLane) && <p className="notice mt-3">{t('build.noPos', { lane: laneName(preferLane) })}</p>}
-          {fellBack && <p className="notice mt-3">{t('build.lowData', { rank: rankName(rank) })}</p>}
+          {rank !== PRO && (
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <span className="text-[11px] leading-[14px] text-muted">{t('build.sourceTitle')}</span>
+              <div className="seg seg-sm" role="radiogroup" aria-label={t('build.sourceTitle')}>
+                {(['mine', 'pro'] as const).map((src) => (
+                  <button key={src} type="button" role="radio" aria-checked={source === src} onClick={() => setSource(src)} className={`seg-btn ${source === src ? 'is-active' : ''}`}>
+                    {src === 'mine' ? `${t('build.sourceMine')} · ${rankName(rank)}` : t('build.sourcePro')}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+          {fellBack && <p className="notice mt-3">{t('build.lowData', { rank: rankName(wantRank) })}</p>}
 
+          <IdealRow build={build} itemOf={item} suggestions={suggestions} />
           <Adaptation suggestions={suggestions} enemies={enemies} />
+          <h3 className="mt-6 border-t border-line pt-4 font-display text-[13px] font-bold uppercase tracking-[0.06em] text-muted">{t('build.details')}</h3>
           <BuildBody build={build} itemOf={item} abilityOf={ability} abilityName={abilityName} highlight={new Set(suggestions.map((x) => x.key))} />
           <p className="mt-5 text-[11px] leading-[14px] text-muted">{t('build.note')}</p>
         </>
@@ -130,14 +149,17 @@ export function BuildPanel({ hero, rank, preferLane, onClose, enemies = [] }: {
   );
 }
 
-function ItemTile({ id, meta, top, bottom, qty, hot }: {
+function ItemTile({ id, meta, top, bottom, qty, hot, tag, tagHot }: {
   id: number;
-  meta: [string, string] | undefined;
+  meta: [string, string, string[]?] | undefined;
   top?: string;
   bottom?: string;
   qty?: number;
   /** Also suggested for this enemy draft. */
   hot?: boolean;
+  /** Small label under the tile (slot kind). */
+  tag?: string;
+  tagHot?: boolean;
 }) {
   const name = meta?.[1] ?? `#${id}`;
   return (
@@ -151,6 +173,7 @@ function ItemTile({ id, meta, top, bottom, qty, hot }: {
       <span className="mt-1 w-full truncate text-[11px] leading-[14px] text-ink">{name}</span>
       {top && <span className="tnum text-[11px] font-semibold leading-[14px] text-ink">{top}</span>}
       {bottom && <span className="tnum text-[11px] leading-[14px] text-muted">{bottom}</span>}
+      {tag && <span className={`mt-0.5 w-full truncate text-[11px] font-semibold leading-[14px] ${tagHot ? 'text-accent' : 'text-muted'}`}>{tag}</span>}
     </li>
   );
 }
@@ -167,7 +190,7 @@ function Row({ title, children }: { title: string; children: React.ReactNode }) 
 function BuildBody({ build, itemOf, abilityOf, abilityName, highlight }: {
   build: Build;
   highlight: Set<string>;
-  itemOf: (id: number) => [string, string] | undefined;
+  itemOf: (id: number) => [string, string, string[]?] | undefined;
   abilityOf: (id: number) => [string, string, string] | undefined;
   abilityName: (id: number) => string;
 }) {
@@ -288,7 +311,7 @@ function Adaptation({ suggestions, enemies }: { suggestions: ItemSuggestion[]; e
                   </span>
                   <span className="mt-0.5 block text-[11px] leading-[14px] text-muted">
                     {s.reasons.map((r) => t(`rule.${r.rule}` as StringKey, { n: r.n })).join(' · ')}
-                    {' · '}{s.buildPct > 0.01 ? t('adapt.inBuild', { pct: Math.round(s.buildPct * 100) }) : t('adapt.rare')}
+                    {' · '}{s.buildPct > 0.01 ? t('adapt.inBuild', { pct: Math.round(s.buildPct * 100) }) : t('adapt.consumable')}
                   </span>
                 </span>
               </li>
@@ -297,6 +320,44 @@ function Adaptation({ suggestions, enemies }: { suggestions: ItemSuggestion[]; e
         </ul>
       )}
       <p className="mt-3 text-[11px] leading-[14px] text-muted">{t('adapt.note')}</p>
+    </div>
+  );
+}
+
+/** Boots + 6 slots in buying order (src/scoring/idealBuild.ts). */
+function IdealRow({ build, itemOf, suggestions }: {
+  build: Build;
+  itemOf: (id: number) => [string, string, string[]?] | undefined;
+  suggestions: ItemSuggestion[];
+}) {
+  const i18n = useI18n();
+  const { t } = i18n;
+  const ib = useMemo(() => idealBuild(build, itemOf, suggestions), [build, itemOf, suggestions]);
+  if (!ib.slots.length) return null;
+  const vs = (s?: ItemSuggestion) => (s ? t('adapt.vs', { names: [...new Map(s.reasons.flatMap((r) => r.heroes).map((h) => [h.id, h])).values()].slice(0, 2).map((h) => i18n.heroName(h)).join(', ') }) : '');
+  return (
+    <div className="mt-4">
+      <h3 className="label mb-2 text-ink">{t('build.ideal')}</h3>
+      {/* wraps instead of scrolling: the whole build must be visible at once */}
+      <ol className="flex flex-wrap gap-x-1 gap-y-3">
+        {ib.boots && (
+          <ItemTile id={ib.boots.id} meta={itemOf(ib.boots.id)} top={`${Math.round(ib.boots.pct * 100)}%`} bottom={t('build.min', { min: ib.boots.minute })} tag={t('build.boots')} />
+        )}
+        {ib.slots.map((sl, i) => (
+          <ItemTile
+            key={sl.id}
+            id={sl.id}
+            meta={itemOf(sl.id)}
+            top={`${i + 1}. ${Math.round(sl.pct * 100)}%`}
+            bottom={t('build.min', { min: sl.minute })}
+            hot={sl.kind === 'draft'}
+            tag={sl.kind === 'core' ? t('build.kindCore') : sl.kind === 'draft' ? vs(sl.suggestion) : t('build.kindSituational')}
+            tagHot={sl.kind === 'draft'}
+          />
+        ))}
+      </ol>
+      {ib.shard && <p className="mt-1 text-[11px] leading-[14px] text-muted">{t('build.shard', { min: ib.shard.minute, pct: Math.round(ib.shard.pct * 100) })}</p>}
+      <p className="mt-2 text-[11px] leading-[14px] text-muted">{t('build.idealNote')}</p>
     </div>
   );
 }
