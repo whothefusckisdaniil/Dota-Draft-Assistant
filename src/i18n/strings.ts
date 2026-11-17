@@ -185,6 +185,7 @@ const en = {
   'privacy.noAccount': 'No account required.',
   'privacy.noData': 'No personal data stored.',
   'privacy.noSteam': 'No Steam login required.',
+  'privacy.analytics': 'Anonymous visit statistics (Vercel Web Analytics): page views, country, device and browser type. No cookies, no account, nothing that identifies you.',
   'privacy.note': 'The app does not collect Steam IDs and stores nothing beyond your browser session.',
 
   'footer.matchups': 'Matchups:',
@@ -422,6 +423,7 @@ const ru: Record<StringKey, string> = {
   'privacy.noAccount': 'Регистрация не нужна.',
   'privacy.noData': 'Персональные данные не хранятся.',
   'privacy.noSteam': 'Вход через Steam не нужен.',
+  'privacy.analytics': 'Анонимная статистика посещений (Vercel Web Analytics): просмотры страниц, страна, тип устройства и браузера. Без cookie и аккаунтов, ничего, что указывает на вас лично.',
   'privacy.note': 'Сайт не собирает Steam ID и ничего не хранит, кроме настроек в вашем браузере.',
 
   'footer.matchups': 'Матчапы:',

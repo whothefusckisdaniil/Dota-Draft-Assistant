@@ -29,6 +29,8 @@ The app recommends heroes only. It does not recommend items, item builds or purc
 
 - **Share:** the Share menu copies the draft link or makes a draft card image — enemies + top counterpicks, LASTPICK branding, site address — as 1080×1920 (stories / TikTok, content kept out of the top/bottom 250 px) or 1200×630 (post). Drawn on a canvas in the browser (`src/share/shareCard.ts`); phones get the system share sheet with the file, desktops download it.
 
+- **Analytics:** Vercel Web Analytics (`@vercel/analytics`, mounted in `src/main.tsx`): cookieless visitor and page-view counts, countries, devices, referrers in the Vercel dashboard → Analytics (enable it there once). The draft query string is stripped before sending (`src/analytics.ts`), one view per page per visit, and visits that opened a shared draft link are reported as `/?via=draft-link`. Mentioned on the Privacy page.
+
 ## Run
 
 ```bash

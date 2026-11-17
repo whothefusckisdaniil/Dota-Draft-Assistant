@@ -151,6 +151,7 @@ export default function App() {
               <li>{t('privacy.noAccount')}</li>
               <li>{t('privacy.noData')}</li>
               <li>{t('privacy.noSteam')}</li>
+              <li>{t('privacy.analytics')}</li>
             </ul>
             <p className="mt-3">{t('privacy.note')}</p>
           </section>
