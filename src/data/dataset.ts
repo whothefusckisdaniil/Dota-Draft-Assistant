@@ -161,6 +161,18 @@ export async function loadSynergyByBracket(heroIds: Set<number>): Promise<Map<st
   return synergyInflight.byBracket;
 }
 
+/** Per-position win rates by rank: `{ ALL | bracket: { heroId: [[games, wins] × 5] } }`. Optional. */
+export type RoleStats = Record<string, Record<string, [number, number][]>>;
+let roleStatsPromise: Promise<RoleStats | null> | null = null;
+
+export function loadRoleStats(): Promise<RoleStats | null> {
+  roleStatsPromise ??= fetchOptionalJson<RoleStats>('role-stats.json').catch((e) => {
+    roleStatsPromise = null;
+    throw e;
+  });
+  return roleStatsPromise;
+}
+
 let cache: Dataset | null = null;
 let inflight: Promise<Dataset> | null = null;
 

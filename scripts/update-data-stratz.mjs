@@ -35,6 +35,7 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { getCompleteWeeklyBuckets, getRollingWindow, BUCKET_SEC, ROLLING_DAYS } from './stratz/buckets.mjs';
 import { fetchPositionsFromStratz, validatePositionData } from './stratz/positions.mjs';
+import { fetchRoleStatsFromStratz, finalizeRoleStats, validateRoleStats } from './stratz/role-stats.mjs';
 import { POSITION_ELIGIBILITY } from './stratz/eligibility.mjs';
 import { fetchOpenDotaMetadata, validateHeroMetadata } from './opendota/metadata.mjs';
 import { publishDatasetAtomically } from './dataset-publish.mjs';
@@ -636,7 +637,7 @@ export async function fetchMatchupsFromStratz(heroIds, windowInfo, { token, log 
 /** The only files a refresh publishes (ТЗ №77: Counterpick data only). */
 export const PUBLISHED_FILES = Object.freeze([
   'heroes.json', 'matchups.json', 'positions.json', 'meta.json', 'matchups-by-bracket.json',
-  'synergy.json', 'synergy-by-bracket.json',
+  'synergy.json', 'synergy-by-bracket.json', 'role-stats.json',
 ]);
 
 /** Rank brackets offered in the UI, each published as its own matchup table. */
@@ -716,6 +717,8 @@ export async function buildDataset({
   fetchMetadata = fetchOpenDotaMetadata,
   fetchMatchups = fetchMatchupsFromStratz,
   fetchPositions = fetchPositionsFromStratz,
+  // Optional layer (per-position win rates by rank); null = skipped.
+  fetchRoleStats = null,
   now = new Date(),
   log = console.log,
 } = {}) {
@@ -828,6 +831,20 @@ export async function buildDataset({
   const positionInfo = validatePositionData(positions, { heroes, windowInfo, newHeroIds });
   log(`    Position data passed! ${positionInfo.heroCount} heroes across buckets [${positionInfo.buckets.join(', ')}]`);
 
+  // Per-position win rates by rank ("top supports right now"). Optional: a
+  // failure here is logged and the rest of the snapshot is still published.
+  let roleStats = null;
+  if (fetchRoleStats) {
+    try {
+      roleStats = finalizeRoleStats(await fetchRoleStats(heroIds, windowInfo, { log }), heroes);
+      validateRoleStats(roleStats, heroes);
+      log('    Role stats passed (all ranks + brackets)');
+    } catch (e) {
+      roleStats = null;
+      log(`    WARNING: per-position win rates skipped: ${e.message}`);
+    }
+  }
+
   const totalPairGames = Object.values(matchups).reduce(
     (s, rows) => s + rows.reduce((x, r) => x + r.games_played, 0),
     0,
@@ -864,6 +881,12 @@ export async function buildDataset({
       ? {
           files: ['synergy.json', 'synergy-by-bracket.json'],
           perspective: 'wins = wins of the team with both heroes (same-team "with" rows, both directions averaged)',
+        }
+      : null,
+    roleStats: roleStats
+      ? {
+          file: 'role-stats.json',
+          format: '{ ALL | <bracket>: { heroId: [[games, wins] for positions 1..5] } }, ALL = sum of the brackets',
         }
       : null,
     brackets: {
@@ -909,11 +932,11 @@ export async function buildDataset({
     },
   };
 
-  return { heroes, matchups, matchupsByBracket, synergy, synergyByBracket, positions, meta, validationResult, positionInfo };
+  return { heroes, matchups, matchupsByBracket, synergy, synergyByBracket, roleStats, positions, meta, validationResult, positionInfo };
 }
 
 /** The atomic publish payload: exactly PUBLISHED_FILES, nothing else. */
-export function buildPublishPayload({ heroes, matchups, positions, meta, matchupsByBracket, synergy = null, synergyByBracket = null }) {
+export function buildPublishPayload({ heroes, matchups, positions, meta, matchupsByBracket, synergy = null, synergyByBracket = null, roleStats = null }) {
   const payload = {
     'heroes.json': heroes,
     'matchups.json': matchups,
@@ -926,6 +949,7 @@ export function buildPublishPayload({ heroes, matchups, positions, meta, matchup
     payload['synergy.json'] = synergy;
     payload['synergy-by-bracket.json'] = synergyByBracket;
   }
+  if (roleStats) payload['role-stats.json'] = roleStats;
   for (const [name, value] of Object.entries(payload)) {
     if (value === undefined || value === null) throw new Error(`Refusing to publish: ${name} is missing`);
   }
@@ -943,6 +967,8 @@ async function main() {
       fetchMatchupsFromStratz(heroIds, windowInfo, { ...opts, token }),
     fetchPositions: (heroIds, windowInfo, opts) =>
       fetchPositionsFromStratz(heroIds, windowInfo, { ...opts, token }),
+    fetchRoleStats: (heroIds, windowInfo, opts) =>
+      fetchRoleStatsFromStratz(heroIds, windowInfo, { ...opts, token }),
   });
   const { heroes, meta } = result;
 

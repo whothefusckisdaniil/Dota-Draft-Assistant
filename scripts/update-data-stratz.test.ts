@@ -936,7 +936,8 @@ describe('synergy (same-team "with" rows)', () => {
     expect(result.synergy['1'][0]).toMatchObject({ games_played: 4000, wins: 2000 }); // 4 brackets summed
     expect(Object.keys(result.synergyByBracket)).toEqual(['HERALD_GUARDIAN', 'CRUSADER_ARCHON', 'LEGEND_ANCIENT', 'DIVINE_IMMORTAL']);
     expect(result.meta.synergy.files).toEqual(['synergy.json', 'synergy-by-bracket.json']);
-    expect(Object.keys(buildPublishPayload(result))).toEqual([...PUBLISHED_FILES]);
+    // no role-stats fetcher in this run: everything but the optional role-stats layer
+    expect(Object.keys(buildPublishPayload(result))).toEqual(PUBLISHED_FILES.filter((f) => f !== 'role-stats.json'));
   });
 
   it('the query asks for with-rows only when synergy is requested', () => {
@@ -1041,7 +1042,7 @@ describe('buildDataset — no item data (ТЗ №77)', () => {
 
   it('returns no item layers and no meta.itemData', async () => {
     const { result } = await run();
-    expect(Object.keys(result).sort()).toEqual(['heroes', 'matchups', 'matchupsByBracket', 'meta', 'positionInfo', 'positions', 'synergy', 'synergyByBracket', 'validationResult']);
+    expect(Object.keys(result).sort()).toEqual(['heroes', 'matchups', 'matchupsByBracket', 'meta', 'positionInfo', 'positions', 'roleStats', 'synergy', 'synergyByBracket', 'validationResult']);
     expect(result.meta).not.toHaveProperty('itemData');
     expect(JSON.stringify(result.meta)).not.toMatch(/item/i);
   });
@@ -1062,7 +1063,7 @@ describe('buildDataset — no item data (ТЗ №77)', () => {
 
   it('publishes exactly heroes, matchups, positions, meta and the per-rank tables', async () => {
     const { result } = await run();
-    expect([...PUBLISHED_FILES]).toEqual(['heroes.json', 'matchups.json', 'positions.json', 'meta.json', 'matchups-by-bracket.json', 'synergy.json', 'synergy-by-bracket.json']);
+    expect([...PUBLISHED_FILES]).toEqual(['heroes.json', 'matchups.json', 'positions.json', 'meta.json', 'matchups-by-bracket.json', 'synergy.json', 'synergy-by-bracket.json', 'role-stats.json']);
     // a fetcher without same-team data publishes without the optional synergy layer
     expect(Object.keys(buildPublishPayload(result))).toEqual(PUBLISHED_FILES.slice(0, 5));
     expect([...DATASET_FILES, ...OPTIONAL_DATASET_FILES].sort()).toEqual([...PUBLISHED_FILES].sort());

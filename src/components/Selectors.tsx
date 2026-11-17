@@ -248,7 +248,7 @@ const RANK_MEDALS: Record<string, [string, string]> = {
 };
 const medalSrc = (name: string) => `${import.meta.env.BASE_URL}ranks/${name}.png`;
 
-function Medals({ id, size = 32 }: { id: string; size?: number }) {
+export function Medals({ id, size = 32 }: { id: string; size?: number }) {
   const medals = RANK_MEDALS[id] ?? ['herald', 'immortal'];
   return (
     <span className="flex flex-none items-center" aria-hidden="true">

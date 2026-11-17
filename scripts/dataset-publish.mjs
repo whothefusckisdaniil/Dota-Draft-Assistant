@@ -44,7 +44,7 @@ export const DATASET_FILES = [
  * the OpenDota fallback has no rank split and publishes without them (the UI
  * then hides the rank selector).
  */
-export const OPTIONAL_DATASET_FILES = ['matchups-by-bracket.json', 'synergy.json', 'synergy-by-bracket.json'];
+export const OPTIONAL_DATASET_FILES = ['matchups-by-bracket.json', 'synergy.json', 'synergy-by-bracket.json', 'role-stats.json'];
 const ALLOWED_FILES = [...DATASET_FILES, ...OPTIONAL_DATASET_FILES];
 
 /**
@@ -167,6 +167,17 @@ export async function verifyStagedDataset(stagedDir, { heroCount, requireComplet
   if (present.has('synergy.json')) {
     checkTables('synergy.json', await readOptional('synergy.json'));
     checkByBracket('synergy-by-bracket.json', await readOptional('synergy-by-bracket.json'));
+  }
+  // Per-position win rates: every rank table covers exactly the roster.
+  if (present.has('role-stats.json')) {
+    const roleStats = await readOptional('role-stats.json');
+    if (!roleStats || typeof roleStats !== 'object' || !roleStats.ALL) throw new Error('staged role-stats.json has no ALL table');
+    for (const [bracket, table] of Object.entries(roleStats)) {
+      const tableIds = Object.keys(table ?? {}).map(Number);
+      if (tableIds.length !== heroes.length || tableIds.some((id) => !ids.has(id))) {
+        throw new Error(`staged role-stats.json ${bracket} does not cover exactly the ${heroes.length} heroes`);
+      }
+    }
   }
   // Optional external expectation (the caller's in-memory count), when given.
   if (heroCount !== undefined && meta.heroCount !== heroCount) {

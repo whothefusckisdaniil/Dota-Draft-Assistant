@@ -12,6 +12,7 @@ import { BanSuggestions } from './components/BanSuggestions';
 import { ResultsGrid, ResultsSkeleton } from './components/ResultsGrid';
 import { HeroDetailsDrawer } from './components/HeroDetailsDrawer';
 import { HeroPool } from './components/HeroPool';
+import { TopSupports } from './components/TopSupports';
 import { PickerSheet } from './components/PickerSheet';
 import { DiamondLoader, EmptyDiamonds, Logo } from './components/Brand';
 import { ScoringPlayground } from './components/ScoringPlayground';
@@ -246,23 +247,34 @@ export default function App() {
               {d.synergyUnavailable && <div className="notice mb-4">{t('synergy.unavailable')}</div>}
 
               {!hasDraft ? (
-                <div className="fade-in flex flex-col items-center px-4 py-12 text-center md:py-20">
-                  <EmptyDiamonds />
-                  <p className="mt-5 font-display text-[16px] font-bold leading-5 text-ink sm:text-[20px] sm:leading-6">{t('empty.title')}</p>
-                  <p className="mt-2 text-[13px] leading-[18px] text-muted">{t('empty.text', { max: APP_CONFIG.ui.maxEnemies })}</p>
-                  <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
-                    <span className="text-[13px] text-muted">{t('empty.try')}</span>
-                    {TRY_EXAMPLES.map((n) => {
-                      const id = heroByName.get(n.toLowerCase());
-                      const h = id !== undefined ? d.heroById.get(id) : undefined;
-                      return (
-                        <button key={n} type="button" onClick={() => id !== undefined && d.addHero(id, 'enemy')} className="btn btn-ghost btn-sm">
-                          {h ? i18n.heroName(h) : n}
-                        </button>
-                      );
-                    })}
+                <div className="fade-in">
+                  {/* Short prompt: the draft is still the main action. */}
+                  <div className="flex flex-col items-center px-4 pb-6 pt-4 text-center md:pt-2">
+                    <EmptyDiamonds />
+                    <p className="mt-4 font-display text-[16px] font-bold leading-5 text-ink">{t('empty.title')}</p>
+                    <p className="mt-1.5 text-[13px] leading-[18px] text-muted">{t('empty.text', { max: APP_CONFIG.ui.maxEnemies })}</p>
+                    <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
+                      <span className="text-[13px] text-muted">{t('empty.try')}</span>
+                      {TRY_EXAMPLES.map((n) => {
+                        const id = heroByName.get(n.toLowerCase());
+                        const h = id !== undefined ? d.heroById.get(id) : undefined;
+                        return (
+                          <button key={n} type="button" onClick={() => id !== undefined && d.addHero(id, 'enemy')} className="btn btn-ghost btn-sm">
+                            {h ? i18n.heroName(h) : n}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
-                  <p className="mt-10 max-w-sm text-[11px] leading-[14px] text-muted">{t('app.slogan')}</p>
+                  {/* Before any pick: what is strong on pos 4 / 5 in your rank right now. */}
+                  <TopSupports
+                    stats={d.roleStats}
+                    heroes={d.heroes}
+                    rank={d.rank}
+                    rankOptions={d.rankOptions}
+                    onRank={d.setRank}
+                    initialPos={d.position === '4' ? 4 : 5}
+                  />
                 </div>
               ) : (
                 <>

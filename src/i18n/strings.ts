@@ -237,6 +237,17 @@ const en = {
   'share.making': 'Making the image…',
   'share.saved': 'Image saved',
   'share.failed': 'Could not make the image',
+  'top.title': 'Strongest supports right now',
+  'top.sub': 'Win rate on the position · {rank} · last 30 days',
+  'top.pos4': 'Pos 4',
+  'top.pos5': 'Pos 5',
+  'top.pos4sub': 'Soft support',
+  'top.pos5sub': 'Hard support',
+  'top.row': 'in {pick}% of matches · {share}% of its games here',
+  'top.vs50': 'vs a 50% average',
+  'top.note': 'Win rate of each hero when played at this position, for the selected rank. Only heroes really played there (at least 20% of their games) with enough matches; small samples are pulled toward 50%.',
+  'top.none': 'Not enough data for this rank yet.',
+  'top.unavailable': 'Position statistics are not available right now.',
 } as const;
 
 export type StringKey = keyof typeof en;
@@ -475,6 +486,17 @@ const ru: Record<StringKey, string> = {
   'share.making': 'Готовим картинку…',
   'share.saved': 'Картинка сохранена',
   'share.failed': 'Не удалось сделать картинку',
+  'top.title': 'Сильные саппорты сейчас',
+  'top.sub': 'Винрейт на позиции · {rank} · последние 30 дней',
+  'top.pos4': 'Поз. 4',
+  'top.pos5': 'Поз. 5',
+  'top.pos4sub': 'Саппорт',
+  'top.pos5sub': 'Фулл саппорт',
+  'top.row': 'в {pick}% матчей · {share}% его игр на позиции',
+  'top.vs50': 'относительно средних 50%',
+  'top.note': 'Винрейт героя именно на этой позиции в выбранном ранге. Только герои, которых там реально играют (не меньше 20% их игр) и с достаточным числом матчей; малые выборки подтягиваются к 50%.',
+  'top.none': 'Для этого ранга пока мало данных.',
+  'top.unavailable': 'Статистика по позициям сейчас недоступна.',
 };
 
 export const STRINGS: Record<'en' | 'ru', Record<StringKey, string>> = { en, ru };

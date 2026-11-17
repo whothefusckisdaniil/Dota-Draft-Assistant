@@ -113,6 +113,12 @@ Frontend loads `public/data/*.json` once, scores locally, and shows `Data update
 
 Details and measured impact of the OpenDota → STRATZ switch: [`docs/stratz-migration.md`](docs/stratz-migration.md). The research spike behind it (schema, direction proof, the former Cloudflare workaround — no longer used) is in [`docs/stratz-research.md`](docs/stratz-research.md).
 
+## Top supports (no draft needed)
+
+Before any hero is picked, the main screen shows **Strongest supports right now**: the top 10 heroes on position 4 or 5 by their **win rate when played at that position**, for the rank chosen in the block or the header chip (each bracket or all ranks), over the same 30-day window. Only heroes really played there count (≥ 20% of their games at that position, ≥ 500 games in a bracket / 2 000 across all ranks); the ranking pulls small samples toward 50% (`games / (games + 1000)`), and each row shows the raw win rate, its distance from 50% and the number of games. Code: `src/scoring/topByRole.ts`, `src/components/TopSupports.tsx`.
+
+Data: `public/data/role-stats.json` — `{ ALL | <bracket>: { heroId: [[games, wins] for positions 1..5] } }`, from STRATZ `heroStats.stats(groupByPosition: true)` with `winCount`, one request per weekly bucket for all four brackets (`scripts/stratz/role-stats.mjs`). Checked before publishing (the five position totals of a bracket must match within 10% — every match has two players per position — and each position's population win rate must sit within 45–55%). It is an optional layer: if STRATZ fails or the check fails, the refresh publishes everything else and the block is hidden.
+
 ## Allies, synergy and bans
 
 The draft has three lists: **enemies** (up to 5), **your team** (up to 4 — you are the 5th) and **bans** (up to 14). The search adds to whichever is selected ("Add to: Enemies / My team / Bans"); a hero lives in one list only.

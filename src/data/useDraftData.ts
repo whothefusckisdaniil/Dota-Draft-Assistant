@@ -6,6 +6,8 @@ import {
   loadDataset,
   loadSynergy,
   loadSynergyByBracket,
+  loadRoleStats,
+  type RoleStats,
   type BracketTables,
   type Dataset,
 } from './dataset';
@@ -97,6 +99,9 @@ export function useDraftData() {
   const [synergyAll, setSynergyAll] = useState<Map<number, MatchupRow[]> | null | undefined>(undefined);
   const [synergyByBracket, setSynergyByBracket] = useState<Map<string, Map<number, MatchupRow[]>> | null | undefined>(undefined);
 
+  /** Per-position win rates (no-draft "top supports"); undefined = loading, null = absent. */
+  const [roleStats, setRoleStats] = useState<RoleStats | null | undefined>(undefined);
+
   const setRank = useCallback((next: RankFilter) => {
     setRankState(next);
     try {
@@ -134,6 +139,21 @@ export function useDraftData() {
       alive = false;
     };
   }, []);
+
+  // Per-position win rates for the empty-draft screen (small, optional).
+  useEffect(() => {
+    if (!dataset || roleStats !== undefined) return;
+    let alive = true;
+    loadRoleStats()
+      .then((r) => alive && setRoleStats(r))
+      .catch((e) => {
+        console.error(e);
+        if (alive) setRoleStats(null);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [dataset, roleStats]);
 
   // Per-rank matchup tables: only when a rank is chosen.
   useEffect(() => {
@@ -314,6 +334,7 @@ export function useDraftData() {
     rankError,
     synergyLoading,
     synergyUnavailable,
+    roleStats,
     results,
     banSuggestions,
     /** Enemies without a matchup table — strict coverage blocks ranking (§21). */
