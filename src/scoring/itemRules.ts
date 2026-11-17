@@ -79,7 +79,6 @@ export const RULES: Rule[] = [
     items: [
       { key: 'black_king_bar', pos: CORES },
       { key: 'pipe', pos: [3, 4] },
-      { key: 'eternal_shroud', pos: [2, 3] },
       { key: 'mage_slayer', pos: [1, 2] },
       { key: 'glimmer_cape', pos: SUPPORTS },
     ],
@@ -160,7 +159,7 @@ export const RULES: Rule[] = [
 /** English names for rule items (item keys = Valve/OpenDota keys, also the image names). */
 export const RULE_ITEM_NAMES: Record<string, string> = {
   black_king_bar: 'Black King Bar', lotus_orb: 'Lotus Orb', glimmer_cape: 'Glimmer Cape', aeon_disk: 'Aeon Disk',
-  pipe: 'Pipe of Insight', eternal_shroud: 'Eternal Shroud', mage_slayer: 'Mage Slayer', dust: 'Dust of Appearance',
+  pipe: 'Pipe of Insight', mage_slayer: 'Mage Slayer', dust: 'Dust of Appearance',
   ward_sentry: 'Sentry Ward', gem: 'Gem of True Sight', spirit_vessel: 'Spirit Vessel', skadi: 'Eye of Skadi',
   shivas_guard: "Shiva's Guard", monkey_king_bar: 'Monkey King Bar', bloodthorn: 'Bloodthorn', ghost: 'Ghost Scepter',
   force_staff: 'Force Staff', crimson_guard: 'Crimson Guard', heavens_halberd: "Heaven's Halberd", blade_mail: 'Blade Mail',
@@ -180,14 +179,21 @@ export interface ItemSuggestion {
 
 export const MAX_SUGGESTIONS = 4;
 
+/** Consumables never show up in the builds (they are filtered out there), so
+ *  they cannot be checked against them; they are always purchasable. */
+const ALWAYS_AVAILABLE = new Set(['dust', 'gem', 'ward_sentry']);
+
 /**
  * Suggestions for your hero at a position against the enemies. Items the hero
  * already buys often (≥ 60% of games, the core) are not repeated; items it
  * does buy sometimes rank higher (they fit the hero). One item collects every
  * rule that asks for it.
  */
-export function suggestItems({ hero, position, enemies, build, itemKeyOf }: {
+export function suggestItems({ hero, position, enemies, build, itemKeyOf, available }: {
   hero: Hero;
+  /** Item keys bought by any hero this patch (the builds index). An item no one
+   *  buys is not suggested — it may have been removed from the game. */
+  available?: Set<string>;
   position: Pos;
   enemies: Hero[];
   build: Build | null;
@@ -210,6 +216,7 @@ export function suggestItems({ hero, position, enemies, build, itemKeyOf }: {
       if (!it.pos.includes(position)) continue;
       if (it.melee && !melee) continue;
       if (it.attr && !it.attr.includes(hero.primaryAttr)) continue;
+      if (available && !available.has(it.key) && !ALWAYS_AVAILABLE.has(it.key)) continue;
       const pct = buildPct.get(it.key) ?? 0;
       if (pct >= 0.6) continue; // already core for this hero: nothing to add
       const s = byKey.get(it.key) ?? { key: it.key, name: RULE_ITEM_NAMES[it.key] ?? it.key, score: 0, buildPct: pct, reasons: [] };

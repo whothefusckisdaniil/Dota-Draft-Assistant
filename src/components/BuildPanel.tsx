@@ -68,7 +68,13 @@ export function BuildPanel({ hero, rank, preferLane, onClose, enemies = [] }: {
 
   const item = (id: number) => ix?.items[id];
   const suggestions = useMemo<ItemSuggestion[]>(
-    () => (lane && build ? suggestItems({ hero, position: Number(lane) as 1 | 2 | 3 | 4 | 5, enemies, build, itemKeyOf: (id) => ix?.items[id]?.[0] }) : []),
+    () => (lane && build
+      ? suggestItems({
+        hero, position: Number(lane) as 1 | 2 | 3 | 4 | 5, enemies, build,
+        itemKeyOf: (id) => ix?.items[id]?.[0],
+        available: ix ? new Set(Object.values(ix.items).map((v) => v[0])) : undefined,
+      })
+      : []),
     [hero, lane, enemies, build, ix],
   );
   const ability = (id: number) => ix?.abilities[id];
@@ -135,12 +141,15 @@ function ItemTile({ id, meta, top, bottom, qty, hot }: {
 }) {
   const name = meta?.[1] ?? `#${id}`;
   return (
-    <li className="flex w-[64px] flex-none flex-col items-center text-center" title={[name, top, bottom].filter(Boolean).join(' · ')}>
-      <span className={`relative h-[44px] w-[60px] overflow-hidden rounded-md bg-surface-2 ${hot ? 'ring-2 ring-accent' : ''}`}>
-        {meta && <img src={itemImg(meta[0])} alt={name} width={88} height={64} loading="lazy" decoding="async" className="h-full w-full object-cover" />}
+    <li className="flex w-[72px] flex-none flex-col items-center text-center" title={[name, top, bottom].filter(Boolean).join(' · ')}>
+      <span className="relative h-[44px] w-[60px] overflow-hidden rounded-md bg-surface-2">
+        {meta && <img src={itemImg(meta[0])} alt="" width={88} height={64} loading="lazy" decoding="async" className="h-full w-full object-cover" />}
         {qty && qty > 1 ? <span className="tnum absolute bottom-0 right-0 rounded-tl-md bg-bg/85 px-1 text-[11px] font-semibold text-ink">×{qty}</span> : null}
+        {/* drawn inside the tile: an outer ring is clipped by the scrolling row */}
+        {hot && <span aria-hidden="true" className="pointer-events-none absolute inset-0 rounded-md border-2 border-accent" />}
       </span>
-      {top && <span className="tnum mt-1 text-[11px] font-semibold leading-[14px] text-ink">{top}</span>}
+      <span className="mt-1 w-full truncate text-[11px] leading-[14px] text-ink">{name}</span>
+      {top && <span className="tnum text-[11px] font-semibold leading-[14px] text-ink">{top}</span>}
       {bottom && <span className="tnum text-[11px] leading-[14px] text-muted">{bottom}</span>}
     </li>
   );
@@ -164,6 +173,10 @@ function BuildBody({ build, itemOf, abilityOf, abilityName, highlight }: {
 }) {
   const { t } = useI18n();
   const laning = build.items.filter((x) => x[2] < LANING_MINUTE);
+  // Plain Boots of Speed is the component of every upgrade: shown only when
+  // the hero usually keeps them (no upgraded boots in the list).
+  const upgraded = build.boots.filter(([id]) => itemOf(id)?.[0] !== 'boots');
+  const boots = upgraded.length ? upgraded : build.boots;
   const core = build.items.filter((x) => x[2] >= LANING_MINUTE && x[1] >= CORE_PCT);
   const situational = build.items.filter((x) => x[2] >= LANING_MINUTE && x[1] < CORE_PCT).sort((a, b) => b[1] - a[1]);
   const pctLabel = (x: number) => `${pct(x)}%`;
@@ -177,10 +190,14 @@ function BuildBody({ build, itemOf, abilityOf, abilityName, highlight }: {
           {build.start.map(([id, p, qty]) => <ItemTile key={id} id={id} meta={itemOf(id)} qty={qty} top={pctLabel(p)} />)}
         </Row>
       )}
-      {(laning.length > 0 || build.boots.length > 0) && (
-        <Row title={`${t('build.early')} · ${t('build.boots')}`}>
-          {build.boots.map(([id, p, m]) => <ItemTile key={`b${id}`} id={id} meta={itemOf(id)} top={pctLabel(p)} bottom={minLabel(m)} />)}
+      {laning.length > 0 && (
+        <Row title={t('build.early')}>
           {laning.map(([id, p, m]) => <ItemTile key={id} id={id} meta={itemOf(id)} top={pctLabel(p)} bottom={minLabel(m)} hot={hot(id)} />)}
+        </Row>
+      )}
+      {boots.length > 0 && (
+        <Row title={t('build.boots')}>
+          {boots.map(([id, p, m]) => <ItemTile key={id} id={id} meta={itemOf(id)} top={pctLabel(p)} bottom={minLabel(m)} hot={hot(id)} />)}
         </Row>
       )}
       {core.length > 0 && (

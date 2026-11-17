@@ -76,6 +76,15 @@ describe('enemy-draft item rules', () => {
     expect(bkb(known)).toBeLessThan(bkb(unknown));
   });
 
+  it('never suggests an item nobody buys this patch (removed from the game)', () => {
+    const enemies = team('riki', 'lion', 'bane', 'earthshaker');
+    const available = new Set(['black_king_bar']);
+    const s = suggestItems({ hero: byKey('juggernaut'), position: 1, enemies, build: null, itemKeyOf: () => undefined, available });
+    expect(s.map((x) => x.key)).toEqual(['black_king_bar']);
+    const sup = suggestItems({ hero: byKey('lion'), position: 5, enemies, build: null, itemKeyOf: () => undefined, available });
+    expect(sup.map((x) => x.key)).toEqual(expect.arrayContaining(['dust', 'ward_sentry']));
+  });
+
   it('returns nothing without enemies or without a trigger', () => {
     expect(suggestItems({ hero: byKey('lion'), position: 5, enemies: [], build: null, itemKeyOf: () => undefined })).toEqual([]);
     expect(suggestItems({ hero: byKey('lion'), position: 5, enemies: team('axe'), build: null, itemKeyOf: () => undefined })).toEqual([]);
