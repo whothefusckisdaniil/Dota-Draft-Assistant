@@ -57,7 +57,9 @@ export function BuildPanel({ hero, rank, preferLane, onClose, enemies = [] }: {
   }, [state.builds]);
   useEffect(() => {
     if (!lanes.length) return;
-    setLane(preferLane && lanes.includes(preferLane) ? preferLane : lanes[0]);
+    // A position the hero is (almost) never played on has no honest build:
+    // show nothing rather than another role's items under that role's name.
+    setLane(!preferLane ? lanes[0] : lanes.includes(preferLane) ? preferLane : null);
   }, [lanes, preferLane]);
 
   const laneName = (l: string) => t(`lane.${l}` as StringKey);
@@ -112,6 +114,19 @@ export function BuildPanel({ hero, rank, preferLane, onClose, enemies = [] }: {
       {state.status === 'error' && <p className="notice mt-4">{t('build.unavailable')}</p>}
       {state.status === 'none' && <p className="notice mt-4">{t('build.none')}</p>}
 
+      {state.status === 'ready' && !lane && preferLane && lanes.length > 0 && (
+        <div className="mt-4 rounded-xl border border-line bg-bg-2 p-3">
+          <p className="text-[13px] leading-[18px] text-ink">{t('build.offRole', { name: i18n.heroName(hero), n: preferLane, role: t(`pos.sub.${preferLane}` as StringKey) })}</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {lanes.map((l) => (
+              <button key={l} type="button" onClick={() => setLane(l)} className="btn btn-ghost btn-sm">
+                {l} · {t(`pos.sub.${l}` as StringKey)} <span aria-hidden="true">→</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {state.status === 'ready' && lane && build && (
         <>
           {lanes.length > 1 && (
@@ -123,7 +138,6 @@ export function BuildPanel({ hero, rank, preferLane, onClose, enemies = [] }: {
               ))}
             </div>
           )}
-          {preferLane && !lanes.includes(preferLane) && <p className="notice mt-3">{t('build.noPos', { lane: laneName(preferLane) })}</p>}
           {rank !== PRO && (
             <div className="mt-3 flex flex-wrap items-center gap-2">
               <span className="text-[11px] leading-[14px] text-muted">{t('build.sourceTitle')}</span>
