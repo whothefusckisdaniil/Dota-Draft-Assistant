@@ -224,7 +224,7 @@ export function PositionTabs({ value, onChange }: { value: PositionFilter; onCha
           aria-selected={value === p.id}
           title={t(`pos.${p.id}.long` as StringKey)}
           onClick={() => onChange(p.id)}
-          className={`role-tab ${value === p.id ? 'is-active' : ''}`}
+          className={`role-tab ${p.id === 'all' ? 'role-all' : ''} ${value === p.id ? 'is-active' : ''}`}
         >
           {p.id === 'all' ? (
             <b className="!text-[13px]">{t('pos.all')}</b>
