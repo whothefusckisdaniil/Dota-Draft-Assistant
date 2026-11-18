@@ -265,6 +265,7 @@ export default function App() {
                   preferLane={d.position !== 'all' ? d.position : null}
                   onLane={(l) => d.setPosition(l as Exclude<PositionFilter, 'all'>)}
                   enemies={d.enemies.flatMap((id) => { const h = d.heroById.get(id); return h ? [h] : []; })}
+                  allies={d.allies.flatMap((id) => { const h = d.heroById.get(id); return h ? [h] : []; })}
                   onClose={() => { if (d.me) d.remove(d.me, 'me'); }}
                 />
               )}

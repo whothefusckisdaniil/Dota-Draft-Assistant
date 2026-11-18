@@ -310,6 +310,14 @@ const en = {
   'explain.laneGood': 'Lanes well with {name} ({delta} vs expected).',
   'explain.laneBad': 'Weak lane with {name} ({delta} vs expected).',
   'drawer.laneScore': 'Lane',
+  'team.title': 'For your team',
+  'team.damage': 'no carry among your allies — damage items first',
+  'team.control': 'little control on your team — disables first',
+  'team.save': 'no heals or saves among your allies — saves first',
+  'team.enoughDamage': 'damage is covered ({names}) — keep them alive',
+  'team.tag.damage': 'team: damage',
+  'team.tag.control': 'team: control',
+  'team.tag.save': 'team: saves',
 } as const;
 
 export type StringKey = keyof typeof en;
@@ -621,6 +629,14 @@ const ru: Record<StringKey, string> = {
   'explain.laneGood': 'Хорошо стоит на линии с {name} ({delta} к ожидаемому).',
   'explain.laneBad': 'Слабая линия с {name} ({delta} к ожидаемому).',
   'drawer.laneScore': 'Линия',
+  'team.title': 'Под вашу команду',
+  'team.damage': 'среди союзников нет керри — сначала урон',
+  'team.control': 'мало контроля в команде — сначала дизейблы',
+  'team.save': 'у союзников нет хила и сейвов — сначала сейвы',
+  'team.enoughDamage': 'урон в команде есть ({names}) — берегите их',
+  'team.tag.damage': 'команде: урон',
+  'team.tag.control': 'команде: контроль',
+  'team.tag.save': 'команде: сейвы',
 };
 
 export const STRINGS: Record<'en' | 'ru', Record<StringKey, string>> = { en, ru };

@@ -147,6 +147,10 @@ The top of the build panel is one row: **boots + 6 slots in buying order** (`src
 
 Components most players complete are shown as the finished item (a component leaves the list when its upgrade is bought in at least half as many games: Yasha → Manta, Perseverance → Battle Fury, Crystalys → Daedalus; Maelstrom stays when Mjollnir is rare). Aghanim's Shard and Blessing take no slot: the shard is shown after the slots as a "no slot" tile with its purchase share and typical minute when ≥ 10% of games buy it — purchases only, so a shard from a Tormentor (free) is not counted and the real share is higher, which the note says; order = typical purchase minute. A **My rank / Divine+** switch rebuilds the whole panel from Divine–Immortal games ("how strong players build it"); it is hidden when the selected rank already is Divine–Immortal. No extra STRATZ requests: everything comes from the weekly build files (item recipes are in `public/builds/index.json`).
 
+### For your team (rules)
+
+The ideal build also looks at your **allies** (`src/scoring/teamNeeds.ts`, hero traits from `heroTags.ts`, at least two allies): no right-click carry among them and you play 1–3 → **damage** first; at most one hard disable in total → **control** first; you play 3–5 and no ally heals or saves → **saves** first; you play 3–5 next to two carries → damage is covered, **keep them alive** (saves). Up to 2 of the slots left after core and draft items go to items of that role **that this hero buys** (≥ 5%), labelled "team: damage / control / saves"; the core is never displaced; the rest of the fill prefers those roles too. Item roles: `src/data/itemTags.ts` (hand-authored; new items are left untagged rather than guessed).
+
 ### For this draft (rules, not statistics)
 
 With enemies in the draft, the build panel adds **For this draft**: up to 4 items with the reason and the enemies behind it ("Black King Bar — vs Lion, Bane, Earthshaker · hard disables on the enemy team: 6"). Items already in the statistical build that match get an amber frame. This is rule-based on purpose (the data showed no robust item-vs-enemy signal, ТЗ §36–§38) and is labelled as such in the UI.
