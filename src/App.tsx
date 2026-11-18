@@ -13,6 +13,7 @@ import { ResultsGrid, ResultsSkeleton } from './components/ResultsGrid';
 import { HeroDetailsDrawer } from './components/HeroDetailsDrawer';
 import { HeroPool } from './components/HeroPool';
 import { TopSupports } from './components/TopSupports';
+import { WinChance } from './components/WinChance';
 import { BuildPanel } from './components/BuildPanel';
 import { PickerSheet } from './components/PickerSheet';
 import { DiamondLoader, EmptyDiamonds, Logo } from './components/Brand';
@@ -258,6 +259,8 @@ export default function App() {
               {d.rankError && d.rank !== 'ALL' && <div className="notice mb-4">{t(`rank.${d.rankError}` as StringKey)}</div>}
               {d.synergyUnavailable && <div className="notice mb-4">{t('synergy.unavailable')}</div>}
 
+              {d.draftWin && <WinChance data={d.draftWin} heroById={d.heroById} />}
+              {d.draftWinNeedsMe && <div className="notice mb-4">{t('win.needMe')}</div>}
               {d.me && d.heroById.get(d.me) && (
                 <BuildPanel
                   hero={d.heroById.get(d.me)!}

@@ -318,6 +318,16 @@ const en = {
   'team.tag.damage': 'team: damage',
   'team.tag.control': 'team: control',
   'team.tag.save': 'team: saves',
+  'win.title': 'Draft win chance',
+  'win.you': 'Your team',
+  'win.enemy': 'Enemy',
+  'win.heroes': 'Hero strength',
+  'win.counters': 'Counters',
+  'win.synergy': 'Synergy',
+  'win.best': 'Best matchup: {a} vs {b}',
+  'win.worst': 'Worst matchup: {a} vs {b}',
+  'win.note': 'From hero win rates, all 25 matchups and teammate synergy in this rank. Checked on ~4000 real matches: the draft alone predicts the winner about 60% of the time — the game is still decided by play.',
+  'win.needMe': 'Add your own hero to the "You" slot to see the draft win chance.',
 } as const;
 
 export type StringKey = keyof typeof en;
@@ -637,6 +647,16 @@ const ru: Record<StringKey, string> = {
   'team.tag.damage': 'команде: урон',
   'team.tag.control': 'команде: контроль',
   'team.tag.save': 'команде: сейвы',
+  'win.title': 'Шанс победы по драфту',
+  'win.you': 'Ваша команда',
+  'win.enemy': 'Противник',
+  'win.heroes': 'Сила героев',
+  'win.counters': 'Контрпики',
+  'win.synergy': 'Связки',
+  'win.best': 'Лучшее противостояние: {a} против {b}',
+  'win.worst': 'Худшее противостояние: {a} против {b}',
+  'win.note': 'По винрейтам героев, всем 25 противостояниям и связкам внутри команд на этом ранге. Проверено на ~4000 реальных матчей: один драфт угадывает победителя примерно в 60% игр — дальше всё решает игра.',
+  'win.needMe': 'Добавьте своего героя в слот «Вы», чтобы увидеть шанс победы по драфту.',
 };
 
 export const STRINGS: Record<'en' | 'ru', Record<StringKey, string>> = { en, ru };

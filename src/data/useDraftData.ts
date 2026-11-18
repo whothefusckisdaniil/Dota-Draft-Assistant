@@ -17,6 +17,7 @@ import {
 } from './dataset';
 import { scoreCandidates } from '../scoring/engine';
 import { suggestBans } from '../scoring/bans';
+import { winChance } from '../scoring/winChance';
 import { assignAllyPositions, lanePartner, LANE_PARTNER } from '../scoring/allyPositions';
 import type { LaneInput } from '../scoring/engine';
 import { buildDraftSearch, draftTitle, parseDraftUrl } from './draftUrl';
@@ -332,6 +333,15 @@ export function useDraftData() {
     });
   }, [dataset, hasDraft, rankLoading, synergyLoading, heroes, allies, enemies, bans, me, matchups, synergy, baseWinrates]);
 
+  /** Full 5 v 5 draft: your team's win chance (your hero counts as the fifth). */
+  const team = useMemo(() => (me ? [...allies, me] : allies), [allies, me]);
+  const draftWin = useMemo(() => {
+    if (team.length !== 5 || enemies.length !== 5 || rankLoading || synergyLoading || missingTables.length > 0) return null;
+    return winChance({ team, enemies, matchupByEnemy: matchups, synergyByHero: synergy, baseWinrates });
+  }, [team, enemies, rankLoading, synergyLoading, missingTables.length, matchups, synergy, baseWinrates]);
+  /** Everything is picked except your own hero. */
+  const draftWinNeedsMe = !me && allies.length === 4 && enemies.length === 5;
+
   /** Put a hero into the enemy team, your team or the bans. A hero lives in
    *  one place only: adding it somewhere moves it out of the others. */
   const addHero = useCallback((id: number, to: PickTarget) => {
@@ -403,6 +413,8 @@ export function useDraftData() {
     roleStats,
     results,
     banSuggestions,
+    draftWin,
+    draftWinNeedsMe,
     /** Enemies without a matchup table — strict coverage blocks ranking (§21). */
     missingTables,
   };
