@@ -17,6 +17,8 @@ import { itemHasRole } from '../data/itemTags';
  * Components most players complete are replaced by the finished item (Yasha
  * → Manta, Perseverance → Battle Fury, Crystalys → Daedalus): a component
  * leaves the list when its upgrade is bought in at least half as many games.
+ * Two upgrades of the same intermediate (Hurricane Pike and Hydra's Breath
+ * both need Dragon Lance) are alternatives: only the more popular one stays.
  * Aghanim's Shard / Blessing and boots do not take a slot; the shard is
  * reported separately (shown after the slots as "no slot"). Order = typical purchase minute.
  */
@@ -52,13 +54,21 @@ export function idealBuild(
   needs: TeamNeed[] = [],
 ): IdealBuild {
   const key = (id: number) => itemOf(id)?.[0] ?? '';
-  const later = build.items.filter((x) => x[2] >= IDEAL.laningMinute && !NO_SLOT.has(key(x[0])));
-  const pctByKey = new Map(later.map((x) => [key(x[0]), x[1]]));
+  const allLater = build.items.filter((x) => x[2] >= IDEAL.laningMinute && !NO_SLOT.has(key(x[0])));
+  const comps = (id: number) => itemOf(id)?.[2] ?? [];
+  // Intermediate items: bought on their own here and part of another recipe
+  // (Dragon Lance, Maelstrom, Yasha, Kaya…).
+  const boughtKeys = new Set(allLater.map((x) => key(x[0])));
+  // Alternative upgrades of one intermediate (Dragon Lance → Hurricane Pike
+  // OR Hydra's Breath) need it twice to have both: keep the more popular one.
+  const later = allLater.filter((x) => !allLater.some((y) => y !== x
+    && (y[1] > x[1] || (y[1] === x[1] && y[0] < x[0]))
+    && comps(x[0]).some((c) => boughtKeys.has(c) && comps(y[0]).includes(c))));
 
   // drop a component when its upgrade is bought by at least half as many
   const isCompleted = (k: string, pct: number) => later.some((y) => {
-    const comps = itemOf(y[0])?.[2] ?? [];
-    return comps.includes(k) && y[1] >= pct * IDEAL.upgradeRatio;
+    const cs = comps(y[0]);
+    return cs.includes(k) && y[1] >= pct * IDEAL.upgradeRatio;
   });
   const pool = later.filter((x) => !isCompleted(key(x[0]), x[1]));
 

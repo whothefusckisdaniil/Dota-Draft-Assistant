@@ -58,3 +58,27 @@ describe('ideal build', () => {
     expect(ib.slots).toHaveLength(6);
   });
 });
+
+describe('alternative upgrades of one intermediate item', () => {
+  const ITEMS2: Record<number, [string, string, string[]?]> = {
+    236: ['dragon_lance', 'Dragon Lance', ['blade_of_alacrity', 'belt_of_strength']],
+    102: ['force_staff', 'Force Staff', ['staff_of_wizardry', 'fluffy_hat']],
+    263: ['hurricane_pike', 'Hurricane Pike', ['force_staff', 'dragon_lance']],
+    1806: ['hydras_breath', "Hydra's Breath", ['specialists_array', 'dragon_lance', 'orb_of_venom']],
+    1800: ['specialists_array', "Specialist's Array", ['blade_of_alacrity', 'broadsword']],
+    166: ['maelstrom', 'Maelstrom'], 158: ['mjollnir', 'Mjollnir', ['maelstrom', 'hyperstone']],
+  };
+  const SNIPER = {
+    m: 1000, low: false, start: [], talents: [], skills: [], boots: [],
+    items: [[166, 0.69, 15, 50], [236, 0.88, 17, 50], [102, 0.46, 24, 50], [263, 0.45, 25, 50], [158, 0.49, 26, 50],
+      [1800, 0.31, 26, 50], [1806, 0.29, 28, 50]],
+  } as unknown as Build;
+
+  it("keeps one of Hurricane Pike / Hydra's Breath (both need Dragon Lance)", () => {
+    const keys = idealBuild(SNIPER, (id) => ITEMS2[id]).slots.map((s) => s.key);
+    expect(keys).toContain('hurricane_pike');
+    expect(keys).not.toContain('hydras_breath');
+    expect(keys).not.toContain('dragon_lance'); // completed into the Pike
+    expect(keys).toContain('specialists_array'); // no longer a Hydra component here
+  });
+});
