@@ -281,7 +281,10 @@ function BuildBody({ build, itemOf, abilityOf, abilityName, highlight }: {
           <div className="grid gap-1.5">
             {build.talents.map(([level, a, b]) => (
               <div key={level} className="grid grid-cols-[minmax(0,1fr)_36px_minmax(0,1fr)] items-stretch gap-1.5">
-                {[a, b].map(([id, p], side) => (
+                {/* Valve's hero files (and OpenDota) list each pair right talent first,
+                    left second (Ability10 = level 10 right, Ability11 = left): swap to
+                    match the in-game tree. */}
+                {[b, a].map(([id, p], side) => (
                   <div
                     key={id}
                     className={`flex min-w-0 flex-col justify-center rounded-lg border px-2 py-1.5 text-[12px] leading-4 ${side === 0 ? 'col-start-1 text-right' : 'col-start-3'} ${p >= 0.5 ? 'border-accent/60 bg-accent/10 text-ink' : 'border-line text-muted'}`}
