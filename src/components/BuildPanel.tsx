@@ -167,7 +167,7 @@ export function BuildPanel({ hero, rank, preferLane, onLane, onClose, enemies = 
   );
 }
 
-function ItemTile({ id, meta, top, bottom, qty, hot, tag, tagHot, tagTeam }: {
+function ItemTile({ id, meta, top, bottom, qty, hot, tag, tagHot, tagTeam, tagTitle }: {
   id: number;
   meta: [string, string, string[]?] | undefined;
   top?: string;
@@ -179,12 +179,14 @@ function ItemTile({ id, meta, top, bottom, qty, hot, tag, tagHot, tagTeam }: {
   tag?: string;
   tagHot?: boolean;
   tagTeam?: boolean;
+  /** Full reason behind a short tag (tooltip). */
+  tagTitle?: string;
 }) {
   const name = meta?.[1] ?? `#${id}`;
   // both start with "Aghanim's" and truncate to the same text in a tile
   const label = meta ? SHORT_NAMES[meta[0]] ?? name : name;
   return (
-    <li className="flex w-[72px] flex-none flex-col items-center text-center" title={[name, top, bottom].filter(Boolean).join(' · ')}>
+    <li className="flex w-[72px] flex-none flex-col items-center text-center" title={[name, top, bottom, tagTitle].filter(Boolean).join(' · ')}>
       <span className="relative h-[44px] w-[60px] overflow-hidden rounded-md bg-surface-2">
         {meta && <img src={itemImg(meta[0])} alt="" width={88} height={64} loading="lazy" decoding="async" className="h-full w-full object-cover" />}
         {qty && qty > 1 ? <span className="tnum absolute bottom-0 right-0 rounded-tl-md bg-bg/85 px-1 text-[11px] font-semibold text-ink">×{qty}</span> : null}
@@ -194,7 +196,7 @@ function ItemTile({ id, meta, top, bottom, qty, hot, tag, tagHot, tagTeam }: {
       <span className="mt-1 w-full truncate text-[11px] leading-[14px] text-ink">{label}</span>
       {top && <span className="tnum text-[11px] font-semibold leading-[14px] text-ink">{top}</span>}
       {bottom && <span className="tnum text-[11px] leading-[14px] text-muted">{bottom}</span>}
-      {tag && <span className={`mt-0.5 w-full truncate text-[11px] font-semibold leading-[14px] ${tagHot ? 'text-accent' : tagTeam ? 'text-ally' : 'text-muted'}`}>{tag}</span>}
+      {tag && <span className={`mt-0.5 line-clamp-2 w-full break-words text-[11px] font-semibold leading-[14px] ${tagHot ? 'text-accent' : tagTeam ? 'text-ally' : 'text-muted'}`}>{tag}</span>}
     </li>
   );
 }
@@ -378,7 +380,8 @@ function IdealRow({ build, itemOf, suggestions, needs }: {
             top={`${i + 1}. ${Math.round(sl.pct * 100)}%`}
             bottom={t('build.min', { min: sl.minute })}
             hot={sl.kind === 'draft'}
-            tag={sl.kind === 'core' ? t('build.kindCore') : sl.kind === 'draft' ? vs(sl.suggestion) : sl.kind === 'team' ? needTag(sl.need) : t('build.kindSituational')}
+            tag={sl.kind === 'core' ? t('build.kindCore') : sl.kind === 'draft' ? t('build.kindDraft') : sl.kind === 'team' ? needTag(sl.need) : t('build.kindSituational')}
+            tagTitle={sl.kind === 'draft' ? vs(sl.suggestion) : sl.kind === 'team' && sl.need ? needText(sl.need) : undefined}
             tagHot={sl.kind === 'draft'}
             tagTeam={sl.kind === 'team'}
           />

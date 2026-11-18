@@ -10,10 +10,14 @@ const heroes = heroesRaw as unknown as Hero[];
 const team = (...keys: string[]) => keys.map((k) => heroes.find((h) => h.key === `npc_dota_hero_${k}`)!);
 
 describe('team needs from your allies', () => {
-  it('a carry with only supports around needs damage', () => {
-    const n = teamNeeds(team('undying', 'shadow_shaman'), 1).map((x) => x.id);
+  it('a mid with only supports around needs damage', () => {
+    const n = teamNeeds(team('undying', 'shadow_shaman'), 2).map((x) => x.id);
     expect(n).toContain('damage');
     expect(n).not.toContain('control'); // Shadow Shaman alone brings 2 disables
+  });
+
+  it('on position 1 you are the carry: no "no carry" note', () => {
+    expect(teamNeeds(team('undying', 'shadow_shaman'), 1).map((x) => x.id)).not.toContain('damage');
   });
 
   it('a support next to two carries keeps them alive', () => {
@@ -55,7 +59,7 @@ describe('ideal build with team needs', () => {
   });
 
   it('a team without damage turns the flexible slots into damage items', () => {
-    const needs = teamNeeds(team('undying', 'shadow_shaman'), 1);
+    const needs = teamNeeds(team('undying', 'shadow_shaman'), 2);
     const ib = idealBuild(build, itemOf, [], needs);
     const teamSlots = ib.slots.filter((s) => s.kind === 'team').map((s) => s.key);
     // core (5 items ≥ 35%, BKB included) is never displaced: one slot is left
