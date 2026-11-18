@@ -62,6 +62,13 @@ export const APP_CONFIG = {
     // value: it is typically smaller in magnitude and noisier, and the main
     // question stays "who beats the enemy". draft = counter + wSynergy × synergy.
     wSynergy: 0.5,
+    // Lane partner (your ally on the same lane, from ally positions): lane win
+    // share with that ally minus what both heroes' usual lane shares predict,
+    // in pp, shrunk by lanes/(lanes + laneShrinkK). Small weight: the lane is
+    // only the first ~10 minutes. draft += wLane × lane.
+    wLane: 0.15,
+    laneShrinkK: 150,
+    laneMinGames: 30,
     // Ban suggestions: threat to your team + wSynergy × fit with the enemy team.
     banSuggestions: 8,
   },

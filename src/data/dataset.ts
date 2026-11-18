@@ -198,6 +198,27 @@ export interface BuildIndex {
   items: Record<string, [string, string, string[]?]>;
   /** abilityId → [key, English name, Russian name] */
   abilities: Record<string, [string, string, string]>;
+  /** heroId → position → rank → usual lane win share (0..1). */
+  laneAvg?: Record<string, Record<string, Record<string, number>>>;
+}
+
+/** A hero's lane results with each partner, per position and rank. */
+export interface HeroLanes {
+  heroId: number;
+  positions: Record<string, Record<string, { avg: number; partners: Record<string, [number, number, number]> }>>;
+}
+const heroLaneCache = new Map<number, Promise<HeroLanes | null>>();
+
+export function loadHeroLanes(heroId: number): Promise<HeroLanes | null> {
+  let p = heroLaneCache.get(heroId);
+  if (!p) {
+    p = fetchOptionalJson<HeroLanes>(`lanes/${heroId}.json`, 'builds').catch((e) => {
+      heroLaneCache.delete(heroId);
+      throw e;
+    });
+    heroLaneCache.set(heroId, p);
+  }
+  return p;
 }
 
 let buildIndexPromise: Promise<BuildIndex | null> | null = null;

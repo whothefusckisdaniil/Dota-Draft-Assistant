@@ -114,6 +114,15 @@ Frontend loads `public/data/*.json` once, scores locally, and shows `Data update
 
 Details and measured impact of the OpenDota → STRATZ switch: [`docs/stratz-migration.md`](docs/stratz-migration.md). The research spike behind it (schema, direction proof, the former Cloudflare workaround — no longer used) is in [`docs/stratz-research.md`](docs/stratz-research.md).
 
+## Lane partner (ally positions)
+
+Each ally gets a position chip under its slot: guessed from its usual positions (dashed — Shadow Shaman → 5, Undying → 4; never your own role), tap to cycle 1→5 (solid; kept in the link as `allypos=85-4,27-5`). Positions define your **lane partner**: safe lane 1 + 5, off lane 3 + 4, mid alone. Recommendations for a role then add how well each candidate **lanes with that ally**:
+
+- Data: STRATZ `laneOutcome(isWith: true)` — laning-stage won / drawn / lost lanes of a hero at a position with each partner on the same lane, per rank bracket, same 30-day window. Collected in the weekly builds job (same requests, extra fields) into `public/builds/lanes/<heroId>.json`; each hero's usual lane win share per position and rank is in `public/builds/index.json → laneAvg`. Only allies' files are loaded.
+- Score: lane win share with the ally (won / (won + lost)) minus what both usually get (candidate's share + ally's share − 50%), shrunk by `lanes / (lanes + 150)`, ≥ 30 decided lanes; `draft += 0.15 × lane` (the lane is only the first ~10 minutes). No coverage gate: no data, no adjustment.
+- Shown on the best-pick card, in the analysis and in the explanation: "Lane with Undying: won 75% of lanes, expected 66% +8.57".
+- Example (Crusader–Archon, Undying pos 4 who wins 66% of his lanes on average): Bristleback pos 3 wins 60% with him vs 58% expected — slightly better than expected, not worse; the data replaces the "two melee heroes can't lane" intuition with actual lane results.
+
 ## Top supports (no draft needed)
 
 Before any hero is picked, the main screen shows **Strongest supports right now**: the top 10 heroes on position 4 or 5 by their **win rate when played at that position**, for the rank chosen in the block or the header chip (each bracket or all ranks), over the same 30-day window. Only heroes really played there count (≥ 20% of their games at that position, ≥ 500 games in a bracket / 2 000 across all ranks); the ranking pulls small samples toward 50% (`games / (games + 1000)`), and each row shows the raw win rate, its distance from 50% and the number of games. Code: `src/scoring/topByRole.ts`, `src/components/TopSupports.tsx`.

@@ -4,7 +4,7 @@ import { buildDraftSearch, draftTitle, parseDraftUrl, shareableUrl } from './dra
 describe('parseDraftUrl', () => {
   it('reads enemies in pick order, position and rank', () => {
     expect(parseDraftUrl('?enemy=13,29,8&pos=3&rank=divine')).toEqual({
-      enemies: [13, 29, 8], allies: [], bans: [], me: null, position: '3', rank: 'DIVINE_IMMORTAL', hasDraft: true,
+      enemies: [13, 29, 8], allies: [], bans: [], me: null, allyPos: {}, position: '3', rank: 'DIVINE_IMMORTAL', hasDraft: true,
     });
   });
 
@@ -28,7 +28,7 @@ describe('parseDraftUrl', () => {
   });
 
   it('a link without draft parameters leaves the rank to the stored preference', () => {
-    expect(parseDraftUrl('')).toEqual({ enemies: [], allies: [], bans: [], me: null, position: 'all', rank: null, hasDraft: false });
+    expect(parseDraftUrl('')).toEqual({ enemies: [], allies: [], bans: [], me: null, allyPos: {}, position: 'all', rank: null, hasDraft: false });
     expect(parseDraftUrl('?utm_source=discord').rank).toBeNull();
   });
 
@@ -110,5 +110,13 @@ describe('your hero (?hero=)', () => {
     expect(parseDraftUrl('?hero=junk').me).toBeNull();
     expect(parseDraftUrl('?hero=26').hasDraft).toBe(true);
     expect(buildDraftSearch('', { enemies: [1], me: 26, position: '5', rank: 'ALL' })).toBe('?enemy=1&hero=26&pos=5');
+  });
+});
+
+describe('ally positions (?allypos=)', () => {
+  it('parses positions only for listed allies and writes them back', async () => {
+    const { parseDraftUrl, buildDraftSearch } = await import('./draftUrl');
+    expect(parseDraftUrl('?ally=85,27&allypos=85-4,27-9,99-3').allyPos).toEqual({ 85: '4' });
+    expect(buildDraftSearch('', { enemies: [], allies: [85, 27], allyPos: { 85: '4' }, position: '3', rank: 'ALL' })).toBe('?ally=85,27&allypos=85-4&pos=3');
   });
 });

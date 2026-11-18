@@ -301,6 +301,15 @@ const en = {
   'build.sourceTitle': 'Whose games the build is based on',
   'build.details': 'Detailed statistics',
   'adapt.consumable': 'consumable',
+  'draft.allyPos': 'Pos {n}',
+  'draft.allyPosTitle': 'Position {n} ({role}){auto} — tap to change. Sets who lanes with you.',
+  'draft.allyPosAuto': ', guessed',
+  'laneWith.line': 'Lane with {name}: won {share}% of lanes, expected {exp}%',
+  'laneWith.title': 'Lane with your ally',
+  'laneWith.note': 'Laning-stage results (won / lost lanes, draws left out) of this hero with this ally on the same lane, against what both usually get. Lane partner from ally positions: 1 + 5, 3 + 4, mid alone.',
+  'explain.laneGood': 'Lanes well with {name} ({delta} vs expected).',
+  'explain.laneBad': 'Weak lane with {name} ({delta} vs expected).',
+  'drawer.laneScore': 'Lane',
 } as const;
 
 export type StringKey = keyof typeof en;
@@ -603,6 +612,15 @@ const ru: Record<StringKey, string> = {
   'build.sourceTitle': 'Чьи игры берём за основу',
   'build.details': 'Подробная статистика',
   'adapt.consumable': 'расходник',
+  'draft.allyPos': 'Поз. {n}',
+  'draft.allyPosTitle': 'Позиция {n} ({role}){auto} — нажмите, чтобы сменить. От неё зависит, кто стоит с вами на линии.',
+  'draft.allyPosAuto': ', угадана',
+  'laneWith.line': 'Линия с {name}: выигрывают {share}% линий, ожидаемо {exp}%',
+  'laneWith.title': 'Линия с союзником',
+  'laneWith.note': 'Итоги лайнинга (выигранные и проигранные линии, ничьи не считаются) этого героя с этим союзником на одной линии — против того, что обычно получают оба. Напарник по линии берётся из позиций союзников: 1 + 5, 3 + 4, мид один.',
+  'explain.laneGood': 'Хорошо стоит на линии с {name} ({delta} к ожидаемому).',
+  'explain.laneBad': 'Слабая линия с {name} ({delta} к ожидаемому).',
+  'drawer.laneScore': 'Линия',
 };
 
 export const STRINGS: Record<'en' | 'ru', Record<StringKey, string>> = { en, ru };

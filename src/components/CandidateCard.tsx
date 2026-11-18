@@ -68,6 +68,7 @@ export function BestCard({ c, lane, heroById, onViewDetails }: {
         {c.lowData && <span className="badge badge-warn">{t('card.limited')}</span>}
       </div>
       <p className="mt-3 text-[13px] leading-[18px] text-muted">{explainCandidate(c, lane, i18n, heroById)[0]}</p>
+      {c.lane?.usable && <LaneLine c={c} heroById={heroById} />}
       {(best.length > 0 || worst.length > 0 || goodWith.length > 0) && (
         <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-[13px] leading-[18px]">
           {best.length > 0 && <span className="text-muted">{t('card.bestVs')} <span className="font-semibold text-ink">{best.join(', ')}</span></span>}
@@ -117,5 +118,21 @@ export function ResultRow({ c, rank, tag, onViewDetails, style }: {
       </span>
       <span className={`tnum shrink-0 font-display text-[16px] font-bold ${scoreTone(c.finalScore)}`}>{scoreText(c.finalScore)}</span>
     </button>
+  );
+}
+
+/** "Lane with Undying: won 60% of lanes, expected 58%". */
+export function LaneLine({ c, heroById }: { c: CandidateScore; heroById: Map<number, Hero> }) {
+  const i18n = useI18n();
+  if (!c.lane) return null;
+  const ally = heroById.get(c.lane.allyId);
+  return (
+    <p className="mt-2 flex items-center gap-2 text-[13px] leading-[18px] text-muted">
+      {ally && <span className="h-6 w-6 shrink-0 overflow-hidden rounded-md"><HeroPortrait hero={ally} fill variant="large" /></span>}
+      <span className="min-w-0">
+        {i18n.t('laneWith.line', { name: ally ? i18n.heroName(ally) : `#${c.lane.allyId}`, share: Math.round(c.lane.share), exp: Math.round(c.lane.expected) })}
+        {' '}<span className={`tnum font-semibold ${scoreTone(c.lane.delta)}`}>{scoreText(c.lane.delta)}</span>
+      </span>
+    </p>
   );
 }

@@ -11,7 +11,7 @@ export type Target = 'enemy' | 'ally' | 'ban' | 'me';
 /** Enemy team (5 slots) or your team (4 slots + "you"). An empty slot opens
  *  the hero picker for that team. Mobile: one row of 56 px slots; tablet and
  *  desktop: enemies stacked with names (CSS, see .enemy-slots). */
-export function TeamSlots({ team, ids, max, heroById, active, onRemove, onAdd, title, actions, me = null, meActive = false, onRemoveMe }: {
+export function TeamSlots({ team, ids, max, heroById, active, onRemove, onAdd, title, actions, me = null, meActive = false, onRemoveMe, allyPositions, onAllyPos }: {
   team: 'enemy' | 'ally';
   ids: number[];
   max: number;
@@ -25,6 +25,9 @@ export function TeamSlots({ team, ids, max, heroById, active, onRemove, onAdd, t
   me?: number | null;
   meActive?: boolean;
   onRemoveMe?: () => void;
+  /** Ally positions (set or guessed) and the setter — the chip under each ally. */
+  allyPositions?: Map<number, { pos: string; auto: boolean }>;
+  onAllyPos?: (id: number, pos: '1' | '2' | '3' | '4' | '5') => void;
 }) {
   const i18n = useI18n();
   const { t } = i18n;
@@ -63,12 +66,24 @@ export function TeamSlots({ team, ids, max, heroById, active, onRemove, onAdd, t
             );
           }
           const name = i18n.heroName(h);
+          const ap = team === 'ally' ? allyPositions?.get(id) : undefined;
           return (
             <div key={id} className="slot-wrap">
               <div className={`slot slot-filled pop-in team-${team} ${small ? 'slot-sm' : ''}`}>
                 <HeroPortrait hero={h} fill variant="large" />
                 <button type="button" onClick={() => onRemove(id)} aria-label={t('draft.remove', { name })} className="slot-x">×</button>
               </div>
+              {ap && onAllyPos && (
+                <button
+                  type="button"
+                  onClick={() => onAllyPos(id, (String((Number(ap.pos) % 5) + 1)) as '1')}
+                  title={t('draft.allyPosTitle', { n: ap.pos, role: t(`pos.sub.${ap.pos}` as StringKey), auto: ap.auto ? t('draft.allyPosAuto') : '' })}
+                  aria-label={t('draft.allyPosTitle', { n: ap.pos, role: t(`pos.sub.${ap.pos}` as StringKey), auto: ap.auto ? t('draft.allyPosAuto') : '' })}
+                  className={`ally-pos ${ap.auto ? 'is-auto' : ''}`}
+                >
+                  {t('draft.allyPos', { n: ap.pos })}
+                </button>
+              )}
               <span className="slot-name min-w-0 flex-1 truncate text-[15px] font-semibold text-ink">{name}</span>
             </div>
           );

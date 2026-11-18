@@ -1,5 +1,5 @@
 import { APP_CONFIG } from '../config';
-import type { AggOptions, CandidateScore, DeltaStats, Hero, MatchupDetail, MatchupRow, PositionDataset, SynergyDetail } from '../types';
+import type { LaneDetail, AggOptions, CandidateScore, DeltaStats, Hero, MatchupDetail, MatchupRow, PositionDataset, SynergyDetail } from '../types';
 import { LANE_AFFINITY } from './positions';
 import { EXTRA_AFFINITY, positionScoreBase, type Lane } from './positionsExtra';
 import { isEligibleAt } from './positionEligibility';
@@ -83,6 +83,36 @@ export interface ScoreInput {
   synergyByAlly?: Map<number, MatchupRow[]> | null;
   /** Heroes that cannot be picked (bans, already picked elsewhere). */
   excludeIds?: number[];
+  /** Your ally on this lane (from ally positions) and its laning table. */
+  lane?: LaneInput | null;
+}
+
+export interface LaneInput {
+  allyId: number;
+  /** Ally's lane results with each partner at its position: id → [lanes, won, lost]. */
+  partners: Record<string, [number, number, number]>;
+  /** Ally's usual lane win share at its position (0..1). */
+  allyAvg: number;
+  /** A candidate's usual lane win share at the scored position (0..1), if known. */
+  candidateAvg: (heroId: number) => number | undefined;
+}
+
+/** Laning with the lane partner: share vs what both heroes usually get. */
+export function laneDetail(heroId: number, lane: LaneInput): LaneDetail | null {
+  const cfg = APP_CONFIG.scoring;
+  const row = lane.partners[String(heroId)];
+  if (!row) return null;
+  const [, won, lost] = row;
+  const games = won + lost;
+  if (games <= 0) return null;
+  const share = (100 * won) / games;
+  const expected = ((lane.candidateAvg(heroId) ?? 0.5) + lane.allyAvg - 0.5) * 100;
+  const raw = share - expected;
+  return {
+    allyId: lane.allyId, games, won, lost, share, expected,
+    delta: (raw * games) / (games + cfg.laneShrinkK),
+    usable: games >= cfg.laneMinGames,
+  };
 }
 
 /** Same-team advantage of `heroId` with each ally (shrunk like matchups). */
@@ -198,12 +228,15 @@ export function scoreCandidates(input: ScoreInput, pos: Lane, opts: AggOptions =
     const badCount = deltas.filter((d) => d < cfg.weakLinkThreshold).length;
     const raw = teamScore * cfg.wCounter + positionBonus * cfg.wPosition;
     const synergyScore = usableSynergy.length > 0 ? computeDeltaStats(usableSynergy.map((s) => s.delta)).median : 0;
+    // Lane partner: optional (no coverage gate) — no data, no adjustment.
+    const lane = input.lane ? laneDetail(hero.id, input.lane) : null;
+    const laneBonus = lane?.usable ? cfg.wLane * lane.delta : 0;
     let teamScoreM: number | undefined;
     let finalScore: number;
-    let draftScore = teamScore + cfg.wSynergy * synergyScore;
+    let draftScore = teamScore + cfg.wSynergy * synergyScore + laneBonus;
     if (model === 'M') {
       teamScoreM = deltaStats.median;
-      draftScore = teamScoreM + cfg.wSynergy * synergyScore;
+      draftScore = teamScoreM + cfg.wSynergy * synergyScore + laneBonus;
       const rawM = draftScore * cfg.wCounter + positionBonus * cfg.wPosition;
       finalScore = rawM * (0.3 + 0.7 * confidence);
     } else if (model === 'W') {
@@ -224,6 +257,7 @@ export function scoreCandidates(input: ScoreInput, pos: Lane, opts: AggOptions =
       deltaStats,
       synergy,
       synergyScore,
+      lane,
       draftScore,
     });
   }

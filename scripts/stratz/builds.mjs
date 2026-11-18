@@ -9,6 +9,9 @@
  *   talent                talent picks
  *   abilityMaxLevel       hero level at which each ability was maxed
  *   abilityMinLevel       hero level at which each ability was first taken
+ *   laneOutcome(isWith)   laning-stage result (win / draw / loss) with each
+ *                         teammate who shared the lane — "who lanes well with
+ *                         this hero at this position"
  *
  * Denominator. The item endpoints count a different (larger) population than
  * heroStats.stats, so dividing by the position's match count gives >100%.
@@ -31,13 +34,14 @@ export function buildHeroQuery(heroId, bucketWeekSec, positions, brackets) {
       parts.push(`t_${k}: talent(${a}) { abilityId matchCount winCount }`);
       parts.push(`x_${k}: abilityMaxLevel(${a}) { abilityId level matchCount }`);
       parts.push(`n_${k}: abilityMinLevel(${a}) { abilityId matchCount }`);
+      parts.push(`l_${k}: laneOutcome(heroId: ${heroId}, isWith: true, week: ${bucketWeekSec}, bracketBasicIds: [${b}], positionIds: [POSITION_${p}]) { heroId2 matchCount winCount lossCount }`);
     }
   }
   return `{ heroStats {\n${parts.join('\n')}\n} }`;
 }
 
 function emptyCell() {
-  return { start: new Map(), boots: new Map(), full: new Map(), talent: new Map(), amax: new Map(), amin: new Map() };
+  return { start: new Map(), boots: new Map(), full: new Map(), talent: new Map(), amax: new Map(), amin: new Map(), lane: new Map() };
 }
 
 /** raw[pos][bracket] = cell; weighted sums (rolling-window bucket weight). */
@@ -85,6 +89,13 @@ export function accumulateHero(raw, response, positions, brackets, weight = 1) {
       for (const r of h[`n_${k}`] ?? []) {
         cell.amin.set(r.abilityId, (cell.amin.get(r.abilityId) ?? 0) + weight * r.matchCount);
       }
+      for (const r of h[`l_${k}`] ?? []) {
+        const c = cell.lane.get(r.heroId2) ?? [0, 0, 0];
+        c[0] += weight * r.matchCount;
+        c[1] += weight * r.winCount;
+        c[2] += weight * r.lossCount;
+        cell.lane.set(r.heroId2, c);
+      }
     }
   }
   return raw;
@@ -112,6 +123,11 @@ export function addAllRanks(raw, brackets) {
         all.amax.set(k, a);
       }
       for (const [k, v] of c.amin) all.amin.set(k, (all.amin.get(k) ?? 0) + v);
+      for (const [k, v] of c.lane) {
+        const a = all.lane.get(k) ?? [0, 0, 0];
+        a[0] += v[0]; a[1] += v[1]; a[2] += v[2];
+        all.lane.set(k, a);
+      }
     }
     raw[p].ALL = all;
   }
@@ -242,4 +258,26 @@ export function validateBuilds(builds, { minHeroes = 100 } = {}) {
   if (noStart > ids.length * 0.05) problems.push(`${noStart} position builds without starting items`);
   if (problems.length) throw new Error(`Build contract failed: ${problems.slice(0, 5).join('; ')}${problems.length > 5 ? ` (+${problems.length - 5} more)` : ''}`);
   return { heroes: ids.length };
+}
+
+/** Lane partners with at least this many shared lanes are kept. */
+export const LANE_MIN_MATCHES = 30;
+
+/**
+ * Laning results of this hero/position with each lane partner:
+ * { partnerId: [lanes, won, lost] } (draws = lanes − won − lost). Thin pairs
+ * are dropped; `avg` is the lane win share (won / (won + lost)) over all
+ * partners — what "a usual partner" gets.
+ */
+export function summarizeLanes(cell) {
+  const partners = {};
+  let w = 0;
+  let l = 0;
+  for (const [id, [m, won, lost]] of cell.lane) {
+    w += won;
+    l += lost;
+    if (m >= LANE_MIN_MATCHES) partners[id] = [Math.round(m), Math.round(won), Math.round(lost)];
+  }
+  if (!Object.keys(partners).length) return null;
+  return { avg: w + l ? Math.round((1000 * w) / (w + l)) / 1000 : 0.5, partners };
 }

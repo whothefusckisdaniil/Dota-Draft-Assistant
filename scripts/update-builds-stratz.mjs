@@ -24,7 +24,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { StratzTransport, loadToken, BUCKET_SEC, BRACKETS } from './update-data-stratz.mjs';
 import { POSITION_ELIGIBILITY } from './stratz/eligibility.mjs';
-import { accumulateHero, addAllRanks, buildHeroQuery, summarizeBuild, validateBuilds } from './stratz/builds.mjs';
+import { accumulateHero, addAllRanks, buildHeroQuery, summarizeBuild, summarizeLanes, validateBuilds } from './stratz/builds.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DATA = path.join(ROOT, 'public', 'data');
@@ -102,6 +102,21 @@ export function itemEntry(key, od) {
   return comps.length ? [key, od?.dname ?? key, comps] : [key, od?.dname ?? key];
 }
 
+/** STRATZ answers "analytics database is at capacity" (GraphQL SERVER_BUSY,
+ *  HTTP 200) under load: wait and retry instead of failing the whole run. */
+export async function queryWithRetry(transport, q, { attempts = 6, baseMs = 15000, sleep = (ms) => new Promise((r) => setTimeout(r, ms)), log = console.log } = {}) {
+  for (let i = 1; ; i++) {
+    try {
+      return await transport.query(q);
+    } catch (e) {
+      const busy = /SERVER_BUSY|at capacity|temporarily unavailable/i.test(String(e?.message));
+      if (!busy || i >= attempts) throw e;
+      log(`    STRATZ busy, retry ${i}/${attempts - 1} in ${Math.round((baseMs * i) / 1000)}s`);
+      await sleep(baseMs * i);
+    }
+  }
+}
+
 function eligiblePositions(entry) {
   if (!entry?.positions) return [];
   return ['1', '2', '3', '4', '5'].filter((p) => {
@@ -163,6 +178,8 @@ async function main() {
   const nameOf = await fetchNames(transport);
   try {
     const builds = {};
+    /** Laning results with each partner, per position and rank (public/builds/lanes/). */
+    const lanes = {};
     const list = heroes.filter((h) => !only || only.includes(h.id));
     let n = 0;
     for (const hero of list) {
@@ -181,20 +198,26 @@ async function main() {
       const raw = {};
       const t0 = Date.now();
       for (const bucket of buckets) {
-        const res = await transport.query(buildHeroQuery(hero.id, bucket * BUCKET_SEC, pos, BRACKETS));
+        const res = await queryWithRetry(transport, buildHeroQuery(hero.id, bucket * BUCKET_SEC, pos, BRACKETS));
         accumulateHero(raw, res, pos, BRACKETS, weights[bucket] ?? 1);
       }
       addAllRanks(raw, BRACKETS);
       const out = { heroId: hero.id, positions: {} };
+      const laneOut = { heroId: hero.id, positions: {} };
       for (const p of pos) {
         const byRank = {};
+        const lanesByRank = {};
         for (const rank of ['ALL', ...BRACKETS]) {
           const b = raw[p]?.[rank] ? summarizeBuild(raw[p][rank], ctx) : null;
           if (b) byRank[rank] = b;
+          const l = raw[p]?.[rank] ? summarizeLanes(raw[p][rank]) : null;
+          if (l) lanesByRank[rank] = l;
         }
         if (byRank.ALL) out.positions[p] = byRank;
+        if (lanesByRank.ALL) laneOut.positions[p] = lanesByRank;
       }
       if (Object.keys(out.positions).length) builds[hero.id] = out;
+      if (Object.keys(laneOut.positions).length) lanes[hero.id] = laneOut;
       console.log(`    [${n}/${list.length}] ${hero.name}: positions ${pos.join(',')} in ${Date.now() - t0}ms`);
     }
 
@@ -227,6 +250,10 @@ async function main() {
       heroes: Object.keys(builds).map(Number).sort((a, b) => a - b),
       items,
       abilities,
+      /** heroId → position → rank → lane win share (won / (won + lost)) with any partner. */
+      laneAvg: Object.fromEntries(Object.entries(lanes).map(([id, l]) => [id, Object.fromEntries(
+        Object.entries(l.positions).map(([p, byRank]) => [p, Object.fromEntries(Object.entries(byRank).map(([r, x]) => [r, x.avg]))]),
+      )])),
     };
 
     // Atomic swap of the whole directory (a partial run keeps the other heroes).
@@ -240,6 +267,7 @@ async function main() {
       newIndex.heroes = [...new Set([...index.heroes, ...newIndex.heroes])].sort((a, b) => a - b);
       newIndex.items = { ...index.items, ...newIndex.items };
       newIndex.abilities = { ...index.abilities, ...newIndex.abilities };
+      newIndex.laneAvg = { ...(index.laneAvg ?? {}), ...newIndex.laneAvg };
       newIndex.generatedAt = index.generatedAt; // a partial run does not make the rest fresh
     }
     let bytes = 0;
@@ -248,6 +276,15 @@ async function main() {
       bytes += s.length;
       fs.writeFileSync(path.join(next, `${id}.json`), s);
     }
+    fs.mkdirSync(path.join(next, 'lanes'), { recursive: true });
+    let laneBytes = 0;
+    for (const [id, l] of Object.entries(lanes)) {
+      const s = JSON.stringify(l);
+      laneBytes += s.length;
+      fs.writeFileSync(path.join(next, 'lanes', `${id}.json`), s);
+    }
+    console.log(`    lane files: ${Object.keys(lanes).length} heroes, ${Math.round(laneBytes / 1024)} KB`);
+    if (!only && Object.keys(lanes).length < 100) throw new Error(`only ${Object.keys(lanes).length} heroes have lane data`);
     fs.writeFileSync(path.join(next, 'index.json'), JSON.stringify(newIndex));
     if (fs.existsSync(OUT)) fs.renameSync(OUT, prev);
     fs.renameSync(next, OUT);

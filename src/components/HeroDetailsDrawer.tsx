@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import type { CandidateScore, Hero } from '../types';
 import { explainCandidate, useI18n } from '../i18n';
 import { HeroPortrait } from './HeroPortrait';
-import { scoreText, scoreTone } from './CandidateCard';
+import { LaneLine, scoreText, scoreTone } from './CandidateCard';
 import type { StringKey } from '../i18n/strings';
 import type { Lane } from '../scoring/positionsExtra';
 
@@ -128,6 +128,14 @@ export function HeroDetailsDrawer({ candidate: c, laneName, enemyIds, heroById, 
                   <PairRow key={sy.allyId} hero={heroById.get(sy.allyId)} name={name(sy.allyId)} delta={sy.delta} usable={sy.usable} winrate={sy.winrate} games={sy.games} wrKey="drawer.together" />
                 ))}
               </div>
+            </section>
+          )}
+
+          {c.lane?.usable && (
+            <section className="mt-5">
+              <h3 className="label">{t('laneWith.title')}</h3>
+              <LaneLine c={c} heroById={heroById} />
+              <p className="mt-1 text-[11px] leading-[14px] text-muted">{t('laneWith.note')}</p>
             </section>
           )}
 

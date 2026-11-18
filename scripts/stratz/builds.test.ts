@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { accumulateHero, addAllRanks, buildHeroQuery, summarizeBuild, validateBuilds } from './builds.mjs';
-import { abilityDisplayName, rebuildReason } from '../update-builds-stratz.mjs';
+import { abilityDisplayName, queryWithRetry, rebuildReason } from '../update-builds-stratz.mjs';
 
 const B = ['HERALD_GUARDIAN', 'DIVINE_IMMORTAL'];
 const items = new Map<number, { qual: string; cost: number }>([
@@ -114,5 +114,16 @@ describe('ability / talent display names', () => {
     expect(abilityDisplayName({ key: 'special_bonus_unique_lion_5', stratz: '-2.0s Hex Cooldown', openDota: 'x' })).toBe('-2.0s Hex Cooldown');
     expect(abilityDisplayName({ key: 'special_bonus_unique_lion_5', stratz: 'special_bonus_unique_lion_5', openDota: '-{s:bonus_AbilityCooldown}s Hex Cooldown' })).toBe('Hex Cooldown');
     expect(abilityDisplayName({ key: 'special_bonus_unique_dazzle_nothl_projection_duration', stratz: null, openDota: undefined })).toBe('Dazzle nothl projection duration');
+  });
+});
+
+describe('STRATZ busy retry', () => {
+  it('retries SERVER_BUSY and gives up on other errors', async () => {
+    let n = 0;
+    const busy = { query: async () => { n += 1; if (n < 3) throw new Error('GraphQL errors: SERVER_BUSY'); return { ok: true }; } };
+    await expect(queryWithRetry(busy, 'q', { sleep: async () => {}, log: () => {} })).resolves.toEqual({ ok: true });
+    expect(n).toBe(3);
+    const broken = { query: async () => { throw new Error('HTTP 401'); } };
+    await expect(queryWithRetry(broken, 'q', { sleep: async () => {}, log: () => {} })).rejects.toThrow('401');
   });
 });

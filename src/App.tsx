@@ -226,6 +226,8 @@ export default function App() {
                   onAdd={openPicker}
                   me={d.me}
                   meActive={d.target === 'me'}
+                  allyPositions={d.allyPositions}
+                  onAllyPos={d.setAllyPos}
                   onRemoveMe={() => d.me && d.remove(d.me, 'me')}
                 />
                 <BanRow

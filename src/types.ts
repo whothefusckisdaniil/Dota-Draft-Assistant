@@ -63,6 +63,22 @@ export interface Hero {
   nameRu: string;
 }
 
+/** Laning-stage result of a candidate with your ally on the same lane. */
+export interface LaneDetail {
+  allyId: number;
+  /** Lanes with a decided result (won + lost). */
+  games: number;
+  won: number;
+  lost: number;
+  /** Lane win share with this ally, %. */
+  share: number;
+  /** What both heroes' usual lane shares predict, %. */
+  expected: number;
+  /** Shrunk share − expected (pp). */
+  delta: number;
+  usable: boolean;
+}
+
 export interface MatchupDetail {
   enemyId: number;
   games: number;
@@ -136,7 +152,9 @@ export interface CandidateScore {
   synergy: SynergyDetail[];
   /** Median synergy advantage over the allies (pp); 0 without allies. */
   synergyScore: number;
-  /** What the ranking uses: counter median + wSynergy × synergy median (pp). */
+  /** Laning with your lane partner (null without a known partner or data). */
+  lane?: LaneDetail | null;
+  /** What the ranking uses: counter median + wSynergy × synergy median + wLane × lane (pp). */
   draftScore: number;
 }
 

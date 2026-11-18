@@ -7,12 +7,18 @@ import {
   loadSynergy,
   loadSynergyByBracket,
   loadRoleStats,
+  loadBuildIndex,
+  loadHeroLanes,
+  type BuildIndex,
+  type HeroLanes,
   type RoleStats,
   type BracketTables,
   type Dataset,
 } from './dataset';
 import { scoreCandidates } from '../scoring/engine';
 import { suggestBans } from '../scoring/bans';
+import { assignAllyPositions, lanePartner, LANE_PARTNER } from '../scoring/allyPositions';
+import type { LaneInput } from '../scoring/engine';
 import { buildDraftSearch, draftTitle, parseDraftUrl } from './draftUrl';
 import { useI18n } from '../i18n';
 
@@ -81,6 +87,11 @@ export function useDraftData() {
   // it: opening a friend's Divine link keeps your own default.
   const [enemies, setEnemies] = useState<number[]>(urlState.enemies);
   const [allies, setAllies] = useState<number[]>(urlState.allies);
+  /** Positions the user set for allies (others are guessed). */
+  const [allyPosSet, setAllyPosSet] = useState<Record<number, Exclude<PositionFilter, 'all'>>>(urlState.allyPos);
+  /** Lane data: the builds index (usual lane shares) and allies' lane tables. */
+  const [laneIndex, setLaneIndex] = useState<BuildIndex | null | undefined>(undefined);
+  const [laneTables, setLaneTables] = useState<Map<number, HeroLanes | null>>(new Map());
   const [bans, setBans] = useState<number[]>(urlState.bans);
   /** Your own hero (its build is shown). Stored as a 0/1-element list like the others. */
   const [meList, setMeList] = useState<number[]>(urlState.me ? [urlState.me] : []);
@@ -160,6 +171,24 @@ export function useDraftData() {
     };
   }, [dataset, roleStats]);
 
+  // Lane partner data: only with allies (small files, one per ally).
+  useEffect(() => {
+    if (!dataset || allies.length === 0) return;
+    let alive = true;
+    if (laneIndex === undefined) {
+      loadBuildIndex().then((ix) => alive && setLaneIndex(ix)).catch(() => alive && setLaneIndex(null));
+    }
+    for (const id of allies) {
+      if (laneTables.has(id)) continue;
+      loadHeroLanes(id)
+        .then((t) => alive && setLaneTables((m) => new Map(m).set(id, t)))
+        .catch(() => alive && setLaneTables((m) => new Map(m).set(id, null)));
+    }
+    return () => {
+      alive = false;
+    };
+  }, [dataset, allies, laneIndex, laneTables]);
+
   // Per-rank matchup tables: only when a rank is chosen.
   useEffect(() => {
     if (!dataset || activeRank === ALL_RANKS || bracketTables) return;
@@ -215,7 +244,7 @@ export function useDraftData() {
   useEffect(() => {
     if (!dataset) return;
     try {
-      const search = buildDraftSearch(window.location.search, { enemies, allies, bans, me, position, rank: activeRank, lang: i18n.lang });
+      const search = buildDraftSearch(window.location.search, { enemies, allies, bans, me, allyPos: allyPosSet, position, rank: activeRank, lang: i18n.lang });
       if (search !== window.location.search) {
         window.history.replaceState(window.history.state, '', `${window.location.pathname}${search}${window.location.hash}`);
       }
@@ -227,7 +256,7 @@ export function useDraftData() {
     } catch {
       /* a sandboxed frame may forbid history access — sharing just won't update */
     }
-  }, [dataset, enemies, allies, bans, me, position, activeRank, i18n]);
+  }, [dataset, enemies, allies, bans, me, allyPosSet, position, activeRank, i18n]);
 
   const heroes = dataset?.heroes ?? [];
   const heroById = dataset?.heroById ?? new Map<number, Hero>();
@@ -256,6 +285,28 @@ export function useDraftData() {
     [enemies, matchups, rankLoading],
   );
 
+  // Ally positions: set by the user, otherwise guessed (never your own role).
+  const allyPositions = useMemo(
+    () => assignAllyPositions(allies, positions, allyPosSet, position === 'all' ? null : position),
+    [allies, positions, allyPosSet, position],
+  );
+  /** Lane partner input for a candidate playing `lane`, if the data allows. */
+  const laneInputFor = useCallback((lane: Exclude<PositionFilter, 'all'>): LaneInput | null => {
+    const partner = lanePartner(lane, allyPositions);
+    const partnerPos = LANE_PARTNER[lane];
+    if (partner == null || !partnerPos || !laneIndex) return null;
+    const table = laneTables.get(partner)?.positions[partnerPos];
+    const rankKey = activeRank !== ALL_RANKS && table?.[activeRank] ? activeRank : 'ALL';
+    const t = table?.[rankKey];
+    if (!t) return null;
+    return {
+      allyId: partner,
+      partners: t.partners,
+      allyAvg: t.avg,
+      candidateAvg: (id) => laneIndex.laneAvg?.[id]?.[lane]?.[rankKey] ?? laneIndex.laneAvg?.[id]?.[lane]?.ALL,
+    };
+  }, [allyPositions, laneIndex, laneTables, activeRank]);
+
   // Auto-recompute (§9): local scoring is fast, no request gate needed.
   const results = useMemo(() => {
     const scoreAllies = allies.length > 0 && !!synergy;
@@ -267,10 +318,11 @@ export function useDraftData() {
       out.set(lane, scoreCandidates({
         heroes, enemyIds: enemies, matchupByEnemy: matchups, heroById, positions, baseWinrates,
         allyIds: allies, synergyByAlly: synergy, excludeIds: me ? [...bans, me] : bans,
+        lane: laneInputFor(lane),
       }, lane));
     }
     return out;
-  }, [enemies, allies, bans, me, position, heroes, matchups, heroById, positions, baseWinrates, synergy, synergyLoading, missingTables.length, rankLoading]);
+  }, [enemies, allies, bans, me, position, heroes, matchups, heroById, positions, baseWinrates, synergy, synergyLoading, missingTables.length, rankLoading, laneInputFor]);
 
   const banSuggestions = useMemo(() => {
     if (!dataset || !hasDraft || rankLoading || synergyLoading) return [];
@@ -305,6 +357,7 @@ export function useDraftData() {
   const clearAll = useCallback(() => {
     setEnemies([]);
     setAllies([]);
+    setAllyPosSet({});
     setBans([]);
     setMeList([]);
     setTarget('enemy');
@@ -320,6 +373,9 @@ export function useDraftData() {
     meta: dataset?.meta ?? null,
     enemies,
     allies,
+    allyPositions,
+    /** Set an ally's position (the lane partner follows). */
+    setAllyPos: useCallback((id: number, pos: Exclude<PositionFilter, 'all'>) => setAllyPosSet((m) => ({ ...m, [id]: pos })), []),
     bans,
     me,
     taken,

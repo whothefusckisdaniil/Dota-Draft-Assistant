@@ -7,6 +7,7 @@ import type { PositionFilter } from '../config';
  * - `ally`  — your team (up to 4; you are the 5th)
  * - `ban`   — banned heroes
  * - `hero`  — your own hero (its build is shown)
+ * - `allypos` — positions you set for allies: `85-4,27-5` (others are guessed)
  * - `pos`   — 1..5; absent = all positions
  * - `rank`  — herald | crusader | legend | divine; absent = all ranks
  *
@@ -31,6 +32,8 @@ export interface DraftUrlState {
   bans: number[];
   /** Your own hero, or null. */
   me: number | null;
+  /** Ally id → position set by the user. */
+  allyPos: Record<number, '1' | '2' | '3' | '4' | '5'>;
   position: PositionFilter;
   /** STRATZ bracket id, 'ALL', or null when the URL says nothing about the draft. */
   rank: string | null;
@@ -60,12 +63,17 @@ export function parseDraftUrl(search: string, maxEnemies = 5, maxAllies = 4, max
   const allies = parseIds(params.get('ally'), maxAllies, taken);
   const bans = parseIds(params.get('ban'), maxBans, taken);
   const me = parseIds(params.get('hero'), 1, taken)[0] ?? null;
+  const allyPos: DraftUrlState['allyPos'] = {};
+  for (const part of (params.get('allypos') ?? '').split(',')) {
+    const m = part.trim().match(/^(\d{1,4})-([1-5])$/);
+    if (m && allies.includes(Number(m[1]))) allyPos[Number(m[1])] = m[2] as '1';
+  }
   const pos = params.get('pos') ?? '';
   const position: PositionFilter = LANES.has(pos) ? (pos as PositionFilter) : 'all';
   const rankParam = (params.get('rank') ?? '').toLowerCase();
   const hasDraft = ['enemy', 'ally', 'ban', 'hero', 'pos', 'rank'].some((k) => params.has(k));
   const rank = SLUG_TO_RANK[rankParam] ?? (hasDraft ? 'ALL' : null);
-  return { enemies, allies, bans, me, position, rank, hasDraft };
+  return { enemies, allies, bans, me, allyPos, position, rank, hasDraft };
 }
 
 /**
@@ -75,13 +83,14 @@ export function parseDraftUrl(search: string, maxEnemies = 5, maxAllies = 4, max
  */
 export function buildDraftSearch(
   current: string,
-  state: { enemies: number[]; allies?: number[]; bans?: number[]; me?: number | null; position: PositionFilter; rank: string; lang?: 'en' | 'ru' },
+  state: { enemies: number[]; allies?: number[]; bans?: number[]; me?: number | null; allyPos?: Record<number, string>; position: PositionFilter; rank: string; lang?: 'en' | 'ru' },
 ): string {
   const params = new URLSearchParams(current);
   params.delete('enemy');
   params.delete('ally');
   params.delete('ban');
   params.delete('hero');
+  params.delete('allypos');
   params.delete('pos');
   params.delete('rank');
   params.delete('lang');
@@ -89,6 +98,8 @@ export function buildDraftSearch(
   if (state.allies?.length) params.set('ally', state.allies.join(','));
   if (state.bans?.length) params.set('ban', state.bans.join(','));
   if (state.me) params.set('hero', String(state.me));
+  const ap = (state.allies ?? []).filter((id) => state.allyPos?.[id]).map((id) => `${id}-${state.allyPos![id]}`);
+  if (ap.length) params.set('allypos', ap.join(','));
   if (state.position !== 'all') params.set('pos', state.position);
   const slug = RANK_SLUGS[state.rank];
   if (slug) params.set('rank', slug);

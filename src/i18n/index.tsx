@@ -166,6 +166,10 @@ export function explainCandidate(c: CandidateScore, laneName: string, i18n: I18n
   if (synWorst) synLines.push(t('explain.synergyBad', { name: name(synWorst.allyId), delta: fmtSigned(synWorst.delta) }));
   if (usable.length === 0) out.unshift(...synLines);
   else out.splice(Math.min(out.length, 1), 0, ...synLines);
+  // Lane partner (from ally positions)
+  if (c.lane?.usable && Math.abs(c.lane.delta) >= 1.5) {
+    out.push(t(c.lane.delta > 0 ? 'explain.laneGood' : 'explain.laneBad', { name: name(c.lane.allyId), delta: fmtSigned(c.lane.delta) }));
+  }
   if (c.avgGames >= 800) out.push(t('explain.sampleLarge'));
   else if (c.avgGames >= 200) out.push(t('explain.sampleSolid'));
   else out.push(t('explain.sampleLimited'));
