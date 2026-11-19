@@ -82,3 +82,31 @@ describe('alternative upgrades of one intermediate item', () => {
     expect(keys).toContain('specialists_array'); // no longer a Hydra component here
   });
 });
+
+describe('farming items are alternatives', () => {
+  const ITEMS3: Record<number, [string, string, string[]?]> = {
+    166: ['maelstrom', 'Maelstrom'], 158: ['mjollnir', 'Mjollnir', ['maelstrom', 'hyperstone']],
+    137: ['radiance', 'Radiance'], 116: ['black_king_bar', 'Black King Bar'], 145: ['basher', 'Skull Basher'],
+    127: ['blade_mail', 'Blade Mail'], 154: ['sange_and_yasha', 'Sange and Yasha'], 208: ['abyssal_blade', 'Abyssal Blade', ['basher']],
+    108: ['ultimate_scepter', "Aghanim's Scepter"],
+  };
+  // Bloodseeker mid, Crusader–Archon, patch 7.42
+  const BS = {
+    m: 1586, low: false, start: [], talents: [], skills: [], boots: [],
+    items: [[127, 0.396, 15, 50], [166, 0.479, 16, 50], [137, 0.233, 19, 50], [158, 0.296, 26, 50], [154, 0.197, 27, 50],
+      [116, 0.624, 28, 50], [145, 0.411, 31, 50], [108, 0.153, 34, 50], [208, 0.185, 39, 50]],
+  } as unknown as Build;
+
+  it('Bloodseeker: Mjollnir or Radiance, not both', () => {
+    const keys = idealBuild(BS, (id) => ITEMS3[id]).slots.map((s) => s.key);
+    expect(keys).toContain('mjollnir');
+    expect(keys).not.toContain('radiance');
+    expect(keys).toHaveLength(6);
+  });
+
+  it('two core farming items both stay', () => {
+    const both = { ...BS, items: BS.items.map((x) => (x[0] === 137 ? [137, 0.4, 19, 50] : x[0] === 158 ? [158, 0.36, 26, 50] : x)) } as unknown as Build;
+    const keys = idealBuild(both, (id) => ITEMS3[id]).slots.map((s) => s.key);
+    expect(keys).toEqual(expect.arrayContaining(['radiance', 'mjollnir']));
+  });
+});

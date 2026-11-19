@@ -19,6 +19,8 @@ import { itemHasRole } from '../data/itemTags';
  * leaves the list when its upgrade is bought in at least half as many games.
  * Two upgrades of the same intermediate (Hurricane Pike and Hydra's Breath
  * both need Dragon Lance) are alternatives: only the more popular one stays.
+ * So are the farming items (Radiance / Maelstrom-Mjollnir / Battle Fury) —
+ * see FARM_ALTERNATIVES.
  * Aghanim's Shard / Blessing and boots do not take a slot; the shard is
  * reported separately (shown after the slots as "no slot"). Order = typical purchase minute.
  */
@@ -45,6 +47,12 @@ export const IDEAL = { slots: 6, corePct: 0.35, laningMinute: 12, draftSlots: 2,
 
 const NO_SLOT = new Set(['aghanims_shard', 'ultimate_scepter_2']);
 
+/** First big farming item: heroes go one way (Radiance OR Maelstrom/Mjollnir
+ *  OR Battle Fury), rarely two. The data only has each item's own share, not
+ *  how often they are bought together, so a non-core one of these is dropped
+ *  when a more popular one is in the build. Two core ones (≥ 35%) both stay. */
+export const FARM_ALTERNATIVES = new Set(['radiance', 'maelstrom', 'mjollnir', 'gleipnir', 'bfury']);
+
 export function idealBuild(
   build: Build,
   /** itemId → [key, name, components?] (builds index). */
@@ -70,7 +78,10 @@ export function idealBuild(
     const cs = comps(y[0]);
     return cs.includes(k) && y[1] >= pct * IDEAL.upgradeRatio;
   });
-  const pool = later.filter((x) => !isCompleted(key(x[0]), x[1]));
+  const finished = later.filter((x) => !isCompleted(key(x[0]), x[1]));
+  const farm = finished.filter((x) => FARM_ALTERNATIVES.has(key(x[0])));
+  const pool = finished.filter((x) => !FARM_ALTERNATIVES.has(key(x[0])) || x[1] >= IDEAL.corePct
+    || !farm.some((y) => y !== x && (y[1] > x[1] || (y[1] === x[1] && y[0] < x[0]))));
 
   const chosen = new Map<number, IdealSlot>();
   const add = (x: (typeof pool)[number], kind: SlotKind, suggestion?: ItemSuggestion, need?: TeamNeed) => {
