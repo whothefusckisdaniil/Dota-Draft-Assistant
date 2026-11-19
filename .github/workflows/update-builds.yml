@@ -1,9 +1,15 @@
 name: Update hero builds
 
-# Runs every day after the dataset refresh (03:17 UTC), but the script only
-# rebuilds when due: weekly, on a new patch, on a roster change or when forced.
+# Runs after every dataset refresh, but the script only rebuilds when due:
+# weekly, on a new patch (then daily for its first week), on a roster change
+# or when forced.
 # ~640 STRATZ requests (~25 min) per rebuild, inside the token's limits.
 on:
+  # Right after each dataset refresh (it detects a new patch first), plus a
+  # fallback schedule: GitHub's cron often starts hours late.
+  workflow_run:
+    workflows: [Update Dota dataset]
+    types: [completed]
   schedule:
     - cron: '47 4 * * *'
   workflow_dispatch:
@@ -24,6 +30,8 @@ concurrency:
 
 jobs:
   builds:
+    # after a failed dataset refresh there is nothing new to build from
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 90
     permissions:

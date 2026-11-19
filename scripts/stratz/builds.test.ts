@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { accumulateHero, addAllRanks, buildHeroQuery, summarizeBuild, validateBuilds } from './builds.mjs';
-import { abilityDisplayName, queryWithRetry, rebuildReason } from '../update-builds-stratz.mjs';
+import { abilityDisplayName, abilityIdMap, queryWithRetry, rebuildReason } from '../update-builds-stratz.mjs';
 
 const B = ['HERALD_GUARDIAN', 'DIVINE_IMMORTAL'];
 const items = new Map<number, { qual: string; cost: number }>([
@@ -106,6 +106,22 @@ describe('hero builds from STRATZ purchase statistics', () => {
     expect(rebuildReason({ index: { ...index, generatedAt: '2026-11-10T05:00:00Z' }, meta, heroIds: [1, 2], now })).toBe('WEEKLY');
     expect(rebuildReason({ index, meta, heroIds: [1, 2, 3], now })).toBe('ROSTER_CHANGED');
     expect(rebuildReason({ index, meta, heroIds: [1, 2], now, force: true })).toBe('FORCE');
+  });
+
+  it('rebuilds daily in the first week of a patch', () => {
+    const now = new Date('2026-11-20T05:00:00Z');
+    const meta = { latestPatch: '7.42', matchupWindow: { patch: { mode: 'YOUNG_PATCH_FILLED' } } };
+    const index = { patch: '7.42', generatedAt: '2026-11-19T05:00:00Z', heroes: [1] };
+    expect(rebuildReason({ index, meta, heroIds: [1], now })).toBe('YOUNG_PATCH');
+    expect(rebuildReason({ index: { ...index, generatedAt: '2026-11-20T01:00:00Z' }, meta, heroIds: [1], now })).toBeNull();
+    expect(rebuildReason({ index, meta: { ...meta, matchupWindow: { patch: { mode: 'FULL' } } }, heroIds: [1], now })).toBeNull();
+  });
+
+  it('reads ability ids listed as "new,old"', () => {
+    const m = abilityIdMap({ '3060,1617': 'special_bonus_x', 5: 'lion_impale', abc: 'junk' });
+    expect(m.get('special_bonus_x')).toBe(3060);
+    expect(m.get('lion_impale')).toBe(5);
+    expect(m.has('junk')).toBe(false);
   });
 });
 

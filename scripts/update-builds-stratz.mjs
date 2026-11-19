@@ -54,9 +54,23 @@ export function rebuildReason({ index, meta, heroIds, now = new Date(), force = 
   if (index.patch !== meta.latestPatch) return 'NEW_PATCH';
   const age = (now.getTime() - Date.parse(index.generatedAt)) / 86_400_000;
   if (!(age < MAX_AGE_DAYS - 0.25)) return 'WEEKLY';
+  // First week of a patch: each day adds a lot of new-patch games (new
+  // talents start with a handful of picks), so rebuild daily until it settles.
+  if (meta.matchupWindow?.patch?.mode === 'YOUNG_PATCH_FILLED' && !(age < 0.75)) return 'YOUNG_PATCH';
   const built = new Set(index.heroes);
   if (heroIds.some((id) => !built.has(id))) return 'ROSTER_CHANGED';
   return null;
+}
+
+/** name → id from OpenDota's ability_ids. Some keys list several ids
+ *  ("3060,1617"): the first one is the current id (Number() made them NaN). */
+export function abilityIdMap(abilityIds) {
+  const out = new Map();
+  for (const [ids, name] of Object.entries(abilityIds)) {
+    const id = Number(String(ids).split(',')[0]);
+    if (Number.isFinite(id) && !out.has(name)) out.set(name, id);
+  }
+  return out;
 }
 
 /** A usable display name: STRATZ text with numbers → OpenDota text without its
@@ -171,7 +185,7 @@ async function main() {
     getJson(`${OPEN_DOTA}/constants/ability_ids`),
   ]);
   const itemMeta = new Map(Object.entries(odItems).map(([key, v]) => [v.id, { key, name: v.dname, cost: v.cost, qual: v.qual }]));
-  const abilityIdByName = new Map(Object.entries(abilityIds).map(([id, name]) => [name, Number(id)]));
+  const abilityIdByName = abilityIdMap(abilityIds);
 
   const transport = new StratzTransport(loadToken());
   await transport.init();
