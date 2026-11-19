@@ -101,6 +101,9 @@ describe('farming items are alternatives', () => {
     const keys = idealBuild(BS, (id) => ITEMS3[id]).slots.map((s) => s.key);
     expect(keys).toContain('mjollnir');
     expect(keys).not.toContain('radiance');
+    // Skull Basher stays (Abyssal is rare): Abyssal is not a second slot
+    expect(keys).toContain('basher');
+    expect(keys).not.toContain('abyssal_blade');
     expect(keys).toHaveLength(6);
   });
 

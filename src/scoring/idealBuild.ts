@@ -80,8 +80,13 @@ export function idealBuild(
   });
   const finished = later.filter((x) => !isCompleted(key(x[0]), x[1]));
   const farm = finished.filter((x) => FARM_ALTERNATIVES.has(key(x[0])));
+  // A component that stayed (its upgrade is rare: Skull Basher 41% vs Abyssal
+  // 19%) already fills that slot — the upgrade is the same slot later, not
+  // another item, so it does not get a slot of its own.
+  const keptKeys = new Set(finished.map((x) => key(x[0])));
   const pool = finished.filter((x) => !FARM_ALTERNATIVES.has(key(x[0])) || x[1] >= IDEAL.corePct
-    || !farm.some((y) => y !== x && (y[1] > x[1] || (y[1] === x[1] && y[0] < x[0]))));
+    || !farm.some((y) => y !== x && (y[1] > x[1] || (y[1] === x[1] && y[0] < x[0]))))
+    .filter((x) => !comps(x[0]).some((c) => keptKeys.has(c)));
 
   const chosen = new Map<number, IdealSlot>();
   const add = (x: (typeof pool)[number], kind: SlotKind, suggestion?: ItemSuggestion, need?: TeamNeed) => {
