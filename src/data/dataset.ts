@@ -175,7 +175,8 @@ export function loadRoleStats(): Promise<RoleStats | null> {
 
 /** Hero builds (public/builds, scripts/update-builds-stratz.mjs). */
 export type BuildItem = [itemId: number, pct: number, minute: number, winrate: number];
-export type BuildTalent = [heroLevel: number, a: [id: number, pct: number, wr: number], b: [id: number, pct: number, wr: number]];
+/** pct / wr are null for a pair nobody has picked yet (new talents early in a patch). */
+export type BuildTalent = [heroLevel: number, a: [id: number, pct: number | null, wr: number | null], b: [id: number, pct: number | null, wr: number | null]];
 export interface Build {
   m: number;
   low: boolean;

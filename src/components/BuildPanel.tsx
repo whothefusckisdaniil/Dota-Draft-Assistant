@@ -293,11 +293,11 @@ function BuildBody({ build, itemOf, abilityOf, abilityName, highlight }: {
                 {[b, a].map(([id, p], side) => (
                   <div
                     key={id}
-                    className={`flex min-w-0 flex-col justify-center rounded-lg border px-2 py-1.5 text-[12px] leading-4 ${side === 0 ? 'col-start-1 text-right' : 'col-start-3'} ${p >= 0.5 ? 'border-accent/60 bg-accent/10 text-ink' : 'border-line text-muted'}`}
+                    className={`flex min-w-0 flex-col justify-center rounded-lg border px-2 py-1.5 text-[12px] leading-4 ${side === 0 ? 'col-start-1 text-right' : 'col-start-3'} ${p != null && p >= 0.5 ? 'border-accent/60 bg-accent/10 text-ink' : 'border-line text-muted'}`}
                     style={{ gridRow: 1 }}
                   >
                     <span className="line-clamp-2">{abilityName(id)}</span>
-                    <span className="tnum text-[11px] font-semibold">{pct(p)}%</span>
+                    <span className="tnum text-[11px] font-semibold">{p == null ? t('build.talentNew') : `${pct(p)}%`}</span>
                   </div>
                 ))}
                 <span className="tnum col-start-2 row-start-1 flex items-center justify-center rounded-lg bg-surface-2 font-display text-[13px] font-bold text-ink">{level}</span>

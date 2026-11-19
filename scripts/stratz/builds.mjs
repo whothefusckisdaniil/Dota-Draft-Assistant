@@ -165,7 +165,7 @@ export const BUILD_LIMITS = {
  *   start    [itemId, pct, qty]       qty = copies bought by most players
  *   boots    [itemId, pct, minute]
  *   items    [itemId, pct, medianMinute, winrate]
- *   talents  [heroLevel, [id, pct, wr], [id, pct, wr]]
+ *   talents  [heroLevel, [id, pct, wr], [id, pct, wr]] (pct/wr null: no picks yet)
  *   skills   [abilityId, medianLevelMaxed, pctMaxed]  in maxing order
  */
 export function summarizeBuild(cell, ctx) {
@@ -212,10 +212,11 @@ export function summarizeBuild(cell, ctx) {
     if (pair.length !== 2) continue;
     const g = pair.map((t) => cell.talent.get(t.id) ?? [0, 0]);
     const sum = g[0][0] + g[1][0];
-    if (!sum) continue;
+    // A pair with no picks yet (brand-new talents on a patch's first day) is
+    // still listed — with null shares — so the tree is never missing a level.
     talents.push([
       [10, 15, 20, 25][level - 1],
-      ...pair.map((t, i) => [t.id, r3(g[i][0] / sum), r1(g[i][0] ? (100 * g[i][1]) / g[i][0] : 0)]),
+      ...pair.map((t, i) => [t.id, sum ? r3(g[i][0] / sum) : null, sum && g[i][0] ? r1((100 * g[i][1]) / g[i][0]) : null]),
     ]);
   }
 
